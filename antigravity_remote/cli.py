@@ -182,7 +182,7 @@ def cmd_remote(args):
     else:
         print(f"Remote monitoring and control mode is currently: {'ENABLED' if enabled else 'DISABLED'}")
 
-VERSION = "0.2.1"
+VERSION = "0.2.2"
 
 # ANSI color codes
 BLUE = "\033[38;5;39m"
@@ -198,22 +198,18 @@ MAGENTA = "\033[38;5;171m"
 def print_banner():
     """Print the Antigravity Mobile welcome banner in blue."""
     banner = f"""{BLUE}
-    ╔═══════════════════════════════════════════════════════════════╗
-    ║                                                               ║
-    ║      █████╗ ███╗   ██╗████████╗██╗ ██████╗ ██████╗  █████╗    ║
-    ║     ██╔══██╗████╗  ██║╚══██╔══╝██║██╔════╝ ██╔══██╗██╔══██╗   ║
-    ║     ███████║██╔██╗ ██║   ██║   ██║██║  ███╗██████╔╝███████║   ║
-    ║     ██╔══██║██║╚██╗██║   ██║   ██║██║   ██║██╔══██╗██╔══██║   ║
-    ║     ██║  ██║██║ ╚████║   ██║   ██║╚██████╔╝██║  ██║██║  ██║   ║
-    ║     ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ║
-    ║                                                               ║
-    ║          {CYAN}📱  M O B I L E{BLUE}                                     ║
-    ║                                                               ║
-    ╚═══════════════════════════════════════════════════════════════╝{RESET}
+       _          _   _                       _ _
+      / \\   _ __ | |_(_) __ _ _ __ __ ___   _(_) |_ _   _
+     / _ \\ | '_ \\| __| |/ _` | '__/ _` \\ \\ / / | __| | | |
+    / ___ \\| | | | |_| | (_| | | | (_| |\\ V /| | |_| |_| |
+   /_/   \\_\\_| |_|\\__|_|\\__, |_|  \\__,_| \\_/ |_|\\__|\\__, |
+                        |___/                        |___/
+{CYAN}
+                    M  O  B  I  L  E{RESET}
 
     {WHITE}{BOLD}Antigravity Mobile{RESET} {DIM}v{VERSION}{RESET}
     {DIM}Control your AI coding agent from your phone.{RESET}
-    {DIM}Monitor tasks, approve commands, switch models — remotely.{RESET}
+    {DIM}Monitor tasks, approve commands, switch models -- remotely.{RESET}
 """
     print(banner)
 
