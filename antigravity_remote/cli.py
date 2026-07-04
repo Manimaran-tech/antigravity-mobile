@@ -182,7 +182,7 @@ def cmd_remote(args):
     else:
         print(f"Remote monitoring and control mode is currently: {'ENABLED' if enabled else 'DISABLED'}")
 
-VERSION = "0.2.7"
+VERSION = "0.2.8"
 
 # ANSI color codes
 BLUE = "\033[38;5;39m"
@@ -371,6 +371,9 @@ def cmd_setup(args):
     print(f"       {CYAN}──────────────────────────────────────────────────────────────────────────{RESET}")
     print(f"       Please read the remote monitoring rules in {BLUE}.agents/AGENTS.md{RESET} and follow")
     print(f"       them. I have started the server and want to monitor your steps remotely.")
+    print(f"       Also, check if my Python scripts directory is in my system/user PATH, and")
+    print(f"       if not, add it automatically. Finally, read config.json to print my access")
+    print(f"       PIN and let me know.")
     print(f"       ──────────────────────────────────────────────────────────────────────────{RESET}")
     print()
 
