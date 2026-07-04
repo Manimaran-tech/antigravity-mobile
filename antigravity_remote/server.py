@@ -131,6 +131,34 @@ def get_system_status():
         except Exception:
             pass
 
+    response_file = "agent_response.json"
+    if os.path.exists(response_file):
+        try:
+            with open(response_file, "r", encoding="utf-8") as f:
+                res_data = json.load(f)
+                global REMOTE_PROMPT
+                REMOTE_PROMPT["status"] = res_data.get("status", "completed")
+                REMOTE_PROMPT["response"] = res_data.get("output", "")
+            os.remove(response_file)
+        except Exception:
+            pass
+
+    req_file = "agent_approval_request.json"
+    if os.path.exists(req_file):
+        try:
+            with open(req_file, "r", encoding="utf-8") as f:
+                req_data = json.load(f)
+                global REMOTE_APPROVAL
+                REMOTE_APPROVAL = {
+                    "status": "pending",
+                    "type": req_data.get("type", "command"),
+                    "target": req_data.get("target", ""),
+                    "decision": ""
+                }
+            os.remove(req_file)
+        except Exception:
+            pass
+
     return {
         "cpu": cpu,
         "memory": memory,
@@ -336,9 +364,18 @@ def post_approval_response(req: ApprovalResponse, token: str = Depends(verify_to
     global REMOTE_APPROVAL
     if REMOTE_APPROVAL["status"] != "pending":
         raise HTTPException(status_code=400, detail="No pending approval request")
-    REMOTE_APPROVAL["status"] = "approved" if req.approved else "rejected"
-    REMOTE_APPROVAL["decision"] = "approved" if req.approved else "rejected"
-    return {"status": "success", "decision": REMOTE_APPROVAL["status"]}
+    decision = "approved" if req.approved else "rejected"
+    REMOTE_APPROVAL["status"] = decision
+    REMOTE_APPROVAL["decision"] = decision
+    
+    # Write decision to agent_approval_response.json in workspace
+    try:
+        with open("agent_approval_response.json", "w", encoding="utf-8") as f:
+            json.dump({"status": decision}, f)
+    except Exception:
+        pass
+        
+    return {"status": "success", "decision": decision}
 
 # WebSockets
 @app.websocket("/ws/status")

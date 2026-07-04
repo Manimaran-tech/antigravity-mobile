@@ -46,19 +46,44 @@ def poll_approval_decision(base_url: str, token: str, timeout_seconds: int = 300
     print(f"Polling for mobile confirmation (Timeout: {timeout_seconds}s)...")
     
     while time.time() - start_time < timeout_seconds:
+        # 1. Check local file fallback first
+        resp_file = "agent_approval_response.json"
+        if os.path.exists(resp_file):
+            try:
+                with open(resp_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    status = data.get("status")
+                
+                # Small delay to ensure server finished writing/closing before delete
+                time.sleep(0.1)
+                try:
+                    os.remove(resp_file)
+                except Exception:
+                    pass
+                    
+                if status == "approved":
+                    print("MOBILE_CONFIRMATION (FILE): APPROVED")
+                    return 0
+                elif status == "rejected":
+                    print("MOBILE_CONFIRMATION (FILE): REJECTED")
+                    return 1
+            except Exception as e:
+                print(f"Error reading file fallback: {e}")
+
+        # 2. Check HTTP API fallback
         try:
-            with urllib.request.urlopen(req, timeout=5) as response:
+            with urllib.request.urlopen(req, timeout=3) as response:
                 data = json.loads(response.read().decode("utf-8"))
                 status = data.get("status")
                 
                 if status == "approved":
-                    print("MOBILE_CONFIRMATION: APPROVED")
+                    print("MOBILE_CONFIRMATION (API): APPROVED")
                     return 0
                 elif status == "rejected":
-                    print("MOBILE_CONFIRMATION: REJECTED")
+                    print("MOBILE_CONFIRMATION (API): REJECTED")
                     return 1
-        except Exception as e:
-            print(f"Connection issue: {e}")
+        except Exception:
+            pass # Suppress network errors during polling
             
         time.sleep(1.5)
         
@@ -72,6 +97,13 @@ def main():
     parser.add_argument("--url", default="http://127.0.0.1:8000", help="FastAPI Server URL")
     parser.add_argument("--timeout", type=int, default=300, help="Approval timeout in seconds")
     args = parser.parse_args()
+
+    # Always write file-based request fallback first
+    try:
+        with open("agent_approval_request.json", "w", encoding="utf-8") as f:
+            json.dump({"type": args.type, "target": args.target}, f)
+    except Exception as e:
+        print(f"Warning: Failed to write file-based fallback: {e}")
 
     # Read config.json to get PIN
     config_path = "config.json"
@@ -89,18 +121,21 @@ def main():
 
     # Login to get token
     token = get_auth_token(args.url, pin)
-    if not token:
-        print("Failed to authenticate.")
-        sys.exit(3)
-
-    # Post approval request
-    success = request_approval(args.url, token, args.type, args.target)
-    if not success:
-        print("Failed to register approval request on FastAPI server.")
-        sys.exit(3)
+    
+    if token:
+        # Post approval request over API
+        request_approval(args.url, token, args.type, args.target)
 
     # Poll for user decision
-    exit_code = poll_approval_decision(args.url, token, args.timeout)
+    exit_code = poll_approval_decision(args.url, token or "", args.timeout)
+    
+    # Cleanup request file if it exists
+    if os.path.exists("agent_approval_request.json"):
+        try:
+            os.remove("agent_approval_request.json")
+        except Exception:
+            pass
+            
     sys.exit(exit_code)
 
 if __name__ == "__main__":
