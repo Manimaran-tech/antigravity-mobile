@@ -298,7 +298,14 @@ def cancel_endpoint(task_id: str, token: str = Depends(verify_token)):
 
 @app.get("/api/tasks/{task_id}/logs")
 def logs_endpoint(task_id: str, token: str = Depends(verify_token)):
-    return {"logs": runner.get_task_logs(task_id)}
+    task = runner.get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return {
+        "logs": runner.get_task_logs(task_id),
+        "status": task.status,
+        "exit_code": task.exit_code
+    }
 
 @app.post("/api/tasks/summary")
 def generate_summary(token: str = Depends(verify_token)):

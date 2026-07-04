@@ -66,6 +66,88 @@ def cmd_start(args):
         log_level="info"
     )
 
+def cmd_run(args):
+    # Get config PIN
+    config = get_config()
+    pin = config.get("pin")
+    
+    base_url = f"http://127.0.0.1:{args.port}"
+    
+    import urllib.request
+    import urllib.error
+    
+    # 1. Login
+    login_url = f"{base_url}/api/login"
+    login_data = json.dumps({"pin": pin}).encode("utf-8")
+    req = urllib.request.Request(login_url, data=login_data, headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=5) as response:
+            res = json.loads(response.read().decode("utf-8"))
+            token = res.get("token", "")
+    except Exception as e:
+        print(f"Error: Server not running or unreachable at {base_url}. Make sure to start the server first.")
+        print(f"Details: {e}")
+        sys.exit(1)
+        
+    if not token:
+        print("Error: Authentication failed.")
+        sys.exit(1)
+        
+    # 2. Schedule command
+    cmd = " ".join(args.cmd_args)
+    schedule_url = f"{base_url}/api/schedule"
+    schedule_data = json.dumps({"command": cmd}).encode("utf-8")
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token}"
+    }
+    req = urllib.request.Request(schedule_url, data=schedule_data, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=5) as response:
+            task = json.loads(response.read().decode("utf-8"))
+            task_id = task.get("id")
+    except Exception as e:
+        print(f"Error scheduling command: {e}")
+        sys.exit(1)
+        
+    # 3. Confirm and start command
+    confirm_url = f"{base_url}/api/tasks/{task_id}/confirm"
+    req = urllib.request.Request(confirm_url, data=b"", headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=5) as response:
+            pass
+    except Exception as e:
+        print(f"Error starting command: {e}")
+        sys.exit(1)
+        
+    # 4. Stream logs to PC console until complete
+    print(f"Task {task_id} running: '{cmd}'")
+    
+    logs_url = f"{base_url}/api/tasks/{task_id}/logs"
+    req = urllib.request.Request(logs_url, headers=headers)
+    
+    import time
+    printed_offset = 0
+    while True:
+        try:
+            with urllib.request.urlopen(req, timeout=5) as response:
+                log_data = json.loads(response.read().decode("utf-8"))
+                content = log_data.get("logs", "")
+                status = log_data.get("status", "pending")
+                exit_code = log_data.get("exit_code")
+                
+                if len(content) > printed_offset:
+                    print(content[printed_offset:], end="", flush=True)
+                    printed_offset = len(content)
+                    
+                if status in ("completed", "failed", "cancelled"):
+                    if exit_code is not None:
+                        sys.exit(exit_code)
+                    sys.exit(0)
+        except Exception:
+            pass
+        time.sleep(0.5)
+
 def main():
     parser = argparse.ArgumentParser(
         description="Antigravity Remote Monitor and Task Scheduler CLI Tool"
@@ -82,12 +164,19 @@ def main():
     start_parser.add_argument("--port", type=int, default=8000, help="Port to run the web server on")
     start_parser.add_argument("--reload", action="store_true", help="Enable hot reloading for development")
 
+    # run command
+    run_parser = subparsers.add_parser("run", help="Run a command locally via the background runner and log it to the server")
+    run_parser.add_argument("--port", type=int, default=8000, help="Port of the running FastAPI server")
+    run_parser.add_argument("cmd_args", nargs="+", help="Command and arguments to execute")
+
     args = parser.parse_args()
 
     if args.command == "init":
         cmd_init(args)
     elif args.command == "start":
         cmd_start(args)
+    elif args.command == "run":
+        cmd_run(args)
     else:
         parser.print_help()
 
