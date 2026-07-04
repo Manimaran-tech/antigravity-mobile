@@ -75,6 +75,12 @@ This will give you a public URL like `https://xyz.loca.lt`.
 2. Enter your access PIN (shown during setup)
 3. You're in! Start monitoring and controlling your agent remotely 🎉
 
+### Step 5: Instruct the AI Agent
+To tell your Antigravity IDE agent to start outputting logs and routing command confirmations to your phone, copy and paste this prompt into your **Antigravity IDE Chat Panel**:
+```text
+Please read the remote monitoring rules in .agents/AGENTS.md and follow them. I have started the server and want to monitor your steps remotely.
+```
+
 ---
 
 ## 📖 All Commands

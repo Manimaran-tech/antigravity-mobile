@@ -182,7 +182,7 @@ def cmd_remote(args):
     else:
         print(f"Remote monitoring and control mode is currently: {'ENABLED' if enabled else 'DISABLED'}")
 
-VERSION = "0.2.3"
+VERSION = "0.2.4"
 
 # ANSI color codes
 BLUE = "\033[38;5;39m"
@@ -314,6 +314,12 @@ def cmd_setup(args):
     print(f"       {CYAN}$ npx localtunnel --port 8000{RESET}")
     print()
     print(f"    {GREEN}3.{RESET} Open the URL on your phone & enter PIN: {YELLOW}{BOLD}{pin}{RESET}")
+    print()
+    print(f"    {GREEN}4.{RESET} {WHITE}Copy & Paste this prompt into your Antigravity IDE Chat panel:{RESET}")
+    print(f"       {CYAN}──────────────────────────────────────────────────────────────────────────{RESET}")
+    print(f"       Please read the remote monitoring rules in {BLUE}.agents/AGENTS.md{RESET} and follow")
+    print(f"       them. I have started the server and want to monitor your steps remotely.")
+    print(f"       ──────────────────────────────────────────────────────────────────────────{RESET}")
     print()
 
 
