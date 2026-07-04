@@ -45,6 +45,14 @@ pip install antigravity-mobile
 
 That's it! Now run `antigravity-mobile` to see the welcome screen.
 
+> [!TIP]
+> **Windows Path Issue:** If you receive an error saying `'antigravity-mobile' is not recognized as an internal or external command`, it means your Python scripts directory is not in your system PATH.
+> You can bypass this by running the tool directly as a Python module:
+> ```bash
+> python -m antigravity_remote
+> ```
+> *(You can replace `antigravity-mobile` with `python -m antigravity_remote` for all commands below).*
+
 ### 🗑️ Uninstallation
 
 If you wish to completely remove the tool, you can uninstall it via pip:

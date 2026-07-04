@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "antigravity-mobile"
-version = "0.2.5"
+version = "0.2.6"
 description = "A remote monitor and scheduler CLI tool for Antigravity 2.0 IDE"
 readme = "README.md"
 requires-python = ">=3.8"

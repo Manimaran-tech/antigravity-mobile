@@ -182,7 +182,7 @@ def cmd_remote(args):
     else:
         print(f"Remote monitoring and control mode is currently: {'ENABLED' if enabled else 'DISABLED'}")
 
-VERSION = "0.2.4"
+VERSION = "0.2.6"
 
 # ANSI color codes
 BLUE = "\033[38;5;39m"
@@ -222,6 +222,8 @@ def print_quickstart():
     """Print quick-start guide after the banner."""
     guide = f"""
     {YELLOW}━━━ Quick Start ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}
+    {DIM}If 'antigravity-mobile' is not in your PATH, you can run all commands{RESET}
+    {DIM}by prefixing with 'python -m antigravity_remote' (e.g. python -m antigravity_remote setup).{RESET}
 
     {GREEN}1.{RESET} {WHITE}Setup{RESET}          {DIM}Generate config & security PIN{RESET}
        {CYAN}$ antigravity-mobile setup{RESET}
@@ -240,15 +242,11 @@ def print_quickstart():
     {CYAN}setup{RESET}              {DIM}Interactive first-time setup wizard{RESET}
     {CYAN}init{RESET}               {DIM}Generate config & security PIN{RESET}
     {CYAN}start{RESET}              {DIM}Start the FastAPI dashboard server{RESET}
-    {CYAN}run <cmd>{RESET}          {DIM}Execute a command & stream logs to phone{RESET}
     {CYAN}remote --on{RESET}        {DIM}Enable remote monitoring mode{RESET}
     {CYAN}remote --off{RESET}       {DIM}Disable remote monitoring (saves tokens){RESET}
     {CYAN}remote --status{RESET}    {DIM}Check if remote mode is on or off{RESET}
 
     {YELLOW}━━━ Examples ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}
-
-    {DIM}# Run a command on your PC and stream output to phone{RESET}
-    {CYAN}$ antigravity-mobile run "pytest tests/" {RESET}
 
     {DIM}# Turn off remote mode when coding locally (saves tokens){RESET}
     {CYAN}$ antigravity-mobile remote --off{RESET}
@@ -258,7 +256,7 @@ def print_quickstart():
 
     {YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}
     {DIM}PyPI:   pip install antigravity-mobile{RESET}
-    {DIM}GitHub: https://github.com/user/antigravity-mobile{RESET}
+    {DIM}GitHub: https://github.com/Manimaran-tech/antigravity-mobile{RESET}
 """
     print(guide)
 
