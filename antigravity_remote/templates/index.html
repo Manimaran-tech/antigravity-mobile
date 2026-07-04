@@ -658,6 +658,66 @@
             </div>
         </div>
 
+        <!-- Model Selector & Limits -->
+        <div class="glass-panel" style="display: flex; flex-direction: column; gap: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 0;">
+                    <i data-lucide="cpu" style="width:18px;height:18px;color:var(--accent-teal)"></i> Model Control
+                </h3>
+                <select id="model-select" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--text-primary); padding: 6px 12px; font-family: inherit; font-size: 0.85rem; outline: none; cursor: pointer;">
+                    <option value="claude-sonnet-4.5">Claude 4.5 Sonnet</option>
+                    <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+                    <option value="gemini-3-5-flash">Gemini 3.5 Flash</option>
+                    <option value="gemini-1-5-pro">Gemini 1.5 Pro</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                    <span style="color: var(--text-secondary);">Daily Limit</span>
+                    <span id="daily-quota-label" style="font-weight: 600;">0 / 0</span>
+                </div>
+                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 999px; overflow: hidden;">
+                    <div id="daily-quota-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent-teal), var(--accent-blue)); border-radius: 999px; transition: width 0.5s;"></div>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                    <span style="color: var(--text-secondary);">Weekly Limit</span>
+                    <span id="weekly-quota-label" style="font-weight: 600;">0 / 0</span>
+                </div>
+                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 999px; overflow: hidden;">
+                    <div id="weekly-quota-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple)); border-radius: 999px; transition: width 0.5s;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agent Command Center (Prompt Box) -->
+        <div class="glass-panel" style="display: flex; flex-direction: column; gap: 15px;">
+            <h3 style="font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 0;">
+                <i data-lucide="message-square" style="width:18px;height:18px;color:var(--accent-teal)"></i> Agent Commands
+            </h3>
+            
+            <div id="agent-active-prompt-card" style="display: none; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px 15px; flex-direction: column; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.8rem; color: var(--text-secondary);">Active Remote Prompt</span>
+                    <span id="agent-prompt-status" class="task-status pending">Executing</span>
+                </div>
+                <div id="agent-prompt-text" style="font-family: inherit; font-size: 0.9rem; font-weight: 500; word-break: break-word;">Write a summary report...</div>
+                
+                <div id="agent-prompt-response-wrapper" style="display: none; flex-direction: column; gap: 6px;">
+                    <span style="font-size: 0.8rem; color: var(--text-secondary);">Response:</span>
+                    <div id="agent-prompt-response-box" style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; background: #02040a; padding: 10px; border-radius: 8px; max-height: 120px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; color: var(--text-primary);">Finished successfully.</div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="agent-prompt-input" class="command-input" placeholder="Ask Antigravity to perform a task...">
+                <button id="send-prompt-btn" class="submit-btn"><i data-lucide="send" style="width:16px;height:16px;"></i></button>
+            </div>
+        </div>
+
         <!-- Schedule task -->
         <div class="glass-panel schedule-form">
             <h3><i data-lucide="plus-circle" style="width:18px;height:18px;color:var(--accent-teal)"></i> Schedule Task</h3>
@@ -680,6 +740,34 @@
             </div>
             <div id="tasks-list" class="tasks-list">
                 <div class="empty-text">No scheduled tasks yet</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Remote Approval Modal -->
+    <div id="approval-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(11, 13, 25, 0.95); backdrop-filter: blur(15px); z-index: 2000; display: none; justify-content: center; align-items: center; padding: 20px;">
+        <div class="auth-card" style="max-width: 450px; text-align: left; padding: 30px; gap: 15px;">
+            <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--panel-border); padding-bottom: 12px;">
+                <i data-lucide="shield-alert" style="width: 24px; height: 24px; color: var(--accent-teal);"></i>
+                <h2 style="font-size: 1.3rem; font-weight: 800; margin: 0;">Action Approval Required</h2>
+            </div>
+            
+            <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0;">The Antigravity Agent is requesting permission to execute the following action on your local PC:</p>
+            
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 15px;">
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--accent-teal); font-weight: 600; letter-spacing: 0.5px;" id="approval-action-type">Command</span>
+                    <pre style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #f3f4f6; white-space: pre-wrap; word-break: break-all; margin: 0;" id="approval-action-target">npm run build</pre>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-cols: 1fr 1fr; gap: 15px; margin-top: 10px; width: 100%;">
+                <button id="approve-yes-btn" class="action-btn run" style="justify-content: center; padding: 12px; font-size: 0.95rem; border-radius: 12px;">
+                    <i data-lucide="check" style="width: 18px; height: 18px;"></i> Approve (Yes)
+                </button>
+                <button id="approve-no-btn" class="action-btn cancel" style="justify-content: center; padding: 12px; font-size: 0.95rem; border-radius: 12px;">
+                    <i data-lucide="x" style="width: 18px; height: 18px;"></i> Reject (No)
+                </button>
             </div>
         </div>
     </div>
@@ -729,6 +817,26 @@
         const terminalBody = document.getElementById('terminal-body');
         const terminalCloseBtn = document.getElementById('terminal-close-btn');
         const summaryBtn = document.getElementById('summary-btn');
+
+        const modelSelect = document.getElementById('model-select');
+        const dailyQuotaLabel = document.getElementById('daily-quota-label');
+        const dailyQuotaBar = document.getElementById('daily-quota-bar');
+        const weeklyQuotaLabel = document.getElementById('weekly-quota-label');
+        const weeklyQuotaBar = document.getElementById('weekly-quota-bar');
+
+        const agentActivePromptCard = document.getElementById('agent-active-prompt-card');
+        const agentPromptStatus = document.getElementById('agent-prompt-status');
+        const agentPromptText = document.getElementById('agent-prompt-text');
+        const agentPromptResponseWrapper = document.getElementById('agent-prompt-response-wrapper');
+        const agentPromptResponseBox = document.getElementById('agent-prompt-response-box');
+        const agentPromptInput = document.getElementById('agent-prompt-input');
+        const sendPromptBtn = document.getElementById('send-prompt-btn');
+
+        const approvalOverlay = document.getElementById('approval-overlay');
+        const approvalActionType = document.getElementById('approval-action-type');
+        const approvalActionTarget = document.getElementById('approval-action-target');
+        const approveYesBtn = document.getElementById('approve-yes-btn');
+        const approveNoBtn = document.getElementById('approve-no-btn');
 
         // Application State
         let token = localStorage.getItem('remote_auth_token');
@@ -843,6 +951,56 @@
 
             // Tasks
             updateTasksList(data.tasks);
+
+            // Update agent info (models, limits, remote prompts, approvals)
+            if (data.agent_info) {
+                updateAgentInfo(data.agent_info);
+            }
+        }
+
+        function updateAgentInfo(info) {
+            // 1. Model selection
+            if (document.activeElement !== modelSelect) {
+                modelSelect.value = info.current_model;
+            }
+            
+            // 2. Quotas
+            const details = info.model_details;
+            dailyQuotaLabel.textContent = `${details.daily_used} / ${details.daily_limit}`;
+            const dailyPct = details.daily_limit > 0 ? (details.daily_used / details.daily_limit) * 100 : 0;
+            dailyQuotaBar.style.width = `${Math.min(dailyPct, 100)}%`;
+
+            weeklyQuotaLabel.textContent = `${details.weekly_used} / ${details.weekly_limit}`;
+            const weeklyPct = details.weekly_limit > 0 ? (details.weekly_used / details.weekly_limit) * 100 : 0;
+            weeklyQuotaBar.style.width = `${Math.min(weeklyPct, 100)}%`;
+
+            // 3. Remote Prompt Chat Box status
+            const promptState = info.remote_prompt;
+            if (promptState && promptState.status !== 'idle' && promptState.status !== '') {
+                agentActivePromptCard.style.display = 'flex';
+                agentPromptText.textContent = promptState.prompt;
+                agentPromptStatus.textContent = promptState.status;
+                agentPromptStatus.className = `task-status ${promptState.status}`;
+                
+                if (promptState.response) {
+                    agentPromptResponseWrapper.style.display = 'flex';
+                    agentPromptResponseBox.textContent = promptState.response;
+                } else {
+                    agentPromptResponseWrapper.style.display = 'none';
+                }
+            } else {
+                agentActivePromptCard.style.display = 'none';
+            }
+
+            // 4. Interactive approvals overlay popup modal
+            const approval = info.remote_approval;
+            if (approval && approval.status === 'pending') {
+                approvalActionType.textContent = approval.type;
+                approvalActionTarget.textContent = approval.target;
+                approvalOverlay.style.display = 'flex';
+            } else {
+                approvalOverlay.style.display = 'none';
+            }
         }
 
         function updateProgressCircle(circleEl, textEl, value) {
@@ -1070,6 +1228,96 @@
                 alert('Failed to connect to server');
             }
         });
+
+        // Change Model Selection
+        modelSelect.addEventListener('change', async () => {
+            const selectedModel = modelSelect.value;
+            try {
+                const res = await fetch('/api/agent/model', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ model: selectedModel })
+                });
+                if (res.status === 401) {
+                    handleUnauthorized();
+                    return;
+                }
+                if (!res.ok) {
+                    alert('Failed to switch model selection');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        // Send Prompt to Agent
+        sendPromptBtn.addEventListener('click', async () => {
+            const promptVal = agentPromptInput.value.trim();
+            if (!promptVal) return;
+            
+            try {
+                const res = await fetch('/api/agent/prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ prompt: promptVal })
+                });
+                
+                if (res.status === 401) {
+                    handleUnauthorized();
+                    return;
+                }
+                
+                if (res.ok) {
+                    agentPromptInput.value = '';
+                } else {
+                    const errData = await res.json();
+                    alert(errData.detail || 'Failed to submit prompt');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Connection error');
+            }
+        });
+
+        agentPromptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                sendPromptBtn.click();
+            }
+        });
+
+        // Confirmations Responses (Yes / No)
+        async function submitApproval(decision) {
+            try {
+                const res = await fetch('/api/agent/approve/response', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ approved: decision })
+                });
+                
+                if (res.status === 401) {
+                    handleUnauthorized();
+                    return;
+                }
+                
+                if (res.ok) {
+                    approvalOverlay.style.display = 'none';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        approveYesBtn.addEventListener('click', () => submitApproval(true));
+        approveNoBtn.addEventListener('click', () => submitApproval(false));
 
         // Initialize lucide
         lucide.createIcons();

@@ -3,6 +3,7 @@ import json
 import asyncio
 import psutil
 import datetime
+import uuid
 from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect, Query, status
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -42,6 +43,61 @@ class LoginRequest(BaseModel):
 
 class ScheduleRequest(BaseModel):
     command: str
+
+class PromptRequest(BaseModel):
+    prompt: str
+
+class ModelRequest(BaseModel):
+    model: str
+
+class ApprovalRequest(BaseModel):
+    type: str
+    target: str
+
+class ApprovalResponse(BaseModel):
+    approved: bool
+
+class ResponseRequest(BaseModel):
+    status: str
+    output: str
+
+# Kiro settings paths
+KIRO_SETTINGS_PATH = os.path.expandvars(r"%APPDATA%\Kiro\User\settings.json")
+
+def get_kiro_model() -> str:
+    if os.path.exists(KIRO_SETTINGS_PATH):
+        try:
+            with open(KIRO_SETTINGS_PATH, "r") as f:
+                settings = json.load(f)
+                return settings.get("kiroAgent.modelSelection", "claude-sonnet-4.5")
+        except Exception:
+            pass
+    return "claude-sonnet-4.5"
+
+def set_kiro_model(model: str):
+    if os.path.exists(KIRO_SETTINGS_PATH):
+        try:
+            with open(KIRO_SETTINGS_PATH, "r") as f:
+                settings = json.load(f)
+            settings["kiroAgent.modelSelection"] = model
+            with open(KIRO_SETTINGS_PATH, "w") as f:
+                json.dump(settings, f, indent=4)
+            return True
+        except Exception:
+            pass
+    return False
+
+# In-memory limits database
+MODEL_LIMITS = {
+    "claude-sonnet-4.5": {"name": "Claude 4.5 Sonnet", "daily_limit": 50, "daily_used": 12, "weekly_limit": 350, "weekly_used": 115},
+    "claude-3-5-sonnet": {"name": "Claude 3.5 Sonnet", "daily_limit": 50, "daily_used": 22, "weekly_limit": 350, "weekly_used": 140},
+    "gemini-3-5-flash": {"name": "Gemini 3.5 Flash", "daily_limit": 150, "daily_used": 42, "weekly_limit": 1000, "weekly_used": 285},
+    "gemini-1-5-pro": {"name": "Gemini 1.5 Pro", "daily_limit": 50, "daily_used": 15, "weekly_limit": 350, "weekly_used": 85}
+}
+
+# State managers
+REMOTE_PROMPT = {"id": "", "prompt": "", "status": "idle", "response": ""}
+REMOTE_APPROVAL = {"status": "idle", "type": "", "target": "", "decision": ""}
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
     token = credentials.credentials
@@ -200,6 +256,90 @@ def get_file_content(path: str, token: str = Depends(verify_token)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error reading file: {str(e)}")
 
+@app.get("/api/agent/status")
+def get_agent_status(token: str = Depends(verify_token)):
+    current_model = get_kiro_model()
+    return {
+        "current_model": current_model,
+        "model_details": MODEL_LIMITS.get(current_model, {"name": current_model, "daily_limit": 0, "daily_used": 0, "weekly_limit": 0, "weekly_used": 0}),
+        "all_models": MODEL_LIMITS,
+        "remote_prompt": REMOTE_PROMPT,
+        "remote_approval": REMOTE_APPROVAL
+    }
+
+@app.post("/api/agent/model")
+def switch_model_endpoint(req: ModelRequest, token: str = Depends(verify_token)):
+    if req.model not in MODEL_LIMITS:
+        raise HTTPException(status_code=400, detail="Invalid model selection")
+    success = set_kiro_model(req.model)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to write Kiro settings")
+    return {"status": "success", "model": req.model}
+
+@app.post("/api/agent/prompt")
+def post_remote_prompt(req: PromptRequest, token: str = Depends(verify_token)):
+    global REMOTE_PROMPT
+    if REMOTE_PROMPT["status"] == "pending" or REMOTE_PROMPT["status"] == "executing":
+        raise HTTPException(status_code=400, detail="Agent is already busy with a pending task")
+    
+    current_model = get_kiro_model()
+    if current_model in MODEL_LIMITS:
+        MODEL_LIMITS[current_model]["daily_used"] += 1
+        MODEL_LIMITS[current_model]["weekly_used"] += 1
+        
+    REMOTE_PROMPT = {
+        "id": str(uuid.uuid4())[:8],
+        "prompt": req.prompt,
+        "status": "pending",
+        "response": ""
+    }
+    return REMOTE_PROMPT
+
+@app.get("/api/agent/prompt/check")
+def check_remote_prompt():
+    global REMOTE_PROMPT
+    if REMOTE_PROMPT["status"] == "pending":
+        REMOTE_PROMPT["status"] = "executing"
+        return REMOTE_PROMPT
+    return {"status": "idle"}
+
+@app.post("/api/agent/response")
+def post_agent_response(req: ResponseRequest, token: str = Depends(verify_token)):
+    global REMOTE_PROMPT
+    if REMOTE_PROMPT["status"] != "executing":
+        raise HTTPException(status_code=400, detail="No active executing prompt")
+    REMOTE_PROMPT["status"] = req.status
+    REMOTE_PROMPT["response"] = req.output
+    return {"status": "success"}
+
+@app.post("/api/agent/approve/request")
+def post_approval_request(req: ApprovalRequest, token: str = Depends(verify_token)):
+    global REMOTE_APPROVAL
+    REMOTE_APPROVAL = {
+        "status": "pending",
+        "type": req.type,
+        "target": req.target,
+        "decision": ""
+    }
+    return REMOTE_APPROVAL
+
+@app.get("/api/agent/approve/status")
+def get_approval_status(token: str = Depends(verify_token)):
+    return REMOTE_APPROVAL
+
+@app.get("/api/agent/approve/check")
+def check_approval_decision(token: str = Depends(verify_token)):
+    return REMOTE_APPROVAL
+
+@app.post("/api/agent/approve/response")
+def post_approval_response(req: ApprovalResponse, token: str = Depends(verify_token)):
+    global REMOTE_APPROVAL
+    if REMOTE_APPROVAL["status"] != "pending":
+        raise HTTPException(status_code=400, detail="No pending approval request")
+    REMOTE_APPROVAL["status"] = "approved" if req.approved else "rejected"
+    REMOTE_APPROVAL["decision"] = "approved" if req.approved else "rejected"
+    return {"status": "success", "decision": REMOTE_APPROVAL["status"]}
+
 # WebSockets
 @app.websocket("/ws/status")
 async def ws_status(websocket: WebSocket, token: str = Query(...)):
@@ -211,8 +351,17 @@ async def ws_status(websocket: WebSocket, token: str = Query(...)):
     try:
         while True:
             status_data = get_system_status()
-            # Include tasks list
             status_data["tasks"] = [t.to_dict() for t in runner.list_tasks()]
+            
+            current_model = get_kiro_model()
+            status_data["agent_info"] = {
+                "current_model": current_model,
+                "model_details": MODEL_LIMITS.get(current_model, {"name": current_model, "daily_limit": 0, "daily_used": 0, "weekly_limit": 0, "weekly_used": 0}),
+                "all_models": MODEL_LIMITS,
+                "remote_prompt": REMOTE_PROMPT,
+                "remote_approval": REMOTE_APPROVAL
+            }
+            
             await websocket.send_json(status_data)
             await asyncio.sleep(2)
     except WebSocketDisconnect:
