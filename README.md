@@ -1,131 +1,189 @@
-# Antigravity Mobile Monitor & Task Scheduler
+# Antigravity Mobile
 
-`antigravity-mobile` is a lightweight command-line tool and FastAPI-powered web application designed for the **Google Antigravity IDE and CLI**. It enables you to securely monitor your development workflow, switch AI models, track usage quotas, view real-time log outputs, and confirm or reject commands directly from your mobile device while you are away from your workstation.
-
----
-
-## Key Features
-
-- 📱 **Mobile-Optimized Dashboard**: Responsive, glassmorphic UI styled in a beautiful dark theme with real-time stats.
-- 🤖 **Model Control**: Switch active models (Gemini 3.5 Flash, Claude 4.5 Sonnet, GPT-OSS, etc.) directly from your phone.
-- 📊 **Quota & Limit Progress**: Live tracking of request limits (Gemini Weekly/5-Hr and Claude/GPT Weekly/5-Hr limits).
-- 💻 **Live Agent Thought Output Console**: A real-time console streaming step-by-step developer thoughts, planned tools, and logs from the agent to your phone.
-- 🛡️ **Interactive Mobile Approvals**: Run terminal commands and get interruptive Yes/No popup prompts on your phone instead of the PC desktop.
-- 🔌 **Automatic Offline Fallback**: Automatically bypasses the mobile check and falls back to standard PC desktop prompts if your FastAPI server is offline.
-- ⚡ **PC CLI Run Wrapper (`run`)**: Execute commands directly on your PC that log to the server and appear on your phone, bypassing all sandbox desktop security prompts.
-- 🎛️ **Remote Toggle Switch (`remote`)**: Turn remote mode ON or OFF at any time to save tokens and resources when coding locally.
-- 🔒 **PIN Authentication**: Secure authorization PIN generated on first start, requiring authentication on the mobile client.
-
----
-
-## Installation
-
-### From Source (Editable Mode)
-```bash
-# Clone the repository and navigate to the folder
-cd "d:\Remote Antigravity"
-
-# Install dependencies and CLI tool in editable mode
-pip install -e .
+```
+    ╔═══════════════════════════════════════════════════════════════╗
+    ║                                                               ║
+    ║      █████╗ ███╗   ██╗████████╗██╗ ██████╗ ██████╗  █████╗    ║
+    ║     ██╔══██╗████╗  ██║╚══██╔══╝██║██╔════╝ ██╔══██╗██╔══██╗   ║
+    ║     ███████║██╔██╗ ██║   ██║   ██║██║  ███╗██████╔╝███████║   ║
+    ║     ██╔══██║██║╚██╗██║   ██║   ██║██║   ██║██╔══██╗██╔══██║   ║
+    ║     ██║  ██║██║ ╚████║   ██║   ██║╚██████╔╝██║  ██║██║  ██║   ║
+    ║     ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ║
+    ║                                                               ║
+    ║          📱  M O B I L E                                     ║
+    ║                                                               ║
+    ╚═══════════════════════════════════════════════════════════════╝
 ```
 
-### Packaging & Publishing to PyPI
-To build and publish the package so others can install it via `pip install antigravity-mobile`:
-1. **Install Build Tools**:
-   ```bash
-   pip install --upgrade build twine
-   ```
-2. **Build Distribution Archives**:
-   ```bash
-   python -m build
-   ```
-   *(This generates `.whl` and `.tar.gz` files in the `dist/` directory.)*
-3. **Upload to PyPI**:
-   ```bash
-   python -m twine upload dist/antigravity_mobile-*
-   ```
+**Control your AI coding agent from your phone.**
+
+Monitor tasks, approve commands, switch models — remotely.
+
+[![PyPI](https://img.shields.io/pypi/v/antigravity-mobile)](https://pypi.org/project/antigravity-mobile/)
+[![Python](https://img.shields.io/pypi/pyversions/antigravity-mobile)](https://pypi.org/project/antigravity-mobile/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ---
 
-## Setup & IDE Configuration
+## ✨ Features
 
-To enable silent executions on your PC and redirect confirmations to your phone, update your **Antigravity IDE User Settings**:
+- 📱 **Mobile Dashboard** — Responsive, glassmorphic dark-themed UI with real-time system stats (CPU, RAM, Disk)
+- 🤖 **Model Switcher** — Change active AI models (Gemini 3.5 Flash, Claude 4.5 Sonnet, GPT-OSS) from your phone
+- 📊 **Quota Tracking** — Live progress bars for Gemini & Claude/GPT weekly and 5-hour request limits
+- 💻 **Live Agent Console** — Stream step-by-step agent thoughts and logs to your phone in real-time
+- 🛡️ **Mobile Approvals** — Approve or reject terminal commands via interactive popups on your phone
+- 🔌 **Offline Fallback** — Automatically falls back to PC desktop prompts if the server is offline
+- ⚡ **CLI Run Wrapper** — Execute commands silently on your PC and stream output to your phone
+- 🎛️ **Remote Toggle** — Turn remote mode on/off to save tokens when coding locally
 
-1. Open your settings file: `C:\Users\K\AppData\Roaming\Antigravity IDE\User\settings.json`
-2. Add the following options to allow automatic local command approvals:
+---
+
+## 🚀 Installation
+
+```bash
+pip install antigravity-mobile
+```
+
+That's it! Now run `antigravity-mobile` to see the welcome screen.
+
+---
+
+## 📋 Quick Start
+
+### Step 1: Setup
+Run the interactive setup wizard to generate your secure access PIN and configure agent rules:
+```bash
+antigravity-mobile setup
+```
+
+### Step 2: Start the Server
+Launch the FastAPI dashboard server on all interfaces:
+```bash
+antigravity-mobile start --host 0.0.0.0 --port 8000
+```
+
+### Step 3: Get a Public URL
+Expose your local server to the internet so your phone can reach it (requires Node.js):
+```bash
+npx localtunnel --port 8000
+```
+This will give you a public URL like `https://xyz.loca.lt`.
+
+### Step 4: Open on Your Phone
+1. Open the localtunnel URL on your mobile browser
+2. Enter your access PIN (shown during setup)
+3. You're in! Start monitoring and controlling your agent remotely 🎉
+
+---
+
+## 📖 All Commands
+
+| Command | Description |
+|---------|-------------|
+| `antigravity-mobile` | Show welcome banner & quick-start guide |
+| `antigravity-mobile setup` | Interactive first-time setup wizard |
+| `antigravity-mobile init` | Generate config & security PIN |
+| `antigravity-mobile start` | Start the FastAPI dashboard server |
+| `antigravity-mobile run <cmd>` | Execute a command & stream logs to phone |
+| `antigravity-mobile remote --on` | Enable remote monitoring mode |
+| `antigravity-mobile remote --off` | Disable remote monitoring (saves tokens) |
+| `antigravity-mobile remote --status` | Check if remote mode is on or off |
+
+---
+
+## 💡 Usage Examples
+
+### Run a command and monitor it from your phone
+```bash
+antigravity-mobile run "pytest tests/"
+```
+The command runs silently on your PC. Output streams live to your phone's console.
+
+### Turn off remote mode when coding locally
+```bash
+antigravity-mobile remote --off
+```
+This disables all remote logging, status updates, and mobile approval prompts — saving tokens and resources.
+
+### Turn it back on when leaving your desk
+```bash
+antigravity-mobile remote --on
+```
+
+### Start everything in one go
+```bash
+# Terminal 1: Start the server
+antigravity-mobile start --host 0.0.0.0 --port 8000
+
+# Terminal 2: Expose to internet
+npx localtunnel --port 8000
+```
+
+---
+
+## ⚙️ IDE Configuration (Optional)
+
+To enable silent command execution on your PC (so approvals go to your phone instead of popping up on the desktop), update your **Antigravity IDE User Settings**:
+
+1. Open: `C:\Users\<YOU>\AppData\Roaming\Antigravity IDE\User\settings.json`
+2. Add:
    ```json
    {
        "antigravity.autoApprove": true,
        "antigravity.autonomyLevel": "full"
    }
    ```
-3. Press **`Ctrl + Shift + P`** in the IDE, type **`Developer: Reload Window`**, and press **Enter** to apply changes.
+3. Press `Ctrl + Shift + P` → `Developer: Reload Window`
 
 ---
 
-## Usage
+## 🔒 Security
 
-### 1. Initialize Configuration
-```bash
-antigravity-mobile init
-```
-Generates a randomized access PIN for mobile login (stored in `config.json`).
-
-### 2. Start the Server & Tunnel
-Start the server and expose it using localtunnel:
-```bash
-# Start FastAPI server on all interfaces
-antigravity-mobile start --host 0.0.0.0 --port 8000
-
-# Expose it to the internet so you can access it on your phone
-npx localtunnel --port 8000
-```
-Open the localtunnel URL on your mobile phone browser and enter your access PIN!
-
-### 3. CLI Command Execution
-To execute commands on your PC, log them to the server, and monitor them live on your phone with **no desktop prompts**:
-```bash
-antigravity-mobile run "pytest tests/test_server.py"
-```
-
-### 4. Remote Mode Toggle
-Turn remote monitoring and control on/off:
-```bash
-# Enable remote mode (wakes up daemon, streams logs)
-antigravity-mobile remote --on
-
-# Disable remote mode (puts daemon to sleep, stops logging)
-antigravity-mobile remote --off
-
-# Check status
-antigravity-mobile remote --status
-```
+- **PIN Authentication** — A secure 6-digit PIN is generated on first setup. Mobile clients must authenticate with this PIN before accessing any features.
+- **Token-Based Sessions** — After PIN login, all API requests use a session token.
+- **Command Approval** — Remote commands require explicit user confirmation before execution.
+- **Offline Fallback** — If the server goes offline, the agent automatically falls back to local PC prompts instead of hanging.
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
-d:/Remote Antigravity/
+antigravity-mobile/
+├── antigravity_remote/
+│   ├── cli.py              # CLI with banner, setup wizard, and commands
+│   ├── server.py           # FastAPI server with WebSocket dashboard
+│   ├── agent_daemon.py     # Background polling daemon for remote commands
+│   ├── agent_approve.py    # Mobile approval helper with offline fallback
+│   ├── task_runner.py      # Background subprocess runner
+│   └── templates/
+│       └── index.html      # Mobile-responsive glassmorphic dashboard
 ├── .agents/
-│   ├── AGENTS.md          # Global agent logging & mobile approval rules
+│   ├── AGENTS.md           # Agent logging & mobile approval rules
 │   └── skills/
 │       └── remote_control/
-│           └── SKILL.md   # Remote loop instruction skill for AI agents
-├── antigravity_remote/
-│   ├── __init__.py
-│   ├── cli.py             # CLI Command handling
-│   ├── server.py          # FastAPI server with WebSocket logging & dashboard
-│   ├── agent_daemon.py    # Background sidecar polling daemon
-│   ├── agent_approve.py   # Mobile approval helper script
-│   ├── task_runner.py     # Background subprocess runner
-│   ├── templates/
-│   │   └── index.html     # Mobile-responsive glassmorphic dashboard
-│   └── static/
-│       ├── css/
-│       │   └── styles.css # Custom dashboard styles
-│       └── js/
-│           └── main.js    # Client-side WebSocket & model switcher logic
-├── pyproject.toml         # Packaging metadata & entrypoints
-└── README.md              # Documentation
+│           └── SKILL.md    # Remote loop skill for AI agents
+├── pyproject.toml          # Package metadata & CLI entrypoints
+└── README.md
 ```
+
+---
+
+## 📦 Publishing Updates
+
+```bash
+# Install build tools
+pip install build twine
+
+# Build distribution
+python -m build
+
+# Upload to PyPI
+python -m twine upload dist/antigravity_mobile-*
+```
+
+---
+
+## License
+
+MIT

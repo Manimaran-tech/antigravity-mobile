@@ -182,7 +182,7 @@ def cmd_remote(args):
     else:
         print(f"Remote monitoring and control mode is currently: {'ENABLED' if enabled else 'DISABLED'}")
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 
 # ANSI color codes
 BLUE = "\033[38;5;39m"
@@ -226,21 +226,38 @@ def print_quickstart():
        {CYAN}$ antigravity-mobile setup{RESET}
 
     {GREEN}2.{RESET} {WHITE}Start Server{RESET}   {DIM}Launch the mobile dashboard{RESET}
-       {CYAN}$ antigravity-mobile start --host 0.0.0.0{RESET}
+       {CYAN}$ antigravity-mobile start --host 0.0.0.0 --port 8000{RESET}
 
-    {GREEN}3.{RESET} {WHITE}Open on Phone{RESET}  {DIM}Visit the URL shown & enter your PIN{RESET}
+    {GREEN}3.{RESET} {WHITE}Get Public URL{RESET}  {DIM}Expose your server so your phone can reach it{RESET}
+       {CYAN}$ npx localtunnel --port 8000{RESET}
+       {DIM}Copy the URL it gives you (e.g. https://xyz.loca.lt){RESET}
+
+    {GREEN}4.{RESET} {WHITE}Open on Phone{RESET}  {DIM}Visit the URL on your mobile browser & enter your PIN{RESET}
 
     {YELLOW}━━━ All Commands ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}
 
-    {CYAN}setup{RESET}         {DIM}Interactive first-time setup wizard{RESET}
-    {CYAN}init{RESET}          {DIM}Generate config & security PIN{RESET}
-    {CYAN}start{RESET}         {DIM}Start the FastAPI dashboard server{RESET}
-    {CYAN}run <cmd>{RESET}     {DIM}Execute a command & stream logs to phone{RESET}
-    {CYAN}remote --on{RESET}   {DIM}Enable remote monitoring mode{RESET}
-    {CYAN}remote --off{RESET}  {DIM}Disable remote monitoring mode{RESET}
+    {CYAN}setup{RESET}              {DIM}Interactive first-time setup wizard{RESET}
+    {CYAN}init{RESET}               {DIM}Generate config & security PIN{RESET}
+    {CYAN}start{RESET}              {DIM}Start the FastAPI dashboard server{RESET}
+    {CYAN}run <cmd>{RESET}          {DIM}Execute a command & stream logs to phone{RESET}
+    {CYAN}remote --on{RESET}        {DIM}Enable remote monitoring mode{RESET}
+    {CYAN}remote --off{RESET}       {DIM}Disable remote monitoring (saves tokens){RESET}
+    {CYAN}remote --status{RESET}    {DIM}Check if remote mode is on or off{RESET}
 
+    {YELLOW}━━━ Examples ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}
+
+    {DIM}# Run a command on your PC and stream output to phone{RESET}
+    {CYAN}$ antigravity-mobile run "pytest tests/" {RESET}
+
+    {DIM}# Turn off remote mode when coding locally (saves tokens){RESET}
+    {CYAN}$ antigravity-mobile remote --off{RESET}
+
+    {DIM}# Turn it back on when leaving your desk{RESET}
+    {CYAN}$ antigravity-mobile remote --on{RESET}
+
+    {YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}
+    {DIM}PyPI:   pip install antigravity-mobile{RESET}
     {DIM}GitHub: https://github.com/user/antigravity-mobile{RESET}
-    {DIM}PyPI:   https://pypi.org/project/antigravity-mobile/{RESET}
 """
     print(guide)
 
