@@ -98,6 +98,22 @@ def main():
     parser.add_argument("--timeout", type=int, default=300, help="Approval timeout in seconds")
     args = parser.parse_args()
 
+    # Check if server is online first
+    server_online = False
+    try:
+        req = urllib.request.Request(f"{args.url}/api/status", method="GET")
+        with urllib.request.urlopen(req, timeout=2) as response:
+            server_online = True
+    except urllib.error.HTTPError as e:
+        if e.code in (401, 403, 405):
+            server_online = True
+    except Exception:
+        pass
+        
+    if not server_online:
+        print("MOBILE_CONNECTION: OFFLINE")
+        sys.exit(3)
+
     # Always write file-based request fallback first
     try:
         with open("agent_approval_request.json", "w", encoding="utf-8") as f:

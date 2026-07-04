@@ -21,3 +21,4 @@ To allow the user to monitor and control desktop-started tasks from their mobile
      ```
    - If the helper exits with code `0` (APPROVED), proceed to execute the command.
    - If the helper exits with code `1` (REJECTED), skip the command and report the rejection.
+   - If the helper exits with code `3` (OFFLINE), the mobile connection is offline. Bypass the helper and execute the command directly via `run_command` (this will fallback to prompting the user on the PC desktop).

@@ -34,6 +34,7 @@ When waking up, check if a file named `remote_prompt.json` exists in the workspa
      - If the command exits with code `0` (APPROVED), proceed to execute the command/action.
      - If it exits with code `1` (REJECTED), skip the action and report that the user rejected it on their mobile phone.
      - If it exits with code `2` (TIMEOUT), report that the request timed out.
+     - If it exits with code `3` (OFFLINE), the mobile server is offline. Bypass the helper and execute the command directly via `run_command` (which will fallback to prompting the user on the PC desktop).
   8. Once the task is finished, post the final response to the server. To avoid executing shell commands, write the response directly to `agent_response.json` in the workspace:
      ```json
      {
