@@ -182,11 +182,139 @@ def cmd_remote(args):
     else:
         print(f"Remote monitoring and control mode is currently: {'ENABLED' if enabled else 'DISABLED'}")
 
+VERSION = "0.2.0"
+
+# ANSI color codes
+BLUE = "\033[38;5;39m"
+CYAN = "\033[38;5;51m"
+DIM = "\033[2m"
+BOLD = "\033[1m"
+RESET = "\033[0m"
+GREEN = "\033[38;5;82m"
+YELLOW = "\033[38;5;220m"
+WHITE = "\033[97m"
+MAGENTA = "\033[38;5;171m"
+
+def print_banner():
+    """Print the Antigravity Mobile welcome banner in blue."""
+    banner = f"""{BLUE}
+    ╔═══════════════════════════════════════════════════════════════╗
+    ║                                                               ║
+    ║      █████╗ ███╗   ██╗████████╗██╗ ██████╗ ██████╗  █████╗    ║
+    ║     ██╔══██╗████╗  ██║╚══██╔══╝██║██╔════╝ ██╔══██╗██╔══██╗   ║
+    ║     ███████║██╔██╗ ██║   ██║   ██║██║  ███╗██████╔╝███████║   ║
+    ║     ██╔══██║██║╚██╗██║   ██║   ██║██║   ██║██╔══██╗██╔══██║   ║
+    ║     ██║  ██║██║ ╚████║   ██║   ██║╚██████╔╝██║  ██║██║  ██║   ║
+    ║     ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ║
+    ║                                                               ║
+    ║          {CYAN}📱  M O B I L E{BLUE}                                     ║
+    ║                                                               ║
+    ╚═══════════════════════════════════════════════════════════════╝{RESET}
+
+    {WHITE}{BOLD}Antigravity Mobile{RESET} {DIM}v{VERSION}{RESET}
+    {DIM}Control your AI coding agent from your phone.{RESET}
+    {DIM}Monitor tasks, approve commands, switch models — remotely.{RESET}
+"""
+    print(banner)
+
+def print_quickstart():
+    """Print quick-start guide after the banner."""
+    guide = f"""
+    {YELLOW}━━━ Quick Start ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}
+
+    {GREEN}1.{RESET} {WHITE}Setup{RESET}          {DIM}Generate config & security PIN{RESET}
+       {CYAN}$ antigravity-mobile setup{RESET}
+
+    {GREEN}2.{RESET} {WHITE}Start Server{RESET}   {DIM}Launch the mobile dashboard{RESET}
+       {CYAN}$ antigravity-mobile start --host 0.0.0.0{RESET}
+
+    {GREEN}3.{RESET} {WHITE}Open on Phone{RESET}  {DIM}Visit the URL shown & enter your PIN{RESET}
+
+    {YELLOW}━━━ All Commands ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}
+
+    {CYAN}setup{RESET}         {DIM}Interactive first-time setup wizard{RESET}
+    {CYAN}init{RESET}          {DIM}Generate config & security PIN{RESET}
+    {CYAN}start{RESET}         {DIM}Start the FastAPI dashboard server{RESET}
+    {CYAN}run <cmd>{RESET}     {DIM}Execute a command & stream logs to phone{RESET}
+    {CYAN}remote --on{RESET}   {DIM}Enable remote monitoring mode{RESET}
+    {CYAN}remote --off{RESET}  {DIM}Disable remote monitoring mode{RESET}
+
+    {DIM}GitHub: https://github.com/user/antigravity-mobile{RESET}
+    {DIM}PyPI:   https://pypi.org/project/antigravity-mobile/{RESET}
+"""
+    print(guide)
+
+
+def cmd_setup(args):
+    """Interactive setup wizard that walks the user through first-time configuration."""
+    print_banner()
+
+    print(f"    {YELLOW}━━━ Setup Wizard ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}")
+    print()
+
+    # Step 1: Generate config
+    print(f"    {GREEN}Step 1/3{RESET} {WHITE}Generating secure access PIN...{RESET}")
+    config = generate_config(force=args.force if hasattr(args, 'force') else False)
+    pin = config.get("pin")
+    print(f"    {GREEN}✓{RESET} Config saved to {CYAN}{os.path.abspath(CONFIG_FILE)}{RESET}")
+    print(f"    {GREEN}✓{RESET} Your access PIN: {YELLOW}{BOLD}{pin}{RESET}")
+    print()
+
+    # Step 2: Create .agents directory
+    print(f"    {GREEN}Step 2/3{RESET} {WHITE}Setting up agent rules...{RESET}")
+    agents_dir = os.path.join(os.getcwd(), ".agents", "skills", "remote_control")
+    if os.path.exists(os.path.join(os.getcwd(), ".agents", "AGENTS.md")):
+        print(f"    {GREEN}✓{RESET} Agent rules already configured in {CYAN}.agents/AGENTS.md{RESET}")
+    else:
+        os.makedirs(agents_dir, exist_ok=True)
+        # Create a minimal AGENTS.md
+        agents_md = os.path.join(os.getcwd(), ".agents", "AGENTS.md")
+        with open(agents_md, "w", encoding="utf-8") as f:
+            f.write("# Antigravity Remote Monitoring and Control Rules\n\n")
+            f.write("Before performing any action, check if remote mode is enabled by reading `remote_mode.json` in the workspace root.\n")
+            f.write('- **If `"enabled": false`**: Run normally and bypass all remote features.\n')
+            f.write('- **If `"enabled": true`** (or if the file is missing): Adhere to the remote monitoring rules.\n')
+        print(f"    {GREEN}✓{RESET} Created {CYAN}.agents/AGENTS.md{RESET} with remote monitoring rules")
+    print()
+
+    # Step 3: Create remote_mode.json
+    print(f"    {GREEN}Step 3/3{RESET} {WHITE}Enabling remote monitoring mode...{RESET}")
+    with open("remote_mode.json", "w") as f:
+        json.dump({"enabled": True}, f)
+    print(f"    {GREEN}✓{RESET} Remote mode {GREEN}ENABLED{RESET}")
+    print()
+
+    # Summary
+    print(f"    {YELLOW}━━━ Setup Complete! ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}")
+    print()
+    print(f"    {WHITE}Next steps:{RESET}")
+    print()
+    print(f"    {GREEN}1.{RESET} Start the server:")
+    print(f"       {CYAN}$ antigravity-mobile start --host 0.0.0.0 --port 8000{RESET}")
+    print()
+    print(f"    {GREEN}2.{RESET} Expose to internet (so your phone can reach it):")
+    print(f"       {CYAN}$ npx localtunnel --port 8000{RESET}")
+    print()
+    print(f"    {GREEN}3.{RESET} Open the URL on your phone & enter PIN: {YELLOW}{BOLD}{pin}{RESET}")
+    print()
+
+
 def main():
+    # Enable ANSI colors and UTF-8 output on Windows
+    if sys.platform == "win32":
+        os.system("")  # Enables ANSI escape sequences in Windows terminal
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
     parser = argparse.ArgumentParser(
-        description="Antigravity Remote Monitor and Task Scheduler CLI Tool"
+        description="Antigravity Mobile — Control your AI coding agent from your phone.",
+        add_help=False
     )
     subparsers = parser.add_subparsers(dest="command", help="Sub-commands")
+
+    # setup command
+    setup_parser = subparsers.add_parser("setup", help="Interactive first-time setup wizard")
+    setup_parser.add_argument("--force", action="store_true", help="Force overwrite existing configuration")
 
     # init command
     init_parser = subparsers.add_parser("init", help="Initialize configuration and security PIN")
@@ -209,9 +337,14 @@ def main():
     remote_parser.add_argument("--off", action="store_true", help="Disable remote monitoring and control mode")
     remote_parser.add_argument("--status", action="store_true", help="Check current remote mode status")
 
+    # help command
+    subparsers.add_parser("help", help="Show this help message")
+
     args = parser.parse_args()
 
-    if args.command == "init":
+    if args.command == "setup":
+        cmd_setup(args)
+    elif args.command == "init":
         cmd_init(args)
     elif args.command == "start":
         cmd_start(args)
@@ -219,8 +352,13 @@ def main():
         cmd_run(args)
     elif args.command == "remote":
         cmd_remote(args)
+    elif args.command == "help":
+        print_banner()
+        print_quickstart()
     else:
-        parser.print_help()
+        # No command given — show the beautiful welcome banner
+        print_banner()
+        print_quickstart()
 
 if __name__ == "__main__":
     main()
