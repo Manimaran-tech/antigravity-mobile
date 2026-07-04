@@ -175,12 +175,23 @@ def get_system_status():
         except Exception:
             pass
 
+    agent_logs = ""
+    log_file = "agent_execution.log"
+    if os.path.exists(log_file):
+        try:
+            with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.readlines()
+                agent_logs = "".join(lines[-20:])
+        except Exception:
+            pass
+
     return {
         "cpu": cpu,
         "memory": memory,
         "disk": disk,
         "agent_status": agent_status,
         "agent_task": agent_task,
+        "agent_logs": agent_logs,
         "timestamp": datetime.datetime.now().isoformat()
     }
 

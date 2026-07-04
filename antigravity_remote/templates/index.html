@@ -734,6 +734,17 @@
                 </div>
             </div>
 
+            <!-- Agent Thought Stream / Execution Console -->
+            <div id="agent-logs-panel" style="display: flex; flex-direction: column; gap: 6px; background: rgba(0,0,0,0.4); border: 1px solid var(--panel-border); border-radius: 12px; padding: 12px 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
+                    <span style="color: var(--text-secondary); font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                        <i data-lucide="terminal" style="width:12px;height:12px;color:var(--accent-teal)"></i> Live Agent Output
+                    </span>
+                    <span style="font-size: 0.75rem; color: var(--accent-teal);" id="agent-logs-active-badge">Idle</span>
+                </div>
+                <pre id="agent-logs-box" style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #a3b8cc; max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; margin: 0; padding-top: 6px; line-height: 1.4;">No output logs yet.</pre>
+            </div>
+
             <div class="input-group">
                 <input type="text" id="agent-prompt-input" class="command-input" placeholder="Ask Antigravity to perform a task...">
                 <button id="send-prompt-btn" class="submit-btn"><i data-lucide="send" style="width:16px;height:16px;"></i></button>
@@ -857,6 +868,9 @@
         const agentPromptResponseBox = document.getElementById('agent-prompt-response-box');
         const agentPromptInput = document.getElementById('agent-prompt-input');
         const sendPromptBtn = document.getElementById('send-prompt-btn');
+
+        const agentLogsActiveBadge = document.getElementById('agent-logs-active-badge');
+        const agentLogsBox = document.getElementById('agent-logs-box');
 
         const approvalOverlay = document.getElementById('approval-overlay');
         const approvalActionType = document.getElementById('approval-action-type');
@@ -982,6 +996,22 @@
 
             // Tasks
             updateTasksList(data.tasks);
+
+            // Update live agent output logs
+            if (data.agent_logs) {
+                agentLogsBox.textContent = data.agent_logs;
+                agentLogsBox.scrollTop = agentLogsBox.scrollHeight;
+            } else {
+                agentLogsBox.textContent = "No active execution output.";
+            }
+
+            if (data.agent_status === 'busy' || data.agent_status === 'working') {
+                agentLogsActiveBadge.textContent = "Executing...";
+                agentLogsActiveBadge.style.color = "var(--accent-teal)";
+            } else {
+                agentLogsActiveBadge.textContent = "Idle";
+                agentLogsActiveBadge.style.color = "var(--text-secondary)";
+            }
 
             // Update agent info (models, limits, remote prompts, approvals)
             if (data.agent_info) {

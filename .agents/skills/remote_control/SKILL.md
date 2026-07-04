@@ -1,6 +1,6 @@
 ---
 name: "Antigravity Remote Control Loop"
-description: "Instructs the agent how to poll for remote commands, execute them, and query for approvals via the mobile phone dashboard."
+description: "Instructs the agent how to poll for remote commands, execute them, stream real-time logs, and query for approvals via the mobile phone dashboard."
 ---
 
 # Antigravity Remote Control Loop
@@ -13,26 +13,40 @@ When this skill is loaded, the agent participates in the remote command and conf
 When waking up, check if a file named `remote_prompt.json` exists in the workspace root.
 - **If it exists**:
   1. Read the JSON content (which contains `id`, `prompt`, and `token`).
-  2. Delete the `remote_prompt.json` file.
+  2. Overwrite `remote_prompt.json` with `{}` to clear it.
   3. Treat the `prompt` value as the primary user request for this turn.
-  4. Perform the requested task (creating files, editing code, running scripts).
-  5. If you need to execute any terminal command or modify files that require confirmation:
+  4. Write the current starting state to `agent_status.json`:
+     ```json
+     {"status": "working", "task": "Starting task execution..."}
+     ```
+  5. Initialize `agent_execution.log` with the initial start log:
+     ```
+     [12:00:00] Starting remote task: "[Prompt]"
+     ```
+  6. **Perform the requested task** (creating files, editing code, running scripts).
+     - Whenever you perform a step (e.g. searching, writing a file, or running a test), update `agent_status.json` with the current task and append a progress line to `agent_execution.log` using `write_to_file` so the mobile user can monitor your progress in real-time.
+  7. If you need to execute any terminal command or modify files that require confirmation:
      - Run the approval script first:
        ```powershell
        python -m antigravity_remote.agent_approve --type command --target "<command or action>"
        ```
+     - *Note: Since the local PC is configured to auto-approve commands, this script will run autonomously on the PC and display the approval overlay on the user's mobile screen!*
      - If the command exits with code `0` (APPROVED), proceed to execute the command/action.
      - If it exits with code `1` (REJECTED), skip the action and report that the user rejected it on their mobile phone.
      - If it exits with code `2` (TIMEOUT), report that the request timed out.
-  6. Once the task is finished, post the final summary to the server:
-     - Use a Python script or raw HTTP POST to `/api/agent/response` with headers `Authorization: Bearer <token>` and body:
-       ```json
-       {
-         "status": "completed",
-         "output": "Task finished successfully: [Brief description of what was done]"
-       }
-       ```
-  7. Start the daemon listener again (see Step 2) and end your turn.
+  8. Once the task is finished, post the final response to the server. To avoid executing shell commands, write the response directly to `agent_response.json` in the workspace:
+     ```json
+     {
+       "status": "completed",
+       "output": "Completed successfully: [Brief description of what was done]"
+     }
+     ```
+     *The running FastAPI server will automatically pick up this file, update the server prompt state, and delete the file.*
+  9. Update `agent_status.json` to:
+     ```json
+     {"status": "idle", "task": ""}
+     ```
+  10. Start the daemon listener again (see Step 2) and end your turn.
 
 - **If it does NOT exist**:
   - The agent is idle. Start the daemon listener to wait for new remote prompts.
