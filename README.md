@@ -27,20 +27,22 @@ cd "d:\Remote Antigravity"
 pip install -e .
 ```
 
----
-
 ## CLI Usage
 
-The tool provides an easy-to-use CLI:
+The tool can be executed directly as a script (if the Python scripts directory is on your `PATH`) or as a Python module:
 
 ### 1. Initialize Configuration
 ```bash
+python -m antigravity_remote.cli init
+# OR if scripts folder is on your PATH:
 antigravity-remote init
 ```
 This generates a `config.json` with a secure randomized PIN for mobile authentication.
 
 ### 2. Start the Monitor Server
 ```bash
+python -m antigravity_remote.cli start --host 0.0.0.0 --port 8000
+# OR if scripts folder is on your PATH:
 antigravity-remote start --host 0.0.0.0 --port 8000
 ```
 - `--host 0.0.0.0` allows devices on your local network (e.g., your mobile phone via local Wi-Fi) to access the server.
