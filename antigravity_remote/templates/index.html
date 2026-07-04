@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity Remote Monitor</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0b0d19 0%, #151a33 100%);
+            --panel-bg: rgba(22, 28, 54, 0.6);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --accent-teal: #00f2fe;
+            --accent-blue: #4facfe;
+            --accent-purple: #9b51e0;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --status-idle: #10b981;
+            --status-busy: #f59e0b;
+            --status-failed: #ef4444;
+            --status-pending: #3b82f6;
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* App Wrapper */
+        #app {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex-grow: 1;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, var(--accent-teal), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            padding: 6px 12px;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--panel-border);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--status-failed);
+            box-shadow: 0 0 8px var(--status-failed);
+        }
+
+        .status-dot.connected {
+            background: var(--status-idle);
+            box-shadow: 0 0 8px var(--status-idle);
+        }
+
+        /* Authentication View */
+        #auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(11, 13, 25, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 24px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: var(--glass-shadow);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .auth-card h2 {
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+
+        .auth-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .pin-inputs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .pin-input {
+            width: 48px;
+            height: 56px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .pin-input:focus {
+            outline: none;
+            border-color: var(--accent-teal);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+        }
+
+        .auth-error {
+            color: var(--status-failed);
+            font-size: 0.9rem;
+            min-height: 1.2rem;
+        }
+
+        /* Glassmorphic Panel Base */
+        .glass-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            backdrop-filter: blur(16px);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* Agent State Card */
+        .agent-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .agent-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--accent-teal), var(--accent-purple));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: #0b0d19;
+            font-size: 1.2rem;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+        }
+
+        .agent-info {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            gap: 4px;
+        }
+
+        .agent-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        .agent-status-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .agent-task {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 320px;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            text-transform: uppercase;
+        }
+
+        .badge-idle { background: rgba(16, 185, 129, 0.2); color: var(--status-idle); }
+        .badge-busy { background: rgba(245, 158, 11, 0.2); color: var(--status-busy); }
+
+        /* System Metrics */
+        .metrics-grid {
+            display: grid;
+            grid-template-cols: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .metric-card {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .metric-circle {
+            position: relative;
+            width: 70px;
+            height: 70px;
+        }
+
+        .metric-circle svg {
+            width: 70px;
+            height: 70px;
+            transform: rotate(-90deg);
+        }
+
+        .metric-circle circle {
+            fill: none;
+            stroke-width: 6;
+        }
+
+        .metric-circle .bg-circle {
+            stroke: rgba(255, 255, 255, 0.05);
+        }
+
+        .metric-circle .progress-circle {
+            stroke: var(--accent-teal);
+            stroke-dasharray: 201; /* 2 * pi * r (r=32) */
+            stroke-dashoffset: 201;
+            transition: stroke-dashoffset 0.8s ease;
+            stroke-linecap: round;
+        }
+
+        .metric-circle.memory .progress-circle {
+            stroke: var(--accent-blue);
+        }
+
+        .metric-circle.disk .progress-circle {
+            stroke: var(--accent-purple);
+        }
+
+        .metric-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .metric-name {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Schedule Command Form */
+        .schedule-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .schedule-form h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-group {
+            position: relative;
+            display: flex;
+        }
+
+        .command-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            padding-right: 50px;
+        }
+
+        .command-input:focus {
+            outline: none;
+            border-color: var(--accent-teal);
+        }
+
+        .submit-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, var(--accent-teal), var(--accent-blue));
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #0b0d19;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .submit-btn:hover {
+            opacity: 0.9;
+        }
+
+        /* Task Queue list */
+        .tasks-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .tasks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tasks-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .tasks-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 250px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .task-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
+
+        .task-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .task-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .task-command {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 70%;
+        }
+
+        .task-status {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            text-transform: uppercase;
+        }
+
+        .task-status.pending { background: rgba(59, 130, 246, 0.15); color: var(--status-pending); }
+        .task-status.running { background: rgba(245, 158, 11, 0.15); color: var(--status-busy); }
+        .task-status.completed { background: rgba(16, 185, 129, 0.15); color: var(--status-idle); }
+        .task-status.failed { background: rgba(239, 68, 68, 0.15); color: var(--status-failed); }
+        .task-status.cancelled { background: rgba(255, 255, 255, 0.1); color: var(--text-secondary); }
+
+        .task-details {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            background: transparent;
+            border: 1px solid var(--panel-border);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .action-btn.run {
+            background: linear-gradient(135deg, var(--accent-teal), var(--accent-blue));
+            color: #0b0d19;
+            border: none;
+        }
+
+        .action-btn.cancel {
+            border-color: rgba(239, 68, 68, 0.3);
+            color: var(--status-failed);
+        }
+
+        .action-btn.cancel:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .action-btn.logs {
+            border-color: rgba(0, 242, 254, 0.3);
+            color: var(--accent-teal);
+        }
+
+        .action-btn.logs:hover {
+            background: rgba(0, 242, 254, 0.1);
+        }
+
+        /* Terminal Drawer Modal */
+        #terminal-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(11, 13, 25, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        #terminal-modal.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .terminal-content {
+            background: #060814;
+            border-top: 1px solid var(--panel-border);
+            height: 80vh;
+            border-radius: 24px 24px 0 0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        #terminal-modal.open .terminal-content {
+            transform: translateY(0);
+        }
+
+        .terminal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .terminal-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            font-weight: bold;
+        }
+
+        .terminal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .terminal-body {
+            flex-grow: 1;
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            overflow-y: auto;
+            color: #d1d5db;
+            background: #02040a;
+            white-space: pre-wrap;
+        }
+
+        /* Utility styles */
+        .empty-text {
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Authentication Overlay -->
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <h2>Remote Access Auth</h2>
+            <p>Enter the 6-digit security PIN generated on your terminal to connect</p>
+            <div class="pin-inputs">
+                <input type="text" maxlength="1" class="pin-input" data-idx="0">
+                <input type="text" maxlength="1" class="pin-input" data-idx="1">
+                <input type="text" maxlength="1" class="pin-input" data-idx="2">
+                <input type="text" maxlength="1" class="pin-input" data-idx="3">
+                <input type="text" maxlength="1" class="pin-input" data-idx="4">
+                <input type="text" maxlength="1" class="pin-input" data-idx="5">
+            </div>
+            <div id="auth-error-msg" class="auth-error"></div>
+        </div>
+    </div>
+
+    <!-- Main Viewport -->
+    <div id="app">
+        <header>
+            <div class="brand">
+                <i data-lucide="zap" style="color: var(--accent-teal)"></i>
+                <h1>Antigravity Remote</h1>
+            </div>
+            <div class="connection-status">
+                <div id="ws-status-dot" class="status-dot"></div>
+                <span id="ws-status-text">Disconnected</span>
+            </div>
+        </header>
+
+        <!-- Agent Status -->
+        <div class="glass-panel agent-card">
+            <div class="agent-avatar">AG</div>
+            <div class="agent-info">
+                <div class="agent-label">Agent State</div>
+                <div id="agent-state-label" class="agent-status-text">Detecting...</div>
+                <div id="agent-task-text" class="agent-task">Initial workspace handshake</div>
+            </div>
+            <span id="agent-badge" class="status-badge badge-idle">Idle</span>
+        </div>
+
+        <!-- Metrics -->
+        <div class="glass-panel metrics-grid">
+            <!-- CPU -->
+            <div class="metric-card">
+                <div class="metric-circle cpu">
+                    <svg>
+                        <circle class="bg-circle" cx="35" cy="35" r="32"></circle>
+                        <circle id="cpu-circle" class="progress-circle" cx="35" cy="35" r="32"></circle>
+                    </svg>
+                    <div id="cpu-value" class="metric-value">0%</div>
+                </div>
+                <div class="metric-name">CPU</div>
+            </div>
+            <!-- RAM -->
+            <div class="metric-card">
+                <div class="metric-circle memory">
+                    <svg>
+                        <circle class="bg-circle" cx="35" cy="35" r="32"></circle>
+                        <circle id="ram-circle" class="progress-circle" cx="35" cy="35" r="32"></circle>
+                    </svg>
+                    <div id="ram-value" class="metric-value">0%</div>
+                </div>
+                <div class="metric-name">Memory</div>
+            </div>
+            <!-- Disk -->
+            <div class="metric-card">
+                <div class="metric-circle disk">
+                    <svg>
+                        <circle class="bg-circle" cx="35" cy="35" r="32"></circle>
+                        <circle id="disk-circle" class="progress-circle" cx="35" cy="35" r="32"></circle>
+                    </svg>
+                    <div id="disk-value" class="metric-value">0%</div>
+                </div>
+                <div class="metric-name">Disk</div>
+            </div>
+        </div>
+
+        <!-- Schedule task -->
+        <div class="glass-panel schedule-form">
+            <h3><i data-lucide="plus-circle" style="width:18px;height:18px;color:var(--accent-teal)"></i> Schedule Task</h3>
+            <div class="input-group">
+                <input type="text" id="cmd-input" class="command-input" placeholder="e.g., pytest tests/test_server.py">
+                <button id="schedule-btn" class="submit-btn"><i data-lucide="play" style="width:16px;height:16px;"></i></button>
+            </div>
+        </div>
+
+        <!-- Tasks list -->
+        <div class="glass-panel tasks-container">
+            <div class="tasks-header">
+                <h3>Task Queue</h3>
+                <span id="tasks-count" style="font-size:0.8rem;color:var(--text-secondary)">0 tasks</span>
+            </div>
+            <div id="tasks-list" class="tasks-list">
+                <div class="empty-text">No scheduled tasks yet</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terminal Output Drawer Modal -->
+    <div id="terminal-modal">
+        <div class="terminal-content">
+            <div class="terminal-header">
+                <div class="terminal-title">
+                    <i data-lucide="terminal" style="width:18px;height:18px;color:var(--accent-teal)"></i>
+                    <span id="terminal-task-cmd">echo "Hello World"</span>
+                </div>
+                <button id="terminal-close-btn" class="terminal-close">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <pre id="terminal-body" class="terminal-body">Connecting to logs...</pre>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const authOverlay = document.getElementById('auth-overlay');
+        const authErrorMsg = document.getElementById('auth-error-msg');
+        const pinInputs = document.querySelectorAll('.pin-input');
+        const wsStatusDot = document.getElementById('ws-status-dot');
+        const wsStatusText = document.getElementById('ws-status-text');
+        
+        const cpuCircle = document.getElementById('cpu-circle');
+        const cpuValue = document.getElementById('cpu-value');
+        const ramCircle = document.getElementById('ram-circle');
+        const ramValue = document.getElementById('ram-value');
+        const diskCircle = document.getElementById('disk-circle');
+        const diskValue = document.getElementById('disk-value');
+
+        const agentStateLabel = document.getElementById('agent-state-label');
+        const agentTaskText = document.getElementById('agent-task-text');
+        const agentBadge = document.getElementById('agent-badge');
+
+        const cmdInput = document.getElementById('cmd-input');
+        const scheduleBtn = document.getElementById('schedule-btn');
+        const tasksList = document.getElementById('tasks-list');
+        const tasksCount = document.getElementById('tasks-count');
+
+        const terminalModal = document.getElementById('terminal-modal');
+        const terminalTaskCmd = document.getElementById('terminal-task-cmd');
+        const terminalBody = document.getElementById('terminal-body');
+        const terminalCloseBtn = document.getElementById('terminal-close-btn');
+
+        // Application State
+        let token = localStorage.getItem('remote_auth_token');
+        let statusSocket = null;
+        let logsSocket = null;
+
+        // Auto PIN code navigation helper
+        pinInputs.forEach((input, index) => {
+            input.addEventListener('keyup', (e) => {
+                const val = input.value;
+                if (val.length === 1 && index < 5) {
+                    pinInputs[index + 1].focus();
+                }
+                
+                // Trigger check if all inputs filled
+                const pin = Array.from(pinInputs).map(i => i.value).join('');
+                if (pin.length === 6) {
+                    tryLogin(pin);
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && input.value === '' && index > 0) {
+                    pinInputs[index - 1].focus();
+                }
+            });
+        });
+
+        // Initialize Authentication Status
+        if (token) {
+            authOverlay.style.display = 'none';
+            connectWS();
+        }
+
+        async function tryLogin(pin) {
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    token = data.token;
+                    localStorage.setItem('remote_auth_token', token);
+                    authOverlay.style.display = 'none';
+                    authErrorMsg.textContent = '';
+                    connectWS();
+                } else {
+                    authErrorMsg.textContent = 'Invalid PIN. Try again.';
+                    clearPinInputs();
+                }
+            } catch (err) {
+                authErrorMsg.textContent = 'Failed to connect to authentication API.';
+            }
+        }
+
+        function clearPinInputs() {
+            pinInputs.forEach(i => i.value = '');
+            pinInputs[0].focus();
+        }
+
+        // WebSocket Connection
+        function connectWS() {
+            const loc = window.location;
+            const wsProtocol = loc.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${loc.host}/ws/status?token=${token}`;
+
+            statusSocket = new WebSocket(wsUrl);
+
+            statusSocket.onopen = () => {
+                wsStatusDot.classList.add('connected');
+                wsStatusText.textContent = 'Connected';
+            };
+
+            statusSocket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                updateDashboard(data);
+            };
+
+            statusSocket.onerror = () => {
+                console.error("Status Socket Error");
+            };
+
+            statusSocket.onclose = () => {
+                wsStatusDot.classList.remove('connected');
+                wsStatusText.textContent = 'Disconnected';
+                // Attempt reconnection after 3 seconds
+                setTimeout(connectWS, 3000);
+            };
+        }
+
+        // Update Interface
+        function updateDashboard(data) {
+            // Metrics circles
+            updateProgressCircle(cpuCircle, cpuValue, data.cpu);
+            updateProgressCircle(ramCircle, ramValue, data.memory);
+            updateProgressCircle(diskCircle, diskValue, data.disk);
+
+            // Agent state
+            agentStateLabel.textContent = `Antigravity 2.0 (${data.agent_status.toUpperCase()})`;
+            agentTaskText.textContent = data.agent_task || 'No active work';
+            
+            if (data.agent_status === 'busy' || data.agent_status === 'working') {
+                agentBadge.className = 'status-badge badge-busy';
+                agentBadge.textContent = 'Busy';
+            } else {
+                agentBadge.className = 'status-badge badge-idle';
+                agentBadge.textContent = 'Idle';
+            }
+
+            // Tasks
+            updateTasksList(data.tasks);
+        }
+
+        function updateProgressCircle(circleEl, textEl, value) {
+            // value is 0 - 100
+            const maxOffset = 201; // 2 * pi * r
+            const offset = maxOffset - (value / 100) * maxOffset;
+            circleEl.style.strokeDashoffset = offset;
+            textEl.textContent = `${Math.round(value)}%`;
+        }
+
+        function updateTasksList(tasks) {
+            tasksCount.textContent = `${tasks.length} task${tasks.length === 1 ? '' : 's'}`;
+            
+            if (tasks.length === 0) {
+                tasksList.innerHTML = '<div class="empty-text">No scheduled tasks yet</div>';
+                return;
+            }
+
+            // Sort tasks by created_at descending
+            tasks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            tasksList.innerHTML = tasks.map(task => {
+                const isPending = task.status === 'pending';
+                const isRunning = task.status === 'running';
+                
+                let buttons = '';
+                if (isPending) {
+                    buttons = `
+                        <button class="action-btn run" onclick="confirmTask('${task.id}')">
+                            <i data-lucide="check" style="width:12px;height:12px"></i> Confirm & Run
+                        </button>
+                        <button class="action-btn cancel" onclick="cancelTask('${task.id}')">
+                            <i data-lucide="x" style="width:12px;height:12px"></i> Cancel
+                        </button>
+                    `;
+                } else if (isRunning) {
+                    buttons = `
+                        <button class="action-btn logs" onclick="viewLogs('${task.id}', '${task.command}')">
+                            <i data-lucide="terminal" style="width:12px;height:12px"></i> Logs
+                        </button>
+                        <button class="action-btn cancel" onclick="cancelTask('${task.id}')">
+                            <i data-lucide="square" style="width:12px;height:12px"></i> Stop
+                        </button>
+                    `;
+                } else {
+                    buttons = `
+                        <button class="action-btn logs" onclick="viewLogs('${task.id}', '${task.command}')">
+                            <i data-lucide="file-text" style="width:12px;height:12px"></i> View Logs
+                        </button>
+                    `;
+                }
+
+                return `
+                    <div class="task-item">
+                        <div class="task-top">
+                            <span class="task-command" title="${escapeHtml(task.command)}">${escapeHtml(task.command)}</span>
+                            <span class="task-status ${task.status}">${task.status}</span>
+                        </div>
+                        <div class="task-details">
+                            <span>ID: ${task.id} | ${formatTime(task.created_at)}</span>
+                            <div class="task-actions">
+                                ${buttons}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Reparse icons
+            lucide.createIcons();
+        }
+
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function formatTime(isoStr) {
+            const date = new Date(isoStr);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        // Action Handlers
+        async function apiPost(endpoint) {
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.status === 401) {
+                    handleUnauthorized();
+                }
+                return res.ok;
+            } catch (err) {
+                console.error(err);
+                return false;
+            }
+        }
+
+        function handleUnauthorized() {
+            localStorage.removeItem('remote_auth_token');
+            authOverlay.style.display = 'flex';
+            clearPinInputs();
+            if (statusSocket) {
+                statusSocket.close();
+            }
+        }
+
+        async function confirmTask(taskId) {
+            await apiPost(`/api/tasks/${taskId}/confirm`);
+        }
+
+        async function cancelTask(taskId) {
+            await apiPost(`/api/tasks/${taskId}/cancel`);
+        }
+
+        // Schedule Task
+        scheduleBtn.addEventListener('click', async () => {
+            const command = cmdInput.value.trim();
+            if (!command) return;
+
+            try {
+                const res = await fetch('/api/schedule', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ command })
+                });
+
+                if (res.status === 401) {
+                    handleUnauthorized();
+                    return;
+                }
+
+                if (res.ok) {
+                    cmdInput.value = '';
+                } else {
+                    alert('Failed to schedule command');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        cmdInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                scheduleBtn.click();
+            }
+        });
+
+        // View Logs
+        function viewLogs(taskId, command) {
+            terminalTaskCmd.textContent = command;
+            terminalBody.textContent = 'Connecting to real-time logs...\n';
+            terminalModal.classList.add('open');
+
+            if (logsSocket) {
+                logsSocket.close();
+            }
+
+            const loc = window.location;
+            const wsProtocol = loc.protocol === 'https:' ? 'wss:' : 'ws';
+            const wsUrl = `${wsProtocol}//${loc.host}/ws/logs/${taskId}?token=${token}`;
+
+            logsSocket = new WebSocket(wsUrl);
+
+            logsSocket.onmessage = (event) => {
+                terminalBody.textContent += event.data;
+                // Auto scroll to bottom
+                terminalBody.scrollTop = terminalBody.scrollHeight;
+            };
+
+            logsSocket.onerror = () => {
+                terminalBody.textContent += '\n[WebSocket logs connection error]\n';
+            };
+
+            logsSocket.onclose = () => {
+                terminalBody.textContent += '\n[Stream closed]\n';
+            };
+        }
+
+        terminalCloseBtn.addEventListener('click', () => {
+            terminalModal.classList.remove('open');
+            if (logsSocket) {
+                logsSocket.close();
+                logsSocket = null;
+            }
+        });
+
+        // Initialize lucide
+        lucide.createIcons();
+    </script>
+</body>
+</html>
