@@ -25,3 +25,13 @@ dev = [
 
 [project.scripts]
 antigravity-remote = "antigravity_remote.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["antigravity_remote*"]
+
+[tool.setuptools.package-data]
+antigravity_remote = [
+    "templates/*.html",
+    "static/**/*.css",
+    "static/**/*.js"
+]
