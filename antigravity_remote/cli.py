@@ -148,6 +148,40 @@ def cmd_run(args):
             pass
         time.sleep(0.5)
 
+def cmd_remote(args):
+    mode_file = "remote_mode.json"
+    
+    # Load current status
+    enabled = True
+    if os.path.exists(mode_file):
+        try:
+            with open(mode_file, "r") as f:
+                enabled = json.load(f).get("enabled", True)
+        except Exception:
+            pass
+            
+    if args.on:
+        enabled = True
+        with open(mode_file, "w") as f:
+            json.dump({"enabled": True}, f)
+        print("Remote monitoring and control mode: ENABLED")
+    elif args.off:
+        enabled = False
+        with open(mode_file, "w") as f:
+            json.dump({"enabled": False}, f)
+        # Clear files so they are not left behind
+        for fn in ("agent_status.json", "agent_execution.log", "agent_approval_request.json", "agent_approval_response.json"):
+            if os.path.exists(fn):
+                try:
+                    os.remove(fn)
+                except Exception:
+                    pass
+        print("Remote monitoring and control mode: DISABLED")
+    elif args.status:
+        print(f"Remote monitoring and control mode is currently: {'ENABLED' if enabled else 'DISABLED'}")
+    else:
+        print(f"Remote monitoring and control mode is currently: {'ENABLED' if enabled else 'DISABLED'}")
+
 def main():
     parser = argparse.ArgumentParser(
         description="Antigravity Remote Monitor and Task Scheduler CLI Tool"
@@ -169,6 +203,12 @@ def main():
     run_parser.add_argument("--port", type=int, default=8000, help="Port of the running FastAPI server")
     run_parser.add_argument("cmd_args", nargs="+", help="Command and arguments to execute")
 
+    # remote command
+    remote_parser = subparsers.add_parser("remote", help="Enable or disable remote monitoring and control mode")
+    remote_parser.add_argument("--on", action="store_true", help="Enable remote monitoring and control mode")
+    remote_parser.add_argument("--off", action="store_true", help="Disable remote monitoring and control mode")
+    remote_parser.add_argument("--status", action="store_true", help="Check current remote mode status")
+
     args = parser.parse_args()
 
     if args.command == "init":
@@ -177,6 +217,8 @@ def main():
         cmd_start(args)
     elif args.command == "run":
         cmd_run(args)
+    elif args.command == "remote":
+        cmd_remote(args)
     else:
         parser.print_help()
 

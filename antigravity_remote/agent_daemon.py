@@ -71,6 +71,19 @@ def main():
     parser.add_argument("--url", default="http://127.0.0.1:8000", help="FastAPI Server URL")
     args = parser.parse_args()
 
+    # Check if remote mode is enabled
+    mode_path = "remote_mode.json"
+    while True:
+        if os.path.exists(mode_path):
+            try:
+                with open(mode_path, "r") as f:
+                    if not json.load(f).get("enabled", True):
+                        time.sleep(5)
+                        continue
+            except Exception:
+                pass
+        break
+
     # Read config.json to get PIN
     config_path = "config.json"
     if not os.path.exists(config_path):

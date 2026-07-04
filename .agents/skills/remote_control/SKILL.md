@@ -9,6 +9,11 @@ When this skill is loaded, the agent participates in the remote command and conf
 
 ## Execution Sequence
 
+### 0. Check Remote Mode Toggle
+Before starting, read `remote_mode.json` in the workspace root.
+- **If `"enabled": false`**: Do NOT run the remote control loop. Stop here and run standard workspace actions normally.
+- **If `"enabled": true`** (or if the file is missing): Proceed with the remote control sequence below.
+
 ### 1. Check for Active Remote Prompt
 When waking up, check if a file named `remote_prompt.json` exists in the workspace root.
 - **If it exists**:

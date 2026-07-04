@@ -1,6 +1,8 @@
 # Antigravity Remote Monitoring and Control Rules
 
-To allow the user to monitor and control desktop-started tasks from their mobile phone, the agent must adhere to the following rules at all times:
+Before performing any action, check if remote mode is enabled by reading `remote_mode.json` in the workspace root.
+- **If `"enabled": false`**: Run normally and bypass all remote features (do NOT write status files, do NOT update log files, and do NOT use `agent_approve.py` for confirmations).
+- **If `"enabled": true`** (or if the file is missing/unreadable): Adhere to the following rules at all times:
 
 1. **Always Stream Execution Logs to Mobile**:
    - At the start of **every** agent turn (including desktop chat sessions), write the current active task description to `agent_status.json` in the workspace:
