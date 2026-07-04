@@ -7,26 +7,23 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
         :root {
-            --bg-gradient: linear-gradient(135deg, #0b0d19 0%, #151a33 100%);
-            --panel-bg: rgba(22, 28, 54, 0.6);
-            --panel-border: rgba(255, 255, 255, 0.08);
-            --accent-teal: #00f2fe;
-            --accent-blue: #4facfe;
-            --accent-purple: #9b51e0;
-            --text-primary: #f3f4f6;
-            --text-secondary: #9ca3af;
-            --status-idle: #10b981;
-            --status-busy: #f59e0b;
+            --bg: #09090b;
+            --panel-bg: #18181b;
+            --panel-border: #27272a;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --status-idle: #22c55e;
+            --status-busy: #eab308;
             --status-failed: #ef4444;
-            --status-pending: #3b82f6;
-            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --status-pending: #a1a1aa;
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
         }
 
         * {
@@ -36,8 +33,8 @@
         }
 
         body {
-            font-family: 'Outfit', sans-serif;
-            background: var(--bg-gradient);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
             color: var(--text-primary);
             min-height: 100vh;
             display: flex;
@@ -53,7 +50,7 @@
             padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 16px;
             flex-grow: 1;
         }
 
@@ -68,40 +65,36 @@
         .brand {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .brand h1 {
-            font-size: 1.5rem;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            background: linear-gradient(to right, var(--accent-teal), var(--accent-blue));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+            color: var(--text-primary);
         }
 
         .connection-status {
             display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 0.85rem;
-            padding: 6px 12px;
-            border-radius: 9999px;
-            background: rgba(255, 255, 255, 0.05);
+            font-size: 0.8rem;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: var(--panel-bg);
             border: 1px solid var(--panel-border);
         }
 
         .status-dot {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             background: var(--status-failed);
-            box-shadow: 0 0 8px var(--status-failed);
         }
 
         .status-dot.connected {
             background: var(--status-idle);
-            box-shadow: 0 0 8px var(--status-idle);
         }
 
         /* Authentication View */
@@ -111,8 +104,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(11, 13, 25, 0.95);
-            backdrop-filter: blur(20px);
+            background: var(--bg);
             z-index: 1000;
             display: flex;
             justify-content: center;
@@ -123,111 +115,108 @@
         .auth-card {
             background: var(--panel-bg);
             border: 1px solid var(--panel-border);
-            border-radius: 24px;
-            padding: 40px 30px;
+            border-radius: 8px;
+            padding: 30px;
             width: 100%;
             max-width: 400px;
-            box-shadow: var(--glass-shadow);
+            box-shadow: var(--shadow);
             text-align: center;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 16px;
         }
 
         .auth-card h2 {
-            font-size: 1.8rem;
-            font-weight: 800;
+            font-size: 1.25rem;
+            font-weight: 600;
         }
 
         .auth-card p {
             color: var(--text-secondary);
-            font-size: 0.95rem;
+            font-size: 0.85rem;
         }
 
         .pin-inputs {
             display: flex;
             justify-content: center;
-            gap: 10px;
-            margin: 20px 0;
+            gap: 8px;
+            margin: 15px 0;
         }
 
         .pin-input {
-            width: 48px;
-            height: 56px;
-            background: rgba(255, 255, 255, 0.05);
+            width: 40px;
+            height: 48px;
+            background: var(--bg);
             border: 1px solid var(--panel-border);
-            border-radius: 12px;
+            border-radius: 6px;
             text-align: center;
-            font-size: 1.5rem;
-            font-weight: bold;
+            font-size: 1.25rem;
+            font-weight: 500;
             color: var(--text-primary);
             font-family: 'JetBrains Mono', monospace;
         }
 
         .pin-input:focus {
             outline: none;
-            border-color: var(--accent-teal);
-            box-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+            border-color: var(--text-secondary);
         }
 
         .auth-error {
             color: var(--status-failed);
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             min-height: 1.2rem;
         }
 
-        /* Glassmorphic Panel Base */
+        /* Flat Panel Base */
         .glass-panel {
             background: var(--panel-bg);
             border: 1px solid var(--panel-border);
-            backdrop-filter: blur(16px);
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: var(--glass-shadow);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: var(--shadow);
         }
 
         /* Agent State Card */
         .agent-card {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
         }
 
         .agent-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, var(--accent-teal), var(--accent-purple));
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            background: var(--panel-border);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-weight: bold;
-            color: #0b0d19;
-            font-size: 1.2rem;
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 0.95rem;
         }
 
         .agent-info {
             display: flex;
             flex-direction: column;
             flex-grow: 1;
-            gap: 4px;
+            gap: 2px;
         }
 
         .agent-label {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.05em;
             color: var(--text-secondary);
         }
 
         .agent-status-text {
-            font-size: 1.1rem;
-            font-weight: 600;
+            font-size: 0.95rem;
+            font-weight: 500;
         }
 
         .agent-task {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text-secondary);
             font-family: 'JetBrains Mono', monospace;
             white-space: nowrap;
@@ -237,29 +226,40 @@
         }
 
         .status-badge {
-            font-size: 0.75rem;
-            font-weight: bold;
-            padding: 4px 10px;
-            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 4px;
             text-transform: uppercase;
         }
 
-        .badge-idle { background: rgba(16, 185, 129, 0.2); color: var(--status-idle); }
-        .badge-busy { background: rgba(245, 158, 11, 0.2); color: var(--status-busy); }
+        .badge-idle {
+            background: var(--panel-border);
+            color: var(--text-secondary);
+            border: 1px solid var(--panel-border);
+        }
+
+        .badge-busy {
+            background: rgba(234, 179, 8, 0.1);
+            color: var(--status-busy);
+            border: 1px solid rgba(234, 179, 8, 0.2);
+        }
 
         /* System Metrics */
         .metrics-grid {
-            display: grid;
-            grid-template-cols: repeat(3, 1fr);
-            gap: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
         }
 
         .metric-card {
+            flex: 1;
             text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .metric-circle {
@@ -276,27 +276,27 @@
 
         .metric-circle circle {
             fill: none;
-            stroke-width: 6;
+            stroke-width: 3;
         }
 
         .metric-circle .bg-circle {
-            stroke: rgba(255, 255, 255, 0.05);
+            stroke: var(--panel-border);
         }
 
         .metric-circle .progress-circle {
-            stroke: var(--accent-teal);
+            stroke: var(--text-primary);
             stroke-dasharray: 201; /* 2 * pi * r (r=32) */
             stroke-dashoffset: 201;
             transition: stroke-dashoffset 0.8s ease;
-            stroke-linecap: round;
+            stroke-linecap: square;
         }
 
         .metric-circle.memory .progress-circle {
-            stroke: var(--accent-blue);
+            stroke: var(--text-primary);
         }
 
         .metric-circle.disk .progress-circle {
-            stroke: var(--accent-purple);
+            stroke: var(--text-primary);
         }
 
         .metric-value {
@@ -304,28 +304,29 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 1.1rem;
-            font-weight: bold;
+            font-size: 0.9rem;
+            font-weight: 500;
         }
 
         .metric-name {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
+            font-weight: 500;
         }
 
         /* Schedule Command Form */
         .schedule-form {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
         }
 
         .schedule-form h3 {
-            font-size: 1.1rem;
-            font-weight: 600;
+            font-size: 0.95rem;
+            font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .input-group {
@@ -335,48 +336,48 @@
 
         .command-input {
             width: 100%;
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--bg);
             border: 1px solid var(--panel-border);
-            border-radius: 12px;
-            padding: 14px 16px;
+            border-radius: 6px;
+            padding: 10px 12px;
             font-family: 'JetBrains Mono', monospace;
             color: var(--text-primary);
-            font-size: 0.9rem;
-            padding-right: 50px;
+            font-size: 0.85rem;
+            padding-right: 44px;
         }
 
         .command-input:focus {
             outline: none;
-            border-color: var(--accent-teal);
+            border-color: var(--text-secondary);
         }
 
         .submit-btn {
             position: absolute;
-            right: 8px;
+            right: 6px;
             top: 50%;
             transform: translateY(-50%);
-            background: linear-gradient(135deg, var(--accent-teal), var(--accent-blue));
-            border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
             display: flex;
             justify-content: center;
             align-items: center;
-            color: #0b0d19;
+            color: var(--text-primary);
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: background-color 0.15s;
         }
 
         .submit-btn:hover {
-            opacity: 0.9;
+            background: var(--panel-border);
         }
 
         /* Task Queue list */
         .tasks-container {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
         }
 
         .tasks-header {
@@ -386,32 +387,32 @@
         }
 
         .tasks-header h3 {
-            font-size: 1.1rem;
-            font-weight: 600;
+            font-size: 0.95rem;
+            font-weight: 500;
         }
 
         .tasks-list {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             max-height: 250px;
             overflow-y: auto;
             padding-right: 5px;
         }
 
         .task-item {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 12px 15px;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 6px;
+            padding: 10px 12px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            transition: background-color 0.2s;
+            gap: 6px;
+            transition: background-color 0.15s;
         }
 
         .task-item:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--panel-border);
         }
 
         .task-top {
@@ -422,7 +423,7 @@
 
         .task-command {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -430,18 +431,18 @@
         }
 
         .task-status {
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            padding: 2px 6px;
+            border-radius: 4px;
             text-transform: uppercase;
         }
 
-        .task-status.pending { background: rgba(59, 130, 246, 0.15); color: var(--status-pending); }
-        .task-status.running { background: rgba(245, 158, 11, 0.15); color: var(--status-busy); }
-        .task-status.completed { background: rgba(16, 185, 129, 0.15); color: var(--status-idle); }
-        .task-status.failed { background: rgba(239, 68, 68, 0.15); color: var(--status-failed); }
-        .task-status.cancelled { background: rgba(255, 255, 255, 0.1); color: var(--text-secondary); }
+        .task-status.pending { background: var(--panel-border); color: var(--text-secondary); border: 1px solid var(--panel-border); }
+        .task-status.running { background: rgba(234, 179, 8, 0.1); color: var(--status-busy); border: 1px solid rgba(234, 179, 8, 0.2); }
+        .task-status.completed { background: rgba(34, 197, 94, 0.1); color: var(--status-idle); border: 1px solid rgba(34, 197, 94, 0.2); }
+        .task-status.failed { background: rgba(239, 68, 68, 0.1); color: var(--status-failed); border: 1px solid rgba(239, 68, 68, 0.2); }
+        .task-status.cancelled { background: var(--panel-border); color: var(--text-secondary); border: 1px solid var(--panel-border); }
 
         .task-details {
             font-size: 0.75rem;
@@ -453,46 +454,56 @@
 
         .task-actions {
             display: flex;
-            gap: 8px;
+            gap: 6px;
         }
 
         .action-btn {
-            background: transparent;
+            background: var(--panel-bg);
             border: 1px solid var(--panel-border);
-            padding: 6px 12px;
-            border-radius: 8px;
+            padding: 4px 8px;
+            border-radius: 4px;
             font-size: 0.75rem;
-            font-weight: 600;
+            font-weight: 500;
             color: var(--text-primary);
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 4px;
-            transition: all 0.2s;
+            transition: all 0.15s;
+        }
+
+        .action-btn:hover {
+            background: var(--panel-border);
+            border-color: var(--text-secondary);
         }
 
         .action-btn.run {
-            background: linear-gradient(135deg, var(--accent-teal), var(--accent-blue));
-            color: #0b0d19;
-            border: none;
+            background: var(--text-primary);
+            color: var(--bg);
+            border: 1px solid var(--text-primary);
+        }
+
+        .action-btn.run:hover {
+            background: #e4e4e7;
         }
 
         .action-btn.cancel {
-            border-color: rgba(239, 68, 68, 0.3);
+            border-color: var(--panel-border);
             color: var(--status-failed);
         }
 
         .action-btn.cancel:hover {
-            background: rgba(239, 68, 68, 0.1);
+            background: rgba(239, 68, 68, 0.05);
+            border-color: var(--status-failed);
         }
 
         .action-btn.logs {
-            border-color: rgba(0, 242, 254, 0.3);
-            color: var(--accent-teal);
+            border-color: var(--panel-border);
+            color: var(--text-primary);
         }
 
         .action-btn.logs:hover {
-            background: rgba(0, 242, 254, 0.1);
+            background: var(--panel-border);
         }
 
         /* Terminal Drawer Modal */
@@ -502,15 +513,14 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(11, 13, 25, 0.9);
-            backdrop-filter: blur(10px);
+            background: rgba(9, 9, 11, 0.8);
             z-index: 1000;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.25s ease;
         }
 
         #terminal-modal.open {
@@ -519,15 +529,15 @@
         }
 
         .terminal-content {
-            background: #060814;
+            background: var(--bg);
             border-top: 1px solid var(--panel-border);
             height: 80vh;
-            border-radius: 24px 24px 0 0;
+            border-radius: 8px 8px 0 0;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
             transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         #terminal-modal.open .terminal-content {
@@ -535,8 +545,8 @@
         }
 
         .terminal-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--panel-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -545,9 +555,9 @@
         .terminal-title {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 0.95rem;
-            font-weight: bold;
+            gap: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
         }
 
         .terminal-close {
@@ -557,15 +567,19 @@
             cursor: pointer;
         }
 
+        .terminal-close:hover {
+            color: var(--text-primary);
+        }
+
         .terminal-body {
             flex-grow: 1;
-            padding: 20px;
+            padding: 16px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             line-height: 1.4;
             overflow-y: auto;
-            color: #d1d5db;
-            background: #02040a;
+            color: #fafafa;
+            background: var(--bg);
             white-space: pre-wrap;
         }
 
@@ -574,7 +588,7 @@
             color: var(--text-secondary);
             text-align: center;
             padding: 20px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
     </style>
 </head>
@@ -601,12 +615,17 @@
     <div id="app">
         <header>
             <div class="brand">
-                <i data-lucide="zap" style="color: var(--accent-teal)"></i>
                 <h1>Antigravity Remote</h1>
             </div>
-            <div class="connection-status">
-                <div id="ws-status-dot" class="status-dot"></div>
-                <span id="ws-status-text">Disconnected</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="connection-status">
+                    <div id="ws-status-dot" class="status-dot"></div>
+                    <span id="ws-status-text">Disconnected</span>
+                </div>
+                <button id="shutdown-btn" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; color: rgb(239, 68, 68); padding: 4px 8px; font-size: 0.8rem; font-family: inherit; cursor: pointer; display: flex; align-items: center; gap: 4px; outline: none; transition: background 0.2s;" title="Close Tunnel">
+                    <i data-lucide="power" style="width: 14px; height: 14px;"></i>
+                    <span>Off Tunnel</span>
+                </button>
             </div>
         </header>
 
@@ -659,12 +678,12 @@
         </div>
 
         <!-- Model Selector & Limits -->
-        <div class="glass-panel" style="display: flex; flex-direction: column; gap: 15px;">
+        <div class="glass-panel" style="display: flex; flex-direction: column; gap: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 0;">
-                    <i data-lucide="cpu" style="width:18px;height:18px;color:var(--accent-teal)"></i> Model Control
+                <h3 style="font-size: 0.95rem; font-weight: 500; display: flex; align-items: center; gap: 6px; margin: 0;">
+                    <i data-lucide="cpu" style="width:16px;height:16px;color:var(--text-primary)"></i> Model Control
                 </h3>
-                <select id="model-select" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--text-primary); padding: 6px 12px; font-family: inherit; font-size: 0.85rem; outline: none; cursor: pointer;">
+                <select id="model-select" style="background: var(--bg); border: 1px solid var(--panel-border); border-radius: 6px; color: var(--text-primary); padding: 4px 8px; font-family: inherit; font-size: 0.8rem; outline: none; cursor: pointer;">
                     <option value="gemini-3-5-flash-medium">Gemini 3.5 Flash (Medium)</option>
                     <option value="gemini-3-5-flash-high">Gemini 3.5 Flash (High)</option>
                     <option value="gemini-3-5-flash-low">Gemini 3.5 Flash (Low)</option>
@@ -675,88 +694,50 @@
                     <option value="gpt-oss-120b">GPT-OSS 120B (Medium)</option>
                 </select>
             </div>
-            
-            <div style="font-size: 0.85rem; font-weight: 700; color: var(--accent-teal); margin-top: 5px;">Gemini Models</div>
-            <div style="display: flex; flex-direction: column; gap: 8px; padding-left: 10px;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
-                    <span style="color: var(--text-secondary);">Weekly Limit</span>
-                    <span id="gemini-weekly-label" style="font-weight: 600;">0%</span>
-                </div>
-                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 999px; overflow: hidden;">
-                    <div id="gemini-weekly-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent-teal), var(--accent-blue)); border-radius: 999px; transition: width 0.5s;"></div>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
-                    <span style="color: var(--text-secondary);">Five Hour Limit</span>
-                    <span id="gemini-5hr-label" style="font-weight: 600;">0%</span>
-                </div>
-                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 999px; overflow: hidden;">
-                    <div id="gemini-5hr-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent-blue), var(--accent-teal)); border-radius: 999px; transition: width 0.5s;"></div>
-                </div>
-            </div>
-
-            <div style="font-size: 0.85rem; font-weight: 700; color: var(--accent-purple); margin-top: 10px;">Claude & GPT Models</div>
-            <div style="display: flex; flex-direction: column; gap: 8px; padding-left: 10px;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
-                    <span style="color: var(--text-secondary);">Weekly Limit</span>
-                    <span id="claude-weekly-label" style="font-weight: 600;">0%</span>
-                </div>
-                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 999px; overflow: hidden;">
-                    <div id="claude-weekly-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue)); border-radius: 999px; transition: width 0.5s;"></div>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
-                    <span style="color: var(--text-secondary);">Five Hour Limit</span>
-                    <span id="claude-5hr-label" style="font-weight: 600;">0%</span>
-                </div>
-                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 999px; overflow: hidden;">
-                    <div id="claude-5hr-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple)); border-radius: 999px; transition: width 0.5s;"></div>
-                </div>
-            </div>
         </div>
 
         <!-- Agent Command Center (Prompt Box) -->
-        <div class="glass-panel" style="display: flex; flex-direction: column; gap: 15px;">
-            <h3 style="font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 0;">
-                <i data-lucide="message-square" style="width:18px;height:18px;color:var(--accent-teal)"></i> Agent Commands
+        <div class="glass-panel" style="display: flex; flex-direction: column; gap: 12px;">
+            <h3 style="font-size: 0.95rem; font-weight: 500; display: flex; align-items: center; gap: 6px; margin: 0;">
+                <i data-lucide="message-square" style="width:16px;height:16px;color:var(--text-primary)"></i> Agent Commands
             </h3>
             
-            <div id="agent-active-prompt-card" style="display: none; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px 15px; flex-direction: column; gap: 10px;">
+            <div id="agent-active-prompt-card" style="display: none; background: var(--bg); border: 1px solid var(--panel-border); border-radius: 6px; padding: 10px 12px; flex-direction: column; gap: 8px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 0.8rem; color: var(--text-secondary);">Active Remote Prompt</span>
+                    <span style="font-size: 0.75rem; color: var(--text-secondary);">Active Remote Prompt</span>
                     <span id="agent-prompt-status" class="task-status pending">Executing</span>
                 </div>
-                <div id="agent-prompt-text" style="font-family: inherit; font-size: 0.9rem; font-weight: 500; word-break: break-word;">Write a summary report...</div>
+                <div id="agent-prompt-text" style="font-family: inherit; font-size: 0.85rem; font-weight: 500; word-break: break-word;">Write a summary report...</div>
                 
-                <div id="agent-prompt-response-wrapper" style="display: none; flex-direction: column; gap: 6px;">
-                    <span style="font-size: 0.8rem; color: var(--text-secondary);">Response:</span>
-                    <div id="agent-prompt-response-box" style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; background: #02040a; padding: 10px; border-radius: 8px; max-height: 120px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; color: var(--text-primary);">Finished successfully.</div>
+                <div id="agent-prompt-response-wrapper" style="display: none; flex-direction: column; gap: 4px;">
+                    <span style="font-size: 0.75rem; color: var(--text-secondary);">Response:</span>
+                    <div id="agent-prompt-response-box" style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; background: var(--bg); padding: 8px; border-radius: 4px; max-height: 120px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; color: var(--text-primary);">Finished successfully.</div>
                 </div>
             </div>
 
             <!-- Agent Thought Stream / Execution Console -->
-            <div id="agent-logs-panel" style="display: flex; flex-direction: column; gap: 6px; background: rgba(0,0,0,0.4); border: 1px solid var(--panel-border); border-radius: 12px; padding: 12px 15px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
-                    <span style="color: var(--text-secondary); font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                        <i data-lucide="terminal" style="width:12px;height:12px;color:var(--accent-teal)"></i> Live Agent Output
+            <div id="agent-logs-panel" style="display: flex; flex-direction: column; gap: 6px; background: var(--bg); border: 1px solid var(--panel-border); border-radius: 6px; padding: 10px 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; border-bottom: 1px solid var(--panel-border); padding-bottom: 6px;">
+                    <span style="color: var(--text-secondary); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i data-lucide="terminal" style="width:12px;height:12px;color:var(--text-primary)"></i> Live Agent Output
                     </span>
-                    <span style="font-size: 0.75rem; color: var(--accent-teal);" id="agent-logs-active-badge">Idle</span>
+                    <span style="font-size: 0.75rem; color: var(--text-secondary);" id="agent-logs-active-badge">Idle</span>
                 </div>
-                <pre id="agent-logs-box" style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #a3b8cc; max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; margin: 0; padding-top: 6px; line-height: 1.4;">No output logs yet.</pre>
+                <pre id="agent-logs-box" style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-primary); max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; margin: 0; padding-top: 6px; line-height: 1.4;">No output logs yet.</pre>
             </div>
 
             <div class="input-group">
                 <input type="text" id="agent-prompt-input" class="command-input" placeholder="Ask Antigravity to perform a task...">
-                <button id="send-prompt-btn" class="submit-btn"><i data-lucide="send" style="width:16px;height:16px;"></i></button>
+                <button id="send-prompt-btn" class="submit-btn"><i data-lucide="send" style="width:14px;height:14px;"></i></button>
             </div>
         </div>
 
         <!-- Schedule task -->
         <div class="glass-panel schedule-form">
-            <h3><i data-lucide="plus-circle" style="width:18px;height:18px;color:var(--accent-teal)"></i> Schedule Task</h3>
+            <h3><i data-lucide="plus-circle" style="width:16px;height:16px;color:var(--text-primary)"></i> Schedule Task</h3>
             <div class="input-group">
                 <input type="text" id="cmd-input" class="command-input" placeholder="e.g., pytest tests/test_server.py">
-                <button id="schedule-btn" class="submit-btn"><i data-lucide="play" style="width:16px;height:16px;"></i></button>
+                <button id="schedule-btn" class="submit-btn"><i data-lucide="play" style="width:14px;height:14px;"></i></button>
             </div>
         </div>
 
@@ -764,11 +745,11 @@
         <div class="glass-panel tasks-container">
             <div class="tasks-header">
                 <h3>Task Queue</h3>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <button id="summary-btn" class="action-btn" style="border-color: rgba(155, 81, 224, 0.4); color: var(--accent-purple); padding: 4px 10px; display: flex; align-items: center; gap: 4px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button id="summary-btn" class="action-btn" style="border-color: var(--panel-border); color: var(--text-primary); padding: 4px 8px; display: flex; align-items: center; gap: 4px;">
                         <i data-lucide="file-text" style="width:12px;height:12px"></i> Summary
                     </button>
-                    <span id="tasks-count" style="font-size:0.8rem;color:var(--text-secondary)">0 tasks</span>
+                    <span id="tasks-count" style="font-size:0.75rem;color:var(--text-secondary)">0 tasks</span>
                 </div>
             </div>
             <div id="tasks-list" class="tasks-list">
@@ -778,28 +759,28 @@
     </div>
 
     <!-- Interactive Remote Approval Modal -->
-    <div id="approval-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(11, 13, 25, 0.95); backdrop-filter: blur(15px); z-index: 2000; display: none; justify-content: center; align-items: center; padding: 20px;">
-        <div class="auth-card" style="max-width: 450px; text-align: left; padding: 30px; gap: 15px;">
-            <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--panel-border); padding-bottom: 12px;">
-                <i data-lucide="shield-alert" style="width: 24px; height: 24px; color: var(--accent-teal);"></i>
-                <h2 style="font-size: 1.3rem; font-weight: 800; margin: 0;">Action Approval Required</h2>
+    <div id="approval-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(9, 9, 11, 0.8); z-index: 2000; display: none; justify-content: center; align-items: center; padding: 20px;">
+        <div class="auth-card" style="max-width: 450px; text-align: left; padding: 24px; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--panel-border); padding-bottom: 10px;">
+                <i data-lucide="shield-alert" style="width: 20px; height: 20px; color: var(--text-primary);"></i>
+                <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0;">Action Approval Required</h2>
             </div>
             
-            <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0;">The Antigravity Agent is requesting permission to execute the following action on your local PC:</p>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">The Antigravity Agent is requesting permission to execute the following action on your local PC:</p>
             
-            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 15px;">
-                <div style="display: flex; flex-direction: column; gap: 6px;">
-                    <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--accent-teal); font-weight: 600; letter-spacing: 0.5px;" id="approval-action-type">Command</span>
-                    <pre style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #f3f4f6; white-space: pre-wrap; word-break: break-all; margin: 0;" id="approval-action-target">npm run build</pre>
+            <div style="background: var(--bg); border: 1px solid var(--panel-border); border-radius: 6px; padding: 12px;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; letter-spacing: 0.05em;" id="approval-action-type">Command</span>
+                    <pre style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-primary); white-space: pre-wrap; word-break: break-all; margin: 0;" id="approval-action-target">npm run build</pre>
                 </div>
             </div>
             
-            <div style="display: grid; grid-template-cols: 1fr 1fr; gap: 15px; margin-top: 10px; width: 100%;">
-                <button id="approve-yes-btn" class="action-btn run" style="justify-content: center; padding: 12px; font-size: 0.95rem; border-radius: 12px;">
-                    <i data-lucide="check" style="width: 18px; height: 18px;"></i> Approve (Yes)
+            <div style="display: grid; grid-template-cols: 1fr 1fr; gap: 10px; margin-top: 8px; width: 100%;">
+                <button id="approve-yes-btn" class="action-btn run" style="justify-content: center; padding: 10px; font-size: 0.85rem; border-radius: 6px;">
+                    <i data-lucide="check" style="width: 14px; height: 14px;"></i> Approve (Yes)
                 </button>
-                <button id="approve-no-btn" class="action-btn cancel" style="justify-content: center; padding: 12px; font-size: 0.95rem; border-radius: 12px;">
-                    <i data-lucide="x" style="width: 18px; height: 18px;"></i> Reject (No)
+                <button id="approve-no-btn" class="action-btn cancel" style="justify-content: center; padding: 10px; font-size: 0.85rem; border-radius: 6px;">
+                    <i data-lucide="x" style="width: 14px; height: 14px;"></i> Reject (No)
                 </button>
             </div>
         </div>
@@ -810,7 +791,7 @@
         <div class="terminal-content">
             <div class="terminal-header">
                 <div class="terminal-title">
-                    <i data-lucide="terminal" style="width:18px;height:18px;color:var(--accent-teal)"></i>
+                    <i data-lucide="terminal" style="width:18px;height:18px;color:var(--text-primary)"></i>
                     <span id="terminal-task-cmd">echo "Hello World"</span>
                 </div>
                 <button id="terminal-close-btn" class="terminal-close">
@@ -852,14 +833,6 @@
         const summaryBtn = document.getElementById('summary-btn');
 
         const modelSelect = document.getElementById('model-select');
-        const geminiWeeklyLabel = document.getElementById('gemini-weekly-label');
-        const geminiWeeklyBar = document.getElementById('gemini-weekly-bar');
-        const gemini5hrLabel = document.getElementById('gemini-5hr-label');
-        const gemini5hrBar = document.getElementById('gemini-5hr-bar');
-        const claudeWeeklyLabel = document.getElementById('claude-weekly-label');
-        const claudeWeeklyBar = document.getElementById('claude-weekly-bar');
-        const claude5hrLabel = document.getElementById('claude-5hr-label');
-        const claude5hrBar = document.getElementById('claude-5hr-bar');
 
         const agentActivePromptCard = document.getElementById('agent-active-prompt-card');
         const agentPromptStatus = document.getElementById('agent-prompt-status');
@@ -906,10 +879,30 @@
         });
 
         // Initialize Authentication Status
-        if (token) {
-            authOverlay.style.display = 'none';
-            connectWS();
+        async function validateTokenAndConnect() {
+            if (token) {
+                try {
+                    const response = await fetch('/api/status', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (response.ok) {
+                        authOverlay.style.display = 'none';
+                        connectWS();
+                    } else {
+                        handleUnauthorized();
+                    }
+                } catch (err) {
+                    console.error("Token validation error:", err);
+                    // If server is offline/unreachable, we still try to connect
+                    authOverlay.style.display = 'none';
+                    connectWS();
+                }
+            } else {
+                handleUnauthorized();
+            }
         }
+
+        validateTokenAndConnect();
 
         async function tryLogin(pin) {
             try {
@@ -1007,7 +1000,7 @@
 
             if (data.agent_status === 'busy' || data.agent_status === 'working') {
                 agentLogsActiveBadge.textContent = "Executing...";
-                agentLogsActiveBadge.style.color = "var(--accent-teal)";
+                agentLogsActiveBadge.style.color = "var(--text-primary)";
             } else {
                 agentLogsActiveBadge.textContent = "Idle";
                 agentLogsActiveBadge.style.color = "var(--text-secondary)";
@@ -1023,21 +1016,6 @@
             // 1. Model selection
             if (document.activeElement !== modelSelect) {
                 modelSelect.value = info.current_model;
-            }
-            
-            // 2. Quotas (Gemini and Claude limits)
-            if (info.ide_limits) {
-                const gemini = info.ide_limits.gemini;
-                geminiWeeklyLabel.textContent = `${gemini.weekly_used_pct}%`;
-                geminiWeeklyBar.style.width = `${gemini.weekly_used_pct}%`;
-                gemini5hrLabel.textContent = `${gemini.five_hour_used_pct}%`;
-                gemini5hrBar.style.width = `${gemini.five_hour_used_pct}%`;
-
-                const claude = info.ide_limits.claude;
-                claudeWeeklyLabel.textContent = `${claude.weekly_used_pct}%`;
-                claudeWeeklyBar.style.width = `${claude.weekly_used_pct}%`;
-                claude5hrLabel.textContent = `${claude.five_hour_used_pct}%`;
-                claude5hrBar.style.width = `${claude.five_hour_used_pct}%`;
             }
 
             // 3. Remote Prompt Chat Box status
@@ -1323,6 +1301,32 @@
                 console.error(err);
             }
         });
+
+        // Close Tunnel
+        const shutdownBtn = document.getElementById('shutdown-btn');
+        if (shutdownBtn) {
+            shutdownBtn.addEventListener('click', async () => {
+                if (!confirm("Are you sure you want to turn off the localtunnel?")) {
+                    return;
+                }
+                try {
+                    const res = await fetch('/api/shutdown', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    if (res.ok) {
+                        alert("Localtunnel shutdown command sent.");
+                    } else {
+                        alert("Failed to close localtunnel");
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert("Failed to connect to server");
+                }
+            });
+        }
 
         // Send Prompt to Agent
         sendPromptBtn.addEventListener('click', async () => {

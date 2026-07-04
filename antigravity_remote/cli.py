@@ -47,8 +47,8 @@ def cmd_init(args):
     generate_config(force=args.force)
 
 def cmd_start(args):
-    # Ensure config exists
-    config = get_config()
+    # Force a new config with a fresh PIN every time the server starts
+    config = generate_config(force=True)
     
     print(f"Starting Antigravity Remote Monitor Server...")
     print(f"Host: {args.host}")

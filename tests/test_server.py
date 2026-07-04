@@ -63,7 +63,7 @@ def test_unauthorized_endpoints():
             response = client.get(endpoint)
         else:
             response = client.post(endpoint, json={})
-        assert response.status_code == 403  # HTTPBearer returns 403 on missing credentials
+        assert response.status_code in (401, 403)  # HTTPBearer returns 403 or 401 on missing credentials
 
 def test_authorized_status():
     # Login first

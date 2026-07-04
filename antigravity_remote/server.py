@@ -62,60 +62,33 @@ class ResponseRequest(BaseModel):
     output: str
 
 # settings paths
-KIRO_SETTINGS_PATH = os.path.expandvars(r"%APPDATA%\Kiro\User\settings.json")
 ANTIGRAVITY_SETTINGS_PATH = os.path.expandvars(r"%APPDATA%\Antigravity IDE\User\settings.json")
 
-def get_kiro_model() -> str:
-    # Try Antigravity IDE settings first
+def get_antigravity_model() -> str:
     if os.path.exists(ANTIGRAVITY_SETTINGS_PATH):
         try:
             with open(ANTIGRAVITY_SETTINGS_PATH, "r") as f:
                 settings = json.load(f)
-                val = settings.get("antigravity.modelSelection") or settings.get("antigravity.model") or settings.get("kiroAgent.modelSelection")
+                val = settings.get("antigravity.modelSelection") or settings.get("antigravity.model")
                 if val:
                     return val
         except Exception:
             pass
-            
-    # Try Kiro settings second
-    if os.path.exists(KIRO_SETTINGS_PATH):
-        try:
-            with open(KIRO_SETTINGS_PATH, "r") as f:
-                settings = json.load(f)
-                return settings.get("kiroAgent.modelSelection", "gemini-3-5-flash-high")
-        except Exception:
-            pass
     return "gemini-3-5-flash-high"
 
-def set_kiro_model(model: str):
+def set_antigravity_model(model: str):
     success = False
-    
-    # Update Antigravity IDE settings
     if os.path.exists(ANTIGRAVITY_SETTINGS_PATH):
         try:
             with open(ANTIGRAVITY_SETTINGS_PATH, "r") as f:
                 settings = json.load(f)
             settings["antigravity.modelSelection"] = model
             settings["antigravity.model"] = model
-            settings["kiroAgent.modelSelection"] = model
             with open(ANTIGRAVITY_SETTINGS_PATH, "w") as f:
                 json.dump(settings, f, indent=4)
             success = True
         except Exception:
             pass
-            
-    # Update Kiro settings
-    if os.path.exists(KIRO_SETTINGS_PATH):
-        try:
-            with open(KIRO_SETTINGS_PATH, "r") as f:
-                settings = json.load(f)
-            settings["kiroAgent.modelSelection"] = model
-            with open(KIRO_SETTINGS_PATH, "w") as f:
-                json.dump(settings, f, indent=4)
-            success = True
-        except Exception:
-            pass
-            
     return success
 
 # In-memory limits database (matching Antigravity IDE models)
@@ -130,17 +103,39 @@ MODEL_LIMITS = {
     "gpt-oss-120b": {"name": "GPT-OSS 120B (Medium)", "category": "claude"}
 }
 
-# Real-time limits percentages matching screenshot
-IDE_LIMITS = {
-    "gemini": {
-        "weekly_used_pct": 8,
-        "five_hour_used_pct": 67
-    },
-    "claude": {
-        "weekly_used_pct": 8,
-        "five_hour_used_pct": 100
+def get_system_limits():
+    default_limits = {
+        "gemini": {
+            "weekly_used_pct": 100,
+            "five_hour_used_pct": 76
+        },
+        "claude": {
+            "weekly_used_pct": 67,
+            "five_hour_used_pct": 100
+        }
     }
-}
+    limits_file = "ide_limits.json"
+    if not os.path.exists(limits_file):
+        try:
+            with open(limits_file, "w") as f:
+                json.dump(default_limits, f, indent=4)
+        except Exception:
+            pass
+        return default_limits
+        
+    try:
+        with open(limits_file, "r") as f:
+            data = json.load(f)
+            for cat in ["gemini", "claude"]:
+                if cat not in data:
+                    data[cat] = default_limits[cat]
+                else:
+                    for key in ["weekly_used_pct", "five_hour_used_pct"]:
+                        if key not in data[cat]:
+                            data[cat][key] = default_limits[cat][key]
+            return data
+    except Exception:
+        return default_limits
 
 # State managers
 REMOTE_PROMPT = {"id": "", "prompt": "", "status": "idle", "response": ""}
@@ -351,12 +346,12 @@ def get_file_content(path: str, token: str = Depends(verify_token)):
 
 @app.get("/api/agent/status")
 def get_agent_status(token: str = Depends(verify_token)):
-    current_model = get_kiro_model()
+    current_model = get_antigravity_model()
     return {
         "current_model": current_model,
         "model_details": MODEL_LIMITS.get(current_model, {"name": current_model, "category": "gemini"}),
         "all_models": MODEL_LIMITS,
-        "ide_limits": IDE_LIMITS,
+        "ide_limits": get_system_limits(),
         "remote_prompt": REMOTE_PROMPT,
         "remote_approval": REMOTE_APPROVAL
     }
@@ -365,10 +360,26 @@ def get_agent_status(token: str = Depends(verify_token)):
 def switch_model_endpoint(req: ModelRequest, token: str = Depends(verify_token)):
     if req.model not in MODEL_LIMITS:
         raise HTTPException(status_code=400, detail="Invalid model selection")
-    success = set_kiro_model(req.model)
+    success = set_antigravity_model(req.model)
     if not success:
-        raise HTTPException(status_code=500, detail="Failed to write Kiro settings")
+        raise HTTPException(status_code=500, detail="Failed to write Antigravity settings")
     return {"status": "success", "model": req.model}
+
+def kill_tunnel():
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            cmdline = proc.info.get('cmdline') or []
+            cmd_str = " ".join(cmdline).lower()
+            if 'localtunnel' in cmd_str or 'lt' in cmd_str:
+                proc.terminate()
+        except Exception:
+            pass
+
+@app.post("/api/shutdown")
+def shutdown_endpoint(token: str = Depends(verify_token)):
+    loop = asyncio.get_event_loop()
+    loop.call_later(0.5, kill_tunnel)
+    return {"status": "success", "message": "Tunnel shutting down..."}
 
 @app.post("/api/agent/prompt")
 def post_remote_prompt(req: PromptRequest, token: str = Depends(verify_token)):
@@ -376,12 +387,17 @@ def post_remote_prompt(req: PromptRequest, token: str = Depends(verify_token)):
     if REMOTE_PROMPT["status"] == "pending" or REMOTE_PROMPT["status"] == "executing":
         raise HTTPException(status_code=400, detail="Agent is already busy with a pending task")
     
-    current_model = get_kiro_model()
+    current_model = get_antigravity_model()
     category = MODEL_LIMITS.get(current_model, {}).get("category", "gemini")
-    if category in IDE_LIMITS:
-        # Increment slightly on use to make UI reactive
-        IDE_LIMITS[category]["five_hour_used_pct"] = min(IDE_LIMITS[category]["five_hour_used_pct"] + 2, 100)
-        IDE_LIMITS[category]["weekly_used_pct"] = min(IDE_LIMITS[category]["weekly_used_pct"] + 1, 100)
+    limits = get_system_limits()
+    if category in limits:
+        limits[category]["five_hour_used_pct"] = min(limits[category]["five_hour_used_pct"] + 2, 100)
+        limits[category]["weekly_used_pct"] = min(limits[category]["weekly_used_pct"] + 1, 100)
+        try:
+            with open("ide_limits.json", "w") as f:
+                json.dump(limits, f, indent=4)
+        except Exception:
+            pass
         
     REMOTE_PROMPT = {
         "id": str(uuid.uuid4())[:8],
@@ -458,12 +474,12 @@ async def ws_status(websocket: WebSocket, token: str = Query(...)):
             status_data = get_system_status()
             status_data["tasks"] = [t.to_dict() for t in runner.list_tasks()]
             
-            current_model = get_kiro_model()
+            current_model = get_antigravity_model()
             status_data["agent_info"] = {
                 "current_model": current_model,
                 "model_details": MODEL_LIMITS.get(current_model, {"name": current_model, "category": "gemini"}),
                 "all_models": MODEL_LIMITS,
-                "ide_limits": IDE_LIMITS,
+                "ide_limits": get_system_limits(),
                 "remote_prompt": REMOTE_PROMPT,
                 "remote_approval": REMOTE_APPROVAL
             }

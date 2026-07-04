@@ -16,9 +16,9 @@
     ╚═╝     ╚═╝ ╚═════╝ ╚═════╝ ╚═╝╚══════╝╚══════╝
 ```
 
-**Control your AI coding agent from your phone.**
+**Control your Antigravity IDE desktop coding assistant from your phone.**
 
-Monitor tasks, approve commands, switch models — remotely.
+Monitor agent tasks, approve commands, and switch active models — remotely.
 
 [![PyPI](https://img.shields.io/pypi/v/antigravity-mobile)](https://pypi.org/project/antigravity-mobile/)
 [![Python](https://img.shields.io/pypi/pyversions/antigravity-mobile)](https://pypi.org/project/antigravity-mobile/)
@@ -29,12 +29,10 @@ Monitor tasks, approve commands, switch models — remotely.
 ## ✨ Features
 
 - 📱 **Mobile Dashboard** — Responsive, glassmorphic dark-themed UI with real-time system stats (CPU, RAM, Disk)
-- 🤖 **Model Switcher** — Change active AI models (Gemini 3.5 Flash, Claude 4.5 Sonnet, GPT-OSS) from your phone
-- 📊 **Quota Tracking** — Live progress bars for Gemini & Claude/GPT weekly and 5-hour request limits
-- 💻 **Live Agent Console** — Stream step-by-step agent thoughts and logs to your phone in real-time
-- 🛡️ **Mobile Approvals** — Approve or reject terminal commands via interactive popups on your phone
-- 🔌 **Offline Fallback** — Automatically falls back to PC desktop prompts if the server is offline
-- ⚡ **CLI Run Wrapper** — Execute commands silently on your PC and stream output to your phone
+- 🤖 **Model Switcher** — Switch the active AI model (Gemini, Claude, GPT) in your Antigravity IDE from your phone
+- 💻 **Live Agent Console** — Stream step-by-step IDE agent execution thoughts and logs to your phone in real-time
+- 🛡️ **Mobile Approvals** — Approve or reject terminal commands requested by your IDE agent directly from your phone screen
+- 🔌 **Offline Fallback** — Automatically falls back to local PC desktop prompts if the mobile server is offline
 - 🎛️ **Remote Toggle** — Turn remote mode on/off to save tokens when coding locally
 
 ---
@@ -73,7 +71,7 @@ This will give you a public URL like `https://xyz.loca.lt`.
 ### Step 4: Open on Your Phone
 1. Open the localtunnel URL on your mobile browser
 2. Enter your access PIN (shown during setup)
-3. You're in! Start monitoring and controlling your agent remotely 🎉
+3. You're in! Start monitoring and controlling your IDE agent remotely 🎉
 
 ### Step 5: Instruct the AI Agent
 To tell your Antigravity IDE agent to start outputting logs and routing command confirmations to your phone, copy and paste this prompt into your **Antigravity IDE Chat Panel**:
@@ -91,7 +89,6 @@ Please read the remote monitoring rules in .agents/AGENTS.md and follow them. I 
 | `antigravity-mobile setup` | Interactive first-time setup wizard |
 | `antigravity-mobile init` | Generate config & security PIN |
 | `antigravity-mobile start` | Start the FastAPI dashboard server |
-| `antigravity-mobile run <cmd>` | Execute a command & stream logs to phone |
 | `antigravity-mobile remote --on` | Enable remote monitoring mode |
 | `antigravity-mobile remote --off` | Disable remote monitoring (saves tokens) |
 | `antigravity-mobile remote --status` | Check if remote mode is on or off |
@@ -99,12 +96,6 @@ Please read the remote monitoring rules in .agents/AGENTS.md and follow them. I 
 ---
 
 ## 💡 Usage Examples
-
-### Run a command and monitor it from your phone
-```bash
-antigravity-mobile run "pytest tests/"
-```
-The command runs silently on your PC. Output streams live to your phone's console.
 
 ### Turn off remote mode when coding locally
 ```bash
@@ -158,7 +149,7 @@ To enable silent command execution on your PC (so approvals go to your phone ins
 ```
 antigravity-mobile/
 ├── antigravity_remote/
-│   ├── cli.py              # CLI with banner, setup wizard, and commands
+│   ├── cli.py              # CLI with welcome screen, setup wizard, and server commands
 │   ├── server.py           # FastAPI server with WebSocket dashboard
 │   ├── agent_daemon.py     # Background polling daemon for remote commands
 │   ├── agent_approve.py    # Mobile approval helper with offline fallback
