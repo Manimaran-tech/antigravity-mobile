@@ -182,7 +182,7 @@ def cmd_remote(args):
     else:
         print(f"Remote monitoring and control mode is currently: {'ENABLED' if enabled else 'DISABLED'}")
 
-VERSION = "0.2.9"
+VERSION = "0.2.10"
 
 # ANSI color codes
 BLUE = "\033[38;5;39m"
@@ -400,7 +400,11 @@ def main():
     if sys.platform == "win32":
         os.system("")  # Enables ANSI escape sequences in Windows terminal
         import io
-        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+        if hasattr(sys.stdout, 'buffer') and sys.stdout.buffer is not None:
+            try:
+                sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+            except Exception:
+                pass
 
     parser = argparse.ArgumentParser(
         description="Antigravity Mobile — Control your AI coding agent from your phone.",
