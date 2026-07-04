@@ -922,11 +922,16 @@
                 console.error("Status Socket Error");
             };
 
-            statusSocket.onclose = () => {
+            statusSocket.onclose = (event) => {
                 wsStatusDot.classList.remove('connected');
                 wsStatusText.textContent = 'Disconnected';
-                // Attempt reconnection after 3 seconds
-                setTimeout(connectWS, 3000);
+                if (event.code === 1008) {
+                    console.log("WebSocket status connection rejected (Unauthorized). Logging out.");
+                    handleUnauthorized();
+                } else {
+                    // Attempt reconnection after 3 seconds
+                    setTimeout(connectWS, 3000);
+                }
             };
         }
 
@@ -1183,8 +1188,13 @@
                 terminalBody.textContent += '\n[WebSocket logs connection error]\n';
             };
 
-            logsSocket.onclose = () => {
-                terminalBody.textContent += '\n[Stream closed]\n';
+            logsSocket.onclose = (event) => {
+                if (event.code === 1008) {
+                    console.log("WebSocket logs connection rejected (Unauthorized). Logging out.");
+                    handleUnauthorized();
+                } else {
+                    terminalBody.textContent += '\n[Stream closed]\n';
+                }
             };
         }
 
