@@ -671,7 +671,12 @@
         <div class="glass-panel tasks-container">
             <div class="tasks-header">
                 <h3>Task Queue</h3>
-                <span id="tasks-count" style="font-size:0.8rem;color:var(--text-secondary)">0 tasks</span>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button id="summary-btn" class="action-btn" style="border-color: rgba(155, 81, 224, 0.4); color: var(--accent-purple); padding: 4px 10px; display: flex; align-items: center; gap: 4px;">
+                        <i data-lucide="file-text" style="width:12px;height:12px"></i> Summary
+                    </button>
+                    <span id="tasks-count" style="font-size:0.8rem;color:var(--text-secondary)">0 tasks</span>
+                </div>
             </div>
             <div id="tasks-list" class="tasks-list">
                 <div class="empty-text">No scheduled tasks yet</div>
@@ -723,6 +728,7 @@
         const terminalTaskCmd = document.getElementById('terminal-task-cmd');
         const terminalBody = document.getElementById('terminal-body');
         const terminalCloseBtn = document.getElementById('terminal-close-btn');
+        const summaryBtn = document.getElementById('summary-btn');
 
         // Application State
         let token = localStorage.getItem('remote_auth_token');
@@ -1029,6 +1035,39 @@
             if (logsSocket) {
                 logsSocket.close();
                 logsSocket = null;
+            }
+        });
+
+        // Generate and View Task Summary
+        summaryBtn.addEventListener('click', async () => {
+            try {
+                // 1. Request server to generate summary.md
+                const genRes = await fetch('/api/tasks/summary', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (genRes.status === 401) {
+                    handleUnauthorized();
+                    return;
+                }
+
+                if (genRes.ok) {
+                    const data = await genRes.json();
+                    
+                    // 2. Display summary.md content in the terminal overlay drawer
+                    terminalTaskCmd.textContent = "summary.md (Generated Workspace File)";
+                    terminalBody.textContent = data.content;
+                    terminalModal.classList.add('open');
+                    
+                    // Scroll to top
+                    terminalBody.scrollTop = 0;
+                } else {
+                    alert('Failed to generate task summary');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Failed to connect to server');
             }
         });
 

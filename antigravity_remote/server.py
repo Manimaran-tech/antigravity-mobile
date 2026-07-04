@@ -158,6 +158,48 @@ def cancel_endpoint(task_id: str, token: str = Depends(verify_token)):
 def logs_endpoint(task_id: str, token: str = Depends(verify_token)):
     return {"logs": runner.get_task_logs(task_id)}
 
+@app.post("/api/tasks/summary")
+def generate_summary(token: str = Depends(verify_token)):
+    tasks = runner.list_tasks()
+    tasks.sort(key=lambda x: x.created_at)
+    
+    md = "# Antigravity Task Execution Summary\n\n"
+    md += f"Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+    md += "| ID | Command | Status | Created At | Exit Code |\n"
+    md += "| --- | --- | --- | --- | --- |\n"
+    
+    for t in tasks:
+        exit_code = t.exit_code if t.exit_code is not None else "-"
+        try:
+            created = datetime.datetime.fromisoformat(t.created_at).strftime('%H:%M:%S')
+        except Exception:
+            created = t.created_at
+        md += f"| `{t.id}` | `{t.command}` | **{t.status.upper()}** | {created} | `{exit_code}` |\n"
+        
+    try:
+        summary_path = os.path.abspath("summary.md")
+        with open(summary_path, "w", encoding="utf-8") as f:
+            f.write(md)
+        return {"status": "success", "file": "summary.md", "content": md}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to write summary.md: {str(e)}")
+
+@app.get("/api/file")
+def get_file_content(path: str, token: str = Depends(verify_token)):
+    abs_base = os.path.abspath(".")
+    abs_path = os.path.abspath(path)
+    if not abs_path.startswith(abs_base):
+        raise HTTPException(status_code=403, detail="Access denied: outside workspace boundary")
+    
+    if not os.path.exists(abs_path) or os.path.isdir(abs_path):
+        raise HTTPException(status_code=404, detail="File not found")
+        
+    try:
+        with open(abs_path, "r", encoding="utf-8", errors="ignore") as f:
+            return {"path": path, "content": f.read()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading file: {str(e)}")
+
 # WebSockets
 @app.websocket("/ws/status")
 async def ws_status(websocket: WebSocket, token: str = Query(...)):
