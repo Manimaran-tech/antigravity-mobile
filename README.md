@@ -45,6 +45,13 @@ pip install antigravity-mobile
 
 That's it! Now run `antigravity-mobile` to see the welcome screen.
 
+### 🗑️ Uninstallation
+
+If you wish to completely remove the tool, you can uninstall it via pip:
+```bash
+pip uninstall antigravity-mobile -y
+```
+
 ---
 
 ## 📋 Quick Start
