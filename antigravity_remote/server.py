@@ -61,10 +61,23 @@ class ResponseRequest(BaseModel):
     status: str
     output: str
 
-# Kiro settings paths
+# settings paths
 KIRO_SETTINGS_PATH = os.path.expandvars(r"%APPDATA%\Kiro\User\settings.json")
+ANTIGRAVITY_SETTINGS_PATH = os.path.expandvars(r"%APPDATA%\Antigravity IDE\User\settings.json")
 
 def get_kiro_model() -> str:
+    # Try Antigravity IDE settings first
+    if os.path.exists(ANTIGRAVITY_SETTINGS_PATH):
+        try:
+            with open(ANTIGRAVITY_SETTINGS_PATH, "r") as f:
+                settings = json.load(f)
+                val = settings.get("antigravity.modelSelection") or settings.get("antigravity.model") or settings.get("kiroAgent.modelSelection")
+                if val:
+                    return val
+        except Exception:
+            pass
+            
+    # Try Kiro settings second
     if os.path.exists(KIRO_SETTINGS_PATH):
         try:
             with open(KIRO_SETTINGS_PATH, "r") as f:
@@ -75,6 +88,23 @@ def get_kiro_model() -> str:
     return "gemini-3-5-flash-high"
 
 def set_kiro_model(model: str):
+    success = False
+    
+    # Update Antigravity IDE settings
+    if os.path.exists(ANTIGRAVITY_SETTINGS_PATH):
+        try:
+            with open(ANTIGRAVITY_SETTINGS_PATH, "r") as f:
+                settings = json.load(f)
+            settings["antigravity.modelSelection"] = model
+            settings["antigravity.model"] = model
+            settings["kiroAgent.modelSelection"] = model
+            with open(ANTIGRAVITY_SETTINGS_PATH, "w") as f:
+                json.dump(settings, f, indent=4)
+            success = True
+        except Exception:
+            pass
+            
+    # Update Kiro settings
     if os.path.exists(KIRO_SETTINGS_PATH):
         try:
             with open(KIRO_SETTINGS_PATH, "r") as f:
@@ -82,10 +112,11 @@ def set_kiro_model(model: str):
             settings["kiroAgent.modelSelection"] = model
             with open(KIRO_SETTINGS_PATH, "w") as f:
                 json.dump(settings, f, indent=4)
-            return True
+            success = True
         except Exception:
             pass
-    return False
+            
+    return success
 
 # In-memory limits database (matching Antigravity IDE models)
 MODEL_LIMITS = {
