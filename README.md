@@ -1,6 +1,6 @@
-# Antigravity Remote Monitor & Task Scheduler
+# Antigravity Mobile Monitor & Task Scheduler
 
-`antigravity-remote` is a lightweight command-line tool and FastAPI-powered web application designed for the **Google Antigravity IDE and CLI**. It enables you to securely monitor your development workflow, switch AI models, track usage quotas, view real-time log outputs, and confirm or reject commands directly from your mobile device while you are away from your workstation.
+`antigravity-mobile` is a lightweight command-line tool and FastAPI-powered web application designed for the **Google Antigravity IDE and CLI**. It enables you to securely monitor your development workflow, switch AI models, track usage quotas, view real-time log outputs, and confirm or reject commands directly from your mobile device while you are away from your workstation.
 
 ---
 
@@ -30,7 +30,7 @@ pip install -e .
 ```
 
 ### Packaging & Publishing to PyPI
-To build and publish the package so others can install it via `pip install antigravity-remote`:
+To build and publish the package so others can install it via `pip install antigravity-mobile`:
 1. **Install Build Tools**:
    ```bash
    pip install --upgrade build twine
@@ -42,7 +42,7 @@ To build and publish the package so others can install it via `pip install antig
    *(This generates `.whl` and `.tar.gz` files in the `dist/` directory.)*
 3. **Upload to PyPI**:
    ```bash
-   python -m twine upload dist/*
+   python -m twine upload dist/antigravity_mobile-*
    ```
 
 ---
@@ -67,7 +67,7 @@ To enable silent executions on your PC and redirect confirmations to your phone,
 
 ### 1. Initialize Configuration
 ```bash
-antigravity-remote init
+antigravity-mobile init
 ```
 Generates a randomized access PIN for mobile login (stored in `config.json`).
 
@@ -75,7 +75,7 @@ Generates a randomized access PIN for mobile login (stored in `config.json`).
 Start the server and expose it using localtunnel:
 ```bash
 # Start FastAPI server on all interfaces
-antigravity-remote start --host 0.0.0.0 --port 8000
+antigravity-mobile start --host 0.0.0.0 --port 8000
 
 # Expose it to the internet so you can access it on your phone
 npx localtunnel --port 8000
@@ -85,20 +85,20 @@ Open the localtunnel URL on your mobile phone browser and enter your access PIN!
 ### 3. CLI Command Execution
 To execute commands on your PC, log them to the server, and monitor them live on your phone with **no desktop prompts**:
 ```bash
-antigravity-remote run "pytest tests/test_server.py"
+antigravity-mobile run "pytest tests/test_server.py"
 ```
 
 ### 4. Remote Mode Toggle
 Turn remote monitoring and control on/off:
 ```bash
 # Enable remote mode (wakes up daemon, streams logs)
-antigravity-remote remote --on
+antigravity-mobile remote --on
 
 # Disable remote mode (puts daemon to sleep, stops logging)
-antigravity-remote remote --off
+antigravity-mobile remote --off
 
 # Check status
-antigravity-remote remote --status
+antigravity-mobile remote --status
 ```
 
 ---
