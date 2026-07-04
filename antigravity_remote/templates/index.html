@@ -962,8 +962,8 @@
                     console.log("WebSocket status connection rejected (Unauthorized). Logging out.");
                     handleUnauthorized();
                 } else {
-                    // Attempt reconnection after 3 seconds
-                    setTimeout(connectWS, 3000);
+                    // Attempt reconnection after 3 seconds with token validation
+                    setTimeout(validateTokenAndConnect, 3000);
                 }
             };
         }

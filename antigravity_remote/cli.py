@@ -182,7 +182,7 @@ def cmd_remote(args):
     else:
         print(f"Remote monitoring and control mode is currently: {'ENABLED' if enabled else 'DISABLED'}")
 
-VERSION = "0.2.6"
+VERSION = "0.2.7"
 
 # ANSI color codes
 BLUE = "\033[38;5;39m"
@@ -261,6 +261,51 @@ def print_quickstart():
     print(guide)
 
 
+def configure_windows_path():
+    """Automatically add python scripts folder containing antigravity-mobile to user's system PATH on Windows."""
+    if sys.platform != "win32":
+        return False, "PATH configuration only supported on Windows"
+        
+    try:
+        import winreg
+        import ctypes
+        import sysconfig
+        
+        # Get python scripts directory (where pip installs entry points)
+        scripts_dir = os.path.abspath(sysconfig.get_path('scripts'))
+        if not os.path.exists(scripts_dir):
+            return False, f"Scripts directory not found: {scripts_dir}"
+            
+        # Open user environment key in registry
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment", 0, winreg.KEY_ALL_ACCESS)
+        
+        try:
+            current_path, data_type = winreg.QueryValueEx(key, "Path")
+        except FileNotFoundError:
+            current_path = ""
+            data_type = winreg.REG_EXPAND_SZ
+            
+        # Check if already exists in PATH
+        paths = [p.strip() for p in current_path.split(';') if p.strip()]
+        if any(os.path.abspath(p) == scripts_dir for p in paths):
+            winreg.CloseKey(key)
+            return True, "Scripts directory already in PATH"
+            
+        # Append and save
+        new_path = current_path + (";" if current_path and not current_path.endswith(";") else "") + scripts_dir
+        winreg.SetValueEx(key, "Path", 0, data_type, new_path)
+        winreg.CloseKey(key)
+        
+        # Broadcast environment change message so active shell launchers pick it up (like explorer)
+        HWND_BROADCAST = 0xFFFF
+        WM_SETTINGCHANGE = 0x001A
+        ctypes.windll.user32.SendMessageW(HWND_BROADCAST, WM_SETTINGCHANGE, 0, "Environment")
+        
+        return True, f"Added to PATH: {scripts_dir}"
+    except Exception as e:
+        return False, str(e)
+
+
 def cmd_setup(args):
     """Interactive setup wizard that walks the user through first-time configuration."""
     print_banner()
@@ -269,7 +314,7 @@ def cmd_setup(args):
     print()
 
     # Step 1: Generate config
-    print(f"    {GREEN}Step 1/3{RESET} {WHITE}Generating secure access PIN...{RESET}")
+    print(f"    {GREEN}Step 1/4{RESET} {WHITE}Generating secure access PIN...{RESET}")
     config = generate_config(force=args.force if hasattr(args, 'force') else False)
     pin = config.get("pin")
     print(f"    {GREEN}✓{RESET} Config saved to {CYAN}{os.path.abspath(CONFIG_FILE)}{RESET}")
@@ -277,7 +322,7 @@ def cmd_setup(args):
     print()
 
     # Step 2: Create .agents directory
-    print(f"    {GREEN}Step 2/3{RESET} {WHITE}Setting up agent rules...{RESET}")
+    print(f"    {GREEN}Step 2/4{RESET} {WHITE}Setting up agent rules...{RESET}")
     agents_dir = os.path.join(os.getcwd(), ".agents", "skills", "remote_control")
     if os.path.exists(os.path.join(os.getcwd(), ".agents", "AGENTS.md")):
         print(f"    {GREEN}✓{RESET} Agent rules already configured in {CYAN}.agents/AGENTS.md{RESET}")
@@ -294,10 +339,19 @@ def cmd_setup(args):
     print()
 
     # Step 3: Create remote_mode.json
-    print(f"    {GREEN}Step 3/3{RESET} {WHITE}Enabling remote monitoring mode...{RESET}")
+    print(f"    {GREEN}Step 3/4{RESET} {WHITE}Enabling remote monitoring mode...{RESET}")
     with open("remote_mode.json", "w") as f:
         json.dump({"enabled": True}, f)
     print(f"    {GREEN}✓{RESET} Remote mode {GREEN}ENABLED{RESET}")
+    print()
+
+    # Step 4: Configure system PATH for CLI commands
+    print(f"    {GREEN}Step 4/4{RESET} {WHITE}Configuring Windows User PATH...{RESET}")
+    success, msg = configure_windows_path()
+    if success:
+        print(f"    {GREEN}✓{RESET} {msg}")
+    else:
+        print(f"    {YELLOW}⚠{RESET} Skip PATH config: {msg}")
     print()
 
     # Summary
