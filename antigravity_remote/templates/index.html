@@ -1305,26 +1305,21 @@
         // Close Tunnel
         const shutdownBtn = document.getElementById('shutdown-btn');
         if (shutdownBtn) {
-            shutdownBtn.addEventListener('click', async () => {
+            shutdownBtn.addEventListener('click', () => {
                 if (!confirm("Are you sure you want to turn off the localtunnel?")) {
                     return;
                 }
-                try {
-                    const res = await fetch('/api/shutdown', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-                    if (res.ok) {
-                        alert("Localtunnel shutdown command sent.");
-                    } else {
-                        alert("Failed to close localtunnel");
+                // Show confirmation immediately since the tunnel connection will sever
+                alert("Localtunnel shutdown command sent. The connection will close now.");
+                
+                fetch('/api/shutdown', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
                     }
-                } catch (err) {
-                    console.error(err);
-                    alert("Failed to connect to server");
-                }
+                }).catch(err => {
+                    console.warn("Ignored shutdown connection closed:", err);
+                });
             });
         }
 
