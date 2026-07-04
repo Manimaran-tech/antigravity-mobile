@@ -30,16 +30,25 @@ When waking up, check if a file named `remote_prompt.json` exists in the workspa
      ```
   6. **Perform the requested task** (creating files, editing code, running scripts).
      - Whenever you perform a step (e.g. searching, writing a file, or running a test), update `agent_status.json` with the current task and append a progress line to `agent_execution.log` using `write_to_file` so the mobile user can monitor your progress in real-time.
-  7. If you need to execute any terminal command or modify files that require confirmation:
-     - Run the approval script first:
+  7. If you need to execute any terminal command or modify files that require confirmation, use the **silent file-based approval protocol** to avoid PC desktop popups:
+     - Write the request to `agent_approval_request.json` in the workspace root:
+       ```json
+       {"type": "command", "target": "<command or action>"}
+       ```
+     - Wait and poll the workspace for the response file `agent_approval_response.json` (check every 1.5 seconds, up to a timeout of 300 seconds).
+     - If `agent_approval_response.json` is detected:
+       - Read the content (e.g. `{"status": "approved"}` or `{"status": "rejected"}`).
+       - Delete the response file `agent_approval_response.json`.
+       - If approved, proceed to execute the command/action.
+       - If rejected, skip the action and report that the user rejected it on their mobile phone.
+     - If the server is offline or the file-based handshake fails, run the CLI helper fallback (which may prompt on the desktop):
        ```powershell
        python -m antigravity_remote.agent_approve --type command --target "<command or action>"
        ```
-     - *Note: Since the local PC is configured to auto-approve commands, this script will run autonomously on the PC and display the approval overlay on the user's mobile screen!*
-     - If the command exits with code `0` (APPROVED), proceed to execute the command/action.
-     - If it exits with code `1` (REJECTED), skip the action and report that the user rejected it on their mobile phone.
-     - If it exits with code `2` (TIMEOUT), report that the request timed out.
-     - If it exits with code `3` (OFFLINE), the mobile server is offline. Bypass the helper and execute the command directly via `run_command` (which will fallback to prompting the user on the PC desktop).
+       - If it exits with code `0` (APPROVED), proceed.
+       - If it exits with code `1` (REJECTED), skip the action and report rejection.
+       - If it exits with code `2` (TIMEOUT), report timeout.
+       - If it exits with code `3` (OFFLINE), bypass the helper and run the command directly (this will prompt on the desktop).
   8. Once the task is finished, post the final response to the server. To avoid executing shell commands, write the response directly to `agent_response.json` in the workspace:
      ```json
      {

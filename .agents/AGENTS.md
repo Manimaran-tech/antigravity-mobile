@@ -1,7 +1,7 @@
 # Antigravity Remote Monitoring and Control Rules
 
 Before performing any action, check if remote mode is enabled by reading `remote_mode.json` in the workspace root.
-- **If `"enabled": false`**: Run normally and bypass all remote features (do NOT write status files, do NOT update log files, and do NOT use `agent_approve.py` for confirmations).
+- **If `"enabled": false`**: Run normally and bypass all remote features (do NOT write status files, do NOT update log files, and do NOT use mobile confirmations).
 - **If `"enabled": true`** (or if the file is missing/unreadable): Adhere to the following rules at all times:
 
 1. **Always Stream Execution Logs to Mobile**:
@@ -16,11 +16,19 @@ Before performing any action, check if remote mode is enabled by reading `remote
      ```
      And append a completion log to `agent_execution.log` (e.g., `Task execution complete. Agent is now idle.`).
 
-2. **Always Route Confirmation Dialogs to Mobile**:
-   - Before executing any command (via the `run_command` tool) that modifies state or runs scripts, always run the approval script first to display the confirmation popup on the user's mobile screen:
-     ```powershell
-     python -m antigravity_remote.agent_approve --type command --target "[Command to execute]"
-     ```
-   - If the helper exits with code `0` (APPROVED), proceed to execute the command.
-   - If the helper exits with code `1` (REJECTED), skip the command and report the rejection.
-   - If the helper exits with code `3` (OFFLINE), the mobile connection is offline. Bypass the helper and execute the command directly via `run_command` (this will fallback to prompting the user on the PC desktop).
+2. **Always Route Confirmation Dialogs to Mobile (File-Based Protocol)**:
+   - Before executing any command (via the `run_command` tool) that modifies state or runs scripts, you MUST obtain user confirmation from the mobile device.
+   - To avoid triggering PC desktop dialogs, use the **silent file-based approval protocol**:
+     1. Write the approval request to `agent_approval_request.json` in the workspace root:
+        ```json
+        {"type": "command", "target": "[Command or action to execute]"}
+        ```
+     2. Wait and poll for the user's decision by checking if the file `agent_approval_response.json` exists in the workspace. Read/check it every 1.5 seconds (up to 300 seconds timeout).
+     3. If `agent_approval_response.json` is detected:
+        - Read the decision status: `{"status": "approved"}` or `{"status": "rejected"}`.
+        - Delete `agent_approval_response.json` from the workspace.
+        - If approved, proceed with the command. If rejected, abort and report the rejection.
+     4. If the server is offline or the file-based handshake fails, run the CLI helper fallback (which may prompt on the desktop):
+        ```powershell
+        python -m antigravity_remote.agent_approve --type command --target "[Command to execute]"
+        ```

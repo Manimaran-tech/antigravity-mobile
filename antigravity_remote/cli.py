@@ -182,7 +182,7 @@ def cmd_remote(args):
     else:
         print(f"Remote monitoring and control mode is currently: {'ENABLED' if enabled else 'DISABLED'}")
 
-VERSION = "0.2.8"
+VERSION = "0.2.9"
 
 # ANSI color codes
 BLUE = "\033[38;5;39m"
@@ -328,13 +328,30 @@ def cmd_setup(args):
         print(f"    {GREEN}✓{RESET} Agent rules already configured in {CYAN}.agents/AGENTS.md{RESET}")
     else:
         os.makedirs(agents_dir, exist_ok=True)
-        # Create a minimal AGENTS.md
+        # Create full AGENTS.md with file-based approvals
         agents_md = os.path.join(os.getcwd(), ".agents", "AGENTS.md")
         with open(agents_md, "w", encoding="utf-8") as f:
             f.write("# Antigravity Remote Monitoring and Control Rules\n\n")
             f.write("Before performing any action, check if remote mode is enabled by reading `remote_mode.json` in the workspace root.\n")
-            f.write('- **If `"enabled": false`**: Run normally and bypass all remote features.\n')
-            f.write('- **If `"enabled": true`** (or if the file is missing): Adhere to the remote monitoring rules.\n')
+            f.write('- **If `"enabled": false`**: Run normally and bypass all remote features (do NOT write status files, do NOT update log files, and do NOT use mobile confirmations).\n')
+            f.write('- **If `"enabled": true`** (or if the file is missing/unreadable): Adhere to the following rules at all times:\n\n')
+            f.write("1. **Always Stream Execution Logs to Mobile**:\n")
+            f.write("   - At the start of **every** agent turn, write the current active task description to `agent_status.json`:\n")
+            f.write('     `{"status": "working", "task": "[Brief description of what you are doing right now]"}`\n')
+            f.write("   - Write or append your step-by-step developer thoughts and execution progress to `agent_execution.log`.\n")
+            f.write("   - When a turn completes successfully, update `agent_status.json` to: `{\"status\": \"idle\", \"task\": \"\"}`.\n\n")
+            f.write("2. **Always Route Confirmation Dialogs to Mobile (File-Based Protocol)**:\n")
+            f.write("   - Before executing any command (via the `run_command` tool) that modifies state or runs scripts, you MUST obtain user confirmation from the mobile device.\n")
+            f.write("   - To avoid triggering PC desktop dialogs, use the **silent file-based approval protocol**:\n")
+            f.write("     1. Write the approval request to `agent_approval_request.json` in the workspace root:\n")
+            f.write('        `{"type": "command", "target": "[Command or action to execute]"}`\n')
+            f.write("     2. Wait and poll for the user's decision by checking if the file `agent_approval_response.json` exists in the workspace. Read/check it every 1.5 seconds (up to 300 seconds timeout).\n")
+            f.write("     3. If `agent_approval_response.json` is detected:\n")
+            f.write("        - Read the decision status: `{\"status\": \"approved\"}` or `{\"status\": \"rejected\"}`.\n")
+            f.write("        - Delete `agent_approval_response.json` from the workspace.\n")
+            f.write("        - If approved, proceed with the command. If rejected, abort and report the rejection.\n")
+            f.write("     4. If the server is offline or the file-based handshake fails, run the CLI helper fallback:\n")
+            f.write('        `python -m antigravity_remote.agent_approve --type command --target \"[Command to execute]\"`\n')
         print(f"    {GREEN}✓{RESET} Created {CYAN}.agents/AGENTS.md{RESET} with remote monitoring rules")
     print()
 
@@ -359,22 +376,22 @@ def cmd_setup(args):
     print()
     print(f"    {WHITE}Next steps:{RESET}")
     print()
-    print(f"    {GREEN}1.{RESET} Start the server:")
+    print(f"    {GREEN}1.{RESET} {WHITE}Copy & Paste this prompt into your Antigravity IDE Chat panel:{RESET}")
+    print(f"       {CYAN}──────────────────────────────────────────────────────────────────────────{RESET}")
+    print(f"       Please check if my Python scripts directory (where antigravity-mobile is")
+    print(f"       installed) is in my system/user PATH environment variable. If it is not,")
+    print(f"       add it automatically so that I can run the antigravity-mobile command")
+    print(f"       directly. After doing this, please remind me to start the FastAPI server")
+    print(f"       and localtunnel manually in my terminal.")
+    print(f"       ──────────────────────────────────────────────────────────────────────────{RESET}")
+    print()
+    print(f"    {GREEN}2.{RESET} Start the server manually in your PC terminal:")
     print(f"       {CYAN}$ antigravity-mobile start --host 0.0.0.0 --port 8000{RESET}")
     print()
-    print(f"    {GREEN}2.{RESET} Expose to internet (so your phone can reach it):")
+    print(f"    {GREEN}3.{RESET} Expose to internet (so your phone can reach it):")
     print(f"       {CYAN}$ npx localtunnel --port 8000{RESET}")
     print()
-    print(f"    {GREEN}3.{RESET} Open the URL on your phone & enter PIN: {YELLOW}{BOLD}{pin}{RESET}")
-    print()
-    print(f"    {GREEN}4.{RESET} {WHITE}Copy & Paste this prompt into your Antigravity IDE Chat panel:{RESET}")
-    print(f"       {CYAN}──────────────────────────────────────────────────────────────────────────{RESET}")
-    print(f"       Please read the remote monitoring rules in {BLUE}.agents/AGENTS.md{RESET} and follow")
-    print(f"       them. I have started the server and want to monitor your steps remotely.")
-    print(f"       Also, check if my Python scripts directory is in my system/user PATH, and")
-    print(f"       if not, add it automatically. Finally, read config.json to print my access")
-    print(f"       PIN and let me know.")
-    print(f"       ──────────────────────────────────────────────────────────────────────────{RESET}")
+    print(f"    {GREEN}4.{RESET} Open the URL on your phone & enter PIN: {YELLOW}{BOLD}{pin}{RESET}")
     print()
 
 
