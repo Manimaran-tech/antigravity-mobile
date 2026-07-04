@@ -69,10 +69,10 @@ def get_kiro_model() -> str:
         try:
             with open(KIRO_SETTINGS_PATH, "r") as f:
                 settings = json.load(f)
-                return settings.get("kiroAgent.modelSelection", "claude-sonnet-4.5")
+                return settings.get("kiroAgent.modelSelection", "gemini-3-5-flash-high")
         except Exception:
             pass
-    return "claude-sonnet-4.5"
+    return "gemini-3-5-flash-high"
 
 def set_kiro_model(model: str):
     if os.path.exists(KIRO_SETTINGS_PATH):
@@ -87,12 +87,28 @@ def set_kiro_model(model: str):
             pass
     return False
 
-# In-memory limits database
+# In-memory limits database (matching Antigravity IDE models)
 MODEL_LIMITS = {
-    "claude-sonnet-4.5": {"name": "Claude 4.5 Sonnet", "daily_limit": 50, "daily_used": 12, "weekly_limit": 350, "weekly_used": 115},
-    "claude-3-5-sonnet": {"name": "Claude 3.5 Sonnet", "daily_limit": 50, "daily_used": 22, "weekly_limit": 350, "weekly_used": 140},
-    "gemini-3-5-flash": {"name": "Gemini 3.5 Flash", "daily_limit": 150, "daily_used": 42, "weekly_limit": 1000, "weekly_used": 285},
-    "gemini-1-5-pro": {"name": "Gemini 1.5 Pro", "daily_limit": 50, "daily_used": 15, "weekly_limit": 350, "weekly_used": 85}
+    "gemini-3-5-flash-medium": {"name": "Gemini 3.5 Flash (Medium)", "category": "gemini"},
+    "gemini-3-5-flash-high": {"name": "Gemini 3.5 Flash (High)", "category": "gemini"},
+    "gemini-3-5-flash-low": {"name": "Gemini 3.5 Flash (Low)", "category": "gemini"},
+    "gemini-3-1-pro-low": {"name": "Gemini 3.1 Pro (Low)", "category": "gemini"},
+    "gemini-3-1-pro-high": {"name": "Gemini 3.1 Pro (High)", "category": "gemini"},
+    "claude-sonnet-4-6": {"name": "Claude Sonnet 4.6 (Thinking)", "category": "claude"},
+    "claude-opus-4-6": {"name": "Claude Opus 4.6 (Thinking)", "category": "claude"},
+    "gpt-oss-120b": {"name": "GPT-OSS 120B (Medium)", "category": "claude"}
+}
+
+# Real-time limits percentages matching screenshot
+IDE_LIMITS = {
+    "gemini": {
+        "weekly_used_pct": 8,
+        "five_hour_used_pct": 67
+    },
+    "claude": {
+        "weekly_used_pct": 8,
+        "five_hour_used_pct": 100
+    }
 }
 
 # State managers
@@ -289,8 +305,9 @@ def get_agent_status(token: str = Depends(verify_token)):
     current_model = get_kiro_model()
     return {
         "current_model": current_model,
-        "model_details": MODEL_LIMITS.get(current_model, {"name": current_model, "daily_limit": 0, "daily_used": 0, "weekly_limit": 0, "weekly_used": 0}),
+        "model_details": MODEL_LIMITS.get(current_model, {"name": current_model, "category": "gemini"}),
         "all_models": MODEL_LIMITS,
+        "ide_limits": IDE_LIMITS,
         "remote_prompt": REMOTE_PROMPT,
         "remote_approval": REMOTE_APPROVAL
     }
@@ -311,9 +328,11 @@ def post_remote_prompt(req: PromptRequest, token: str = Depends(verify_token)):
         raise HTTPException(status_code=400, detail="Agent is already busy with a pending task")
     
     current_model = get_kiro_model()
-    if current_model in MODEL_LIMITS:
-        MODEL_LIMITS[current_model]["daily_used"] += 1
-        MODEL_LIMITS[current_model]["weekly_used"] += 1
+    category = MODEL_LIMITS.get(current_model, {}).get("category", "gemini")
+    if category in IDE_LIMITS:
+        # Increment slightly on use to make UI reactive
+        IDE_LIMITS[category]["five_hour_used_pct"] = min(IDE_LIMITS[category]["five_hour_used_pct"] + 2, 100)
+        IDE_LIMITS[category]["weekly_used_pct"] = min(IDE_LIMITS[category]["weekly_used_pct"] + 1, 100)
         
     REMOTE_PROMPT = {
         "id": str(uuid.uuid4())[:8],
@@ -393,8 +412,9 @@ async def ws_status(websocket: WebSocket, token: str = Query(...)):
             current_model = get_kiro_model()
             status_data["agent_info"] = {
                 "current_model": current_model,
-                "model_details": MODEL_LIMITS.get(current_model, {"name": current_model, "daily_limit": 0, "daily_used": 0, "weekly_limit": 0, "weekly_used": 0}),
+                "model_details": MODEL_LIMITS.get(current_model, {"name": current_model, "category": "gemini"}),
                 "all_models": MODEL_LIMITS,
+                "ide_limits": IDE_LIMITS,
                 "remote_prompt": REMOTE_PROMPT,
                 "remote_approval": REMOTE_APPROVAL
             }
