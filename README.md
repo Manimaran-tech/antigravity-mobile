@@ -182,21 +182,6 @@ antigravity-mobile/
 
 ---
 
-##  Publishing Updates
-
-```bash
-# Install build tools
-pip install build twine
-
-# Build distribution
-python -m build
-
-# Upload to PyPI
-python -m twine upload dist/antigravity_mobile-*
-```
-
----
-
 ## License
 
 MIT
