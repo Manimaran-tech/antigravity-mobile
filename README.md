@@ -28,16 +28,16 @@ Monitor agent tasks, approve commands, and switch active models — remotely.
 
 ## ✨ Features
 
-- 📱 **Mobile Dashboard** — Responsive, glassmorphic dark-themed UI with real-time system stats (CPU, RAM, Disk)
-- 🤖 **Model Switcher** — Switch the active AI model (Gemini, Claude, GPT) in your Antigravity IDE from your phone
-- 💻 **Live Agent Console** — Stream step-by-step IDE agent execution thoughts and logs to your phone in real-time
-- 🛡️ **Mobile Approvals** — Approve or reject terminal commands requested by your IDE agent directly from your phone screen
-- 🔌 **Offline Fallback** — Automatically falls back to local PC desktop prompts if the mobile server is offline
-- 🎛️ **Remote Toggle** — Turn remote mode on/off to save tokens when coding locally
+- **Mobile Dashboard** — Responsive, glassmorphic dark-themed UI with real-time system stats (CPU, RAM, Disk)
+- **Model Switcher** — Switch the active AI model (Gemini, Claude, GPT) in your Antigravity IDE from your phone
+- **Live Agent Console** — Stream step-by-step IDE agent execution thoughts and logs to your phone in real-time
+- **Mobile Approvals** — Approve or reject terminal commands requested by your IDE agent directly from your phone screen
+- **Offline Fallback** — Automatically falls back to local PC desktop prompts if the mobile server is offline
+- **Remote Toggle** — Turn remote mode on/off to save tokens when coding locally
 
 ---
 
-## 🚀 Installation
+## Installation
 
 ```bash
 pip install antigravity-mobile
@@ -53,7 +53,7 @@ That's it! Now run `antigravity-mobile` to see the welcome screen.
 > ```
 > *(You can replace `antigravity-mobile` with `python -m antigravity_remote` for all commands below).*
 
-### 🗑️ Uninstallation
+### Uninstallation
 
 If you wish to completely remove the tool, you can uninstall it via pip:
 ```bash
@@ -62,7 +62,7 @@ pip uninstall antigravity-mobile -y
 
 ---
 
-## 📋 Quick Start
+## Quick Start
 
 ### Step 1: Setup
 Run the interactive setup wizard to generate your secure access PIN and configure agent rules:
@@ -110,7 +110,7 @@ Please read the remote monitoring rules in .agents/AGENTS.md and follow them. I 
 
 ---
 
-## 💡 Usage Examples
+##  Usage Examples
 
 ### Turn off remote mode when coding locally
 ```bash
@@ -150,7 +150,7 @@ To enable silent command execution on your PC (so approvals go to your phone ins
 
 ---
 
-## 🔒 Security
+##  Security
 
 - **PIN Authentication** — A secure 6-digit PIN is generated on first setup. Mobile clients must authenticate with this PIN before accessing any features.
 - **Token-Based Sessions** — After PIN login, all API requests use a session token.
@@ -159,7 +159,7 @@ To enable silent command execution on your PC (so approvals go to your phone ins
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 antigravity-mobile/
@@ -182,7 +182,7 @@ antigravity-mobile/
 
 ---
 
-## 📦 Publishing Updates
+##  Publishing Updates
 
 ```bash
 # Install build tools
