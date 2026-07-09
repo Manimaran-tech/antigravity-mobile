@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "antigravity-mobile"
-version = "0.2.10"
+dynamic = ["version"]
 description = "A remote monitor and scheduler CLI tool for Antigravity 2.0 IDE"
 readme = "README.md"
 requires-python = ">=3.8"
-license = { text = "MIT" }
+license = "MIT"
 dependencies = [
     "fastapi>=0.100.0",
     "uvicorn>=0.22.0",
@@ -28,6 +28,9 @@ antigravity-mobile = "antigravity_remote.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["antigravity_remote*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "antigravity_remote.__version__"}
 
 [tool.setuptools.package-data]
 antigravity_remote = [

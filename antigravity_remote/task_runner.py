@@ -77,6 +77,18 @@ class TaskRunner:
             return [Task(**data) for data in self.tasks_data.values()]
 
     def add_task(self, command: str, created_by: str = "remote") -> Task:
+        # Security: validate command input
+        if not command or not command.strip():
+            raise ValueError("Command cannot be empty")
+        if len(command) > 2000:
+            raise ValueError("Command exceeds maximum length of 2000 characters")
+        # Reject null bytes and most ASCII control characters (allow \t, \n, \r)
+        for ch in command:
+            if ch == '\x00':
+                raise ValueError("Command contains null bytes")
+            if ord(ch) < 32 and ch not in ('\t', '\n', '\r'):
+                raise ValueError("Command contains invalid control characters")
+
         task = Task(command=command, created_by=created_by)
         with self.lock:
             self.tasks_data[task.id] = task.to_dict()

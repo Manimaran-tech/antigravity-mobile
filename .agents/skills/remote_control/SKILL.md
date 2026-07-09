@@ -69,6 +69,6 @@ When waking up, check if a file named `remote_prompt.json` exists in the workspa
 ### 2. Spawning the Daemon Listener
 To listen for new remote prompts while you are idle, run the daemon script in the background:
 ```powershell
-python -m antigravity_remote.agent_daemon
+antigravity-mobile daemon
 ```
-*Note: Make sure to launch this command in the background (using `run_command` with high async wait time). Once launched, do not call any more tools and end your turn. The IDE will automatically wake you up when the daemon detects a prompt and exits.*
+*Note: If `antigravity-mobile` is not in the system/user PATH, run `python -m antigravity_remote.agent_daemon`. Make sure to launch this command in the background (using `run_command` with high async wait time). Once launched, do not call any more tools and end your turn. The IDE will automatically wake you up when the daemon detects a prompt and exits.*

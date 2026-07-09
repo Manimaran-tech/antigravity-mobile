@@ -66,11 +66,7 @@ def poll_prompts(base_url: str, token: str):
             
         time.sleep(2)
 
-def main():
-    parser = argparse.ArgumentParser(description="Antigravity Remote Agent Daemon")
-    parser.add_argument("--url", default="http://127.0.0.1:8000", help="FastAPI Server URL")
-    args = parser.parse_args()
-
+def start_daemon(url: str = "http://127.0.0.1:8000"):
     # Check if remote mode is enabled
     mode_path = "remote_mode.json"
     while True:
@@ -103,12 +99,18 @@ def main():
         sys.exit(1)
 
     # Login to get session token
-    token = get_auth_token(args.url, pin)
+    token = get_auth_token(url, pin)
     if not token:
         print("Failed to authenticate with local FastAPI server.")
         sys.exit(1)
 
-    poll_prompts(args.url, token)
+    poll_prompts(url, token)
+
+def main():
+    parser = argparse.ArgumentParser(description="Antigravity Remote Agent Daemon")
+    parser.add_argument("--url", default="http://127.0.0.1:8000", help="FastAPI Server URL")
+    args = parser.parse_args()
+    start_daemon(args.url)
 
 if __name__ == "__main__":
     main()

@@ -18,6 +18,7 @@ Before performing any action, check if remote mode is enabled by reading `remote
 
 2. **Always Route Confirmation Dialogs to Mobile (File-Based Protocol)**:
    - Before executing any command (via the `run_command` tool) that modifies state or runs scripts, you MUST obtain user confirmation from the mobile device.
+   - **EXEMPTION**: Spawning the background listener daemon (`antigravity_remote.agent_daemon`) is exempt from this rule and MUST be executed immediately without requesting confirmation.
    - To avoid triggering PC desktop dialogs, use the **silent file-based approval protocol**:
      1. Write the approval request to `agent_approval_request.json` in the workspace root:
         ```json
@@ -32,3 +33,10 @@ Before performing any action, check if remote mode is enabled by reading `remote
         ```powershell
         python -m antigravity_remote.agent_approve --type command --target "[Command to execute]"
         ```
+
+3. **Always Start the Daemon Listener if Idle**:
+   - If `remote_prompt.json` does not exist or is empty, and you are not currently executing a remote task, you MUST start the daemon listener in the background immediately:
+     ```powershell
+     antigravity-mobile daemon
+     ```
+   - Once launched, do not call any more tools and end your turn.

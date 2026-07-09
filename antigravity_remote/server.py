@@ -1,15 +1,17 @@
 import os
 import json
 import asyncio
+import logging
 import psutil
 import datetime
+import time
 import uuid
-from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect, Query, status
+from fastapi import FastAPI, HTTPException, Depends, Request, WebSocket, WebSocketDisconnect, Query, status
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
-from typing import Set
+from typing import Dict, Set, Tuple
 
 from .task_runner import TaskRunner, Task
 from .cli import get_config
@@ -26,17 +28,23 @@ os.makedirs(os.path.join(STATIC_DIR, "js"), exist_ok=True)
 
 app = FastAPI(title="Antigravity Remote Monitor")
 security = HTTPBearer()
+logger = logging.getLogger("antigravity_remote.server")
 
-# Active authenticated session tokens
-ACTIVE_SESSIONS: Set[str] = set()
+# Active authenticated session tokens — maps token -> creation timestamp
+ACTIVE_SESSIONS: Dict[str, float] = {}
+SESSION_TTL_SECONDS = 86400  # 24 hours
+
+# Login rate limiting — maps IP -> (fail_count, first_fail_timestamp)
+LOGIN_ATTEMPTS: Dict[str, Tuple[int, float]] = {}
+MAX_LOGIN_ATTEMPTS = 5
+LOGIN_LOCKOUT_SECONDS = 900  # 15 minutes
 
 # Initialize Task Runner
 runner = TaskRunner()
 
-# Load config
-config = get_config()
-PIN = config.get("pin")
-SECRET_KEY = config.get("secret_key")
+# NOTE: Config (PIN, secret key) is read dynamically on each login attempt.
+# Do NOT cache at module level — it causes PIN desync when the server is
+# restarted with a fresh PIN via `antigravity-mobile start`.
 
 class LoginRequest(BaseModel):
     pin: str
@@ -141,9 +149,20 @@ def get_system_limits():
 REMOTE_PROMPT = {"id": "", "prompt": "", "status": "idle", "response": ""}
 REMOTE_APPROVAL = {"status": "idle", "type": "", "target": "", "decision": ""}
 
+def _is_token_valid(token: str) -> bool:
+    """Check if a session token exists and has not expired."""
+    if token not in ACTIVE_SESSIONS:
+        return False
+    created_at = ACTIVE_SESSIONS[token]
+    if time.time() - created_at > SESSION_TTL_SECONDS:
+        # Token expired — remove it
+        ACTIVE_SESSIONS.pop(token, None)
+        return False
+    return True
+
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
     token = credentials.credentials
-    if token not in ACTIVE_SESSIONS:
+    if not _is_token_valid(token):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired session token",
@@ -152,7 +171,7 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
     return token
 
 def verify_ws_token(token: str) -> bool:
-    return token in ACTIVE_SESSIONS
+    return _is_token_valid(token)
 
 # Server Status helper
 def get_system_status():
@@ -249,13 +268,42 @@ def get_workspace_tree(path="."):
 
 # Routes
 @app.post("/api/login")
-def login(req: LoginRequest):
-    if req.pin == PIN:
-        # Generate token
+def login(req: LoginRequest, request: Request):
+    # Rate limiting: track failed attempts per client IP
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+
+    if client_ip in LOGIN_ATTEMPTS:
+        fail_count, first_fail_time = LOGIN_ATTEMPTS[client_ip]
+        # Reset window if lockout period has passed
+        if now - first_fail_time > LOGIN_LOCKOUT_SECONDS:
+            del LOGIN_ATTEMPTS[client_ip]
+        elif fail_count >= MAX_LOGIN_ATTEMPTS:
+            remaining = int(LOGIN_LOCKOUT_SECONDS - (now - first_fail_time))
+            logger.warning(f"Login rate limit hit for IP {client_ip}")
+            raise HTTPException(
+                status_code=429,
+                detail=f"Too many failed attempts. Try again in {remaining} seconds."
+            )
+
+    # Read config fresh on every login so we always use the current PIN
+    config = get_config()
+    current_pin = config.get("pin")
+    if req.pin == current_pin:
         import secrets
+        # Clear failed attempts on successful login
+        LOGIN_ATTEMPTS.pop(client_ip, None)
         token = secrets.token_hex(16)
-        ACTIVE_SESSIONS.add(token)
+        ACTIVE_SESSIONS[token] = now
         return {"token": token}
+
+    # Track failed attempt
+    if client_ip in LOGIN_ATTEMPTS:
+        fail_count, first_fail_time = LOGIN_ATTEMPTS[client_ip]
+        LOGIN_ATTEMPTS[client_ip] = (fail_count + 1, first_fail_time)
+    else:
+        LOGIN_ATTEMPTS[client_ip] = (1, now)
+
     raise HTTPException(status_code=401, detail="Invalid PIN")
 
 @app.get("/api/status")
@@ -274,7 +322,10 @@ def tasks_endpoint(token: str = Depends(verify_token)):
 def schedule_endpoint(req: ScheduleRequest, token: str = Depends(verify_token)):
     if not req.command.strip():
         raise HTTPException(status_code=400, detail="Command cannot be empty")
-    task = runner.add_task(req.command)
+    try:
+        task = runner.add_task(req.command)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return task.to_dict()
 
 @app.post("/api/tasks/{task_id}/confirm")
@@ -326,23 +377,27 @@ def generate_summary(token: str = Depends(verify_token)):
             f.write(md)
         return {"status": "success", "file": "summary.md", "content": md}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to write summary.md: {str(e)}")
+        logger.error(f"Failed to write summary.md: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate task summary")
 
 @app.get("/api/file")
 def get_file_content(path: str, token: str = Depends(verify_token)):
-    abs_base = os.path.abspath(".")
-    abs_path = os.path.abspath(path)
-    if not abs_path.startswith(abs_base):
+    # Use realpath to resolve symlinks and prevent symlink escape attacks
+    real_base = os.path.realpath(".")
+    real_path = os.path.realpath(path)
+    # Ensure the resolved path is strictly within the workspace (+ os.sep prevents prefix tricks)
+    if not (real_path == real_base or real_path.startswith(real_base + os.sep)):
         raise HTTPException(status_code=403, detail="Access denied: outside workspace boundary")
     
-    if not os.path.exists(abs_path) or os.path.isdir(abs_path):
+    if not os.path.exists(real_path) or os.path.isdir(real_path):
         raise HTTPException(status_code=404, detail="File not found")
         
     try:
-        with open(abs_path, "r", encoding="utf-8", errors="ignore") as f:
+        with open(real_path, "r", encoding="utf-8", errors="ignore") as f:
             return {"path": path, "content": f.read()}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error reading file: {str(e)}")
+        logger.error(f"Error reading file {real_path}: {e}")
+        raise HTTPException(status_code=500, detail="Internal error reading file")
 
 @app.get("/api/agent/status")
 def get_agent_status(token: str = Depends(verify_token)):
@@ -405,10 +460,23 @@ def post_remote_prompt(req: PromptRequest, token: str = Depends(verify_token)):
         "status": "pending",
         "response": ""
     }
+    
+    # Write directly to remote_prompt.json as a fallback in the working directory
+    # NOTE: Do NOT include the auth token — it would leak credentials to disk.
+    try:
+        prompt_info = {
+            "id": REMOTE_PROMPT["id"],
+            "prompt": REMOTE_PROMPT["prompt"]
+        }
+        with open("remote_prompt.json", "w", encoding="utf-8") as f:
+            json.dump(prompt_info, f, indent=4)
+    except Exception:
+        pass
+        
     return REMOTE_PROMPT
 
 @app.get("/api/agent/prompt/check")
-def check_remote_prompt():
+def check_remote_prompt(token: str = Depends(verify_token)):
     global REMOTE_PROMPT
     if REMOTE_PROMPT["status"] == "pending":
         REMOTE_PROMPT["status"] = "executing"
@@ -553,6 +621,17 @@ def get_dashboard():
         return HTMLResponse(content=open(dashboard_path, "r", encoding="utf-8").read())
     return HTMLResponse(content="<h1>Dashboard index.html not found.</h1>")
 
+@app.get("/favicon.ico")
+def favicon():
+    """Return empty favicon to prevent 404 spam in logs."""
+    favicon_path = os.path.join(STATIC_DIR, "favicon.ico")
+    if os.path.exists(favicon_path):
+        return FileResponse(favicon_path)
+    # Return an empty 204 No Content to silence browser favicon requests
+    from fastapi.responses import Response
+    return Response(status_code=204)
+
 # Serve static folder
 if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
