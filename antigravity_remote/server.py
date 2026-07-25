@@ -101,6 +101,9 @@ def set_antigravity_model(model: str):
 
 # In-memory limits database (matching Antigravity IDE models)
 MODEL_LIMITS = {
+    "gemini-3-6-flash-high": {"name": "Gemini 3.6 Flash (High)", "category": "gemini"},
+    "gemini-3-6-flash-medium": {"name": "Gemini 3.6 Flash (Medium)", "category": "gemini"},
+    "gemini-3-6-flash-low": {"name": "Gemini 3.6 Flash (Low)", "category": "gemini"},
     "gemini-3-5-flash-medium": {"name": "Gemini 3.5 Flash (Medium)", "category": "gemini"},
     "gemini-3-5-flash-high": {"name": "Gemini 3.5 Flash (High)", "category": "gemini"},
     "gemini-3-5-flash-low": {"name": "Gemini 3.5 Flash (Low)", "category": "gemini"},
