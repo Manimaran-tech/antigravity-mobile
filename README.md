@@ -22,6 +22,8 @@ Monitor agent tasks, approve commands, and switch active models — remotely.
 
 [![PyPI](https://img.shields.io/pypi/v/antigravity-mobile)](https://pypi.org/project/antigravity-mobile/)
 [![Python](https://img.shields.io/pypi/pyversions/antigravity-mobile)](https://pypi.org/project/antigravity-mobile/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/antigravity-mobile)](https://pypistats.org/packages/antigravity-mobile)
+[![Total Downloads](https://static.pepy.tech/badge/antigravity-mobile)](https://pepy.tech/project/antigravity-mobile)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ---

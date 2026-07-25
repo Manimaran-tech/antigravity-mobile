@@ -9,6 +9,20 @@ description = "A remote monitor and scheduler CLI tool for Antigravity 2.0 IDE"
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
+authors = [
+    { name = "Manimaran" }
+]
+keywords = ["antigravity", "ide", "remote-monitoring", "fastapi", "cli", "mobile-dashboard"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 dependencies = [
     "fastapi>=0.100.0",
     "uvicorn>=0.22.0",
@@ -16,6 +30,11 @@ dependencies = [
     "websockets>=11.0",
     "psutil>=5.9.0"
 ]
+
+[project.urls]
+Homepage = "https://github.com/Manimaran-tech/antigravity-mobile"
+Repository = "https://github.com/Manimaran-tech/antigravity-mobile"
+Issues = "https://github.com/Manimaran-tech/antigravity-mobile/issues"
 
 [project.optional-dependencies]
 dev = [
