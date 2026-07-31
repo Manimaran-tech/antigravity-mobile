@@ -126,7 +126,8 @@ class TaskRunner:
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,
-                universal_newlines=True
+                universal_newlines=True,
+                cwd=os.getcwd()
             )
             
             with self.lock:
@@ -209,3 +210,9 @@ class TaskRunner:
             except Exception as e:
                 return f"Error reading logs: {str(e)}"
         return "No logs available or task has not started yet."
+
+    def start_task(self, command: str, created_by: str = "remote") -> Task:
+        task = self.add_task(command, created_by)
+        self.confirm_and_run(task.id)
+        return task
+

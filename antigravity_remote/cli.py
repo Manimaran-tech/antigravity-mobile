@@ -8,7 +8,16 @@ import sysconfig
 import uvicorn
 import psutil
 
-CONFIG_FILE = "config.json"
+def get_workspace_root() -> str:
+    cwd = os.path.abspath(os.getcwd())
+    if os.path.exists(os.path.join(cwd, ".agents")) or os.path.exists(os.path.join(cwd, ".git")):
+        return cwd
+    parent = os.path.dirname(cwd)
+    if os.path.exists(os.path.join(parent, ".agents")) or os.path.exists(os.path.join(parent, ".git")):
+        return parent
+    return cwd
+
+CONFIG_FILE = os.path.join(get_workspace_root(), "config.json")
 
 def generate_config(force=False) -> dict:
     if os.path.exists(CONFIG_FILE) and not force:
@@ -125,6 +134,7 @@ def kill_port_process(port: int):
 
 
 def cmd_start(args):
+
     # Force a new config with a fresh PIN every time the server starts
     config = generate_config(force=True)
     
@@ -487,8 +497,9 @@ def cmd_setup(args):
             f.write("3. **Always Start the Daemon Listener if Idle**:\n")
             f.write("   - If `remote_prompt.json` does not exist or is empty, and you are not currently executing a remote task, you MUST start the daemon listener in the background immediately:\n")
             f.write("     ```powershell\n")
-            f.write("     antigravity-mobile daemon\n")
+            f.write("     python -m antigravity_remote.agent_daemon --exit-on-prompt\n")
             f.write("     ```\n")
+            f.write("   - The `--exit-on-prompt` flag makes the daemon exit after writing a prompt, which wakes up the IDE agent to process it.\n")
             f.write("   - Once launched, do not call any more tools and end your turn.\n")
         print(f"    {GREEN}✓{RESET} Created {CYAN}.agents/AGENTS.md{RESET} with remote monitoring rules")
     else:
@@ -559,11 +570,12 @@ def cmd_setup(args):
         f.write('- **If it does NOT exist**:\n')
         f.write('  - The agent is idle. Start the daemon listener to wait for new remote prompts.\n\n')
         f.write('### 2. Spawning the Daemon Listener\n')
-        f.write('To listen for new remote prompts while you are idle, run the daemon script in the background:\n')
+        f.write('To listen for new remote prompts while you are idle, run the daemon script in the background **with `--exit-on-prompt`**:\n')
         f.write('```powershell\n')
-        f.write('antigravity-mobile daemon\n')
+        f.write('python -m antigravity_remote.agent_daemon --exit-on-prompt\n')
         f.write('```\n')
-        f.write('*Note: If `antigravity-mobile` is not in the system/user PATH, run `python -m antigravity_remote.agent_daemon`. Make sure to launch this command in the background (using `run_command` with high async wait time). Once launched, do not call any more tools and end your turn. The IDE will automatically wake you up when the daemon detects a prompt and exits.*\n')
+        f.write('*The `--exit-on-prompt` flag is critical: the daemon will poll for a remote prompt, write `remote_prompt.json` when one arrives, and then **exit**. When the background task exits, the IDE automatically wakes you up so you can read and execute the prompt. After completing the task, re-launch the daemon with `--exit-on-prompt` again to listen for the next prompt.*\n\n')
+        f.write('*Make sure to launch this command in the background (using `run_command` with a high async wait time like `500`). Once launched, do not call any more tools and end your turn.*\n')
     print(f"    {GREEN}✓{RESET} Created {CYAN}.agents/skills/remote_control/SKILL.md{RESET} with remote control skill instructions")
     print()
 
@@ -616,7 +628,7 @@ def cmd_setup(args):
 def cmd_daemon(args):
     """Run the remote command listener daemon."""
     from antigravity_remote.agent_daemon import start_daemon
-    start_daemon(url=args.url)
+    start_daemon(url=args.url, exit_on_prompt=getattr(args, 'exit_on_prompt', False))
 
 
 def cmd_update(args):
@@ -760,6 +772,8 @@ def main():
     # daemon command
     daemon_parser = subparsers.add_parser("daemon", help="Start the background agent prompt listener daemon")
     daemon_parser.add_argument("--url", default="http://127.0.0.1:8000", help="FastAPI Server URL")
+    daemon_parser.add_argument("--exit-on-prompt", action="store_true", default=False,
+                               help="Exit after writing the first prompt (for IDE background task mode)")
 
     # uninstall command
     uninstall_parser = subparsers.add_parser("uninstall", help="Remove all generated workspace files and guide pip uninstall")

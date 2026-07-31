@@ -6,6 +6,15 @@ import urllib.request
 import urllib.error
 import argparse
 
+def get_workspace_root() -> str:
+    cwd = os.path.abspath(os.getcwd())
+    if os.path.exists(os.path.join(cwd, ".agents")) or os.path.exists(os.path.join(cwd, ".git")):
+        return cwd
+    parent = os.path.dirname(cwd)
+    if os.path.exists(os.path.join(parent, ".agents")) or os.path.exists(os.path.join(parent, ".git")):
+        return parent
+    return cwd
+
 def get_auth_token(base_url: str, pin: str) -> str:
     login_url = f"{base_url}/api/login"
     data = json.dumps({"pin": pin}).encode("utf-8")
@@ -47,7 +56,7 @@ def poll_approval_decision(base_url: str, token: str, timeout_seconds: int = 300
     
     while time.time() - start_time < timeout_seconds:
         # 1. Check local file fallback first
-        resp_file = "agent_approval_response.json"
+        resp_file = os.path.join(get_workspace_root(), "agent_approval_response.json")
         if os.path.exists(resp_file):
             try:
                 with open(resp_file, "r", encoding="utf-8") as f:
@@ -92,7 +101,7 @@ def poll_approval_decision(base_url: str, token: str, timeout_seconds: int = 300
 
 def main():
     parser = argparse.ArgumentParser(description="Antigravity Remote Agent Command Approval Helper")
-    parser.add_argument("--type", required=True, choices=["command", "edit", "create", "delete"], help="Type of action requiring approval")
+    parser.add_argument("--type", required=True, choices=["command", "edit", "create", "delete", "question", "plan", "action"], help="Type of action requiring approval")
     parser.add_argument("--target", required=True, help="Target action/command details")
     parser.add_argument("--url", default="http://127.0.0.1:8000", help="FastAPI Server URL")
     parser.add_argument("--timeout", type=int, default=300, help="Approval timeout in seconds")
@@ -116,13 +125,13 @@ def main():
 
     # Always write file-based request fallback first
     try:
-        with open("agent_approval_request.json", "w", encoding="utf-8") as f:
+        with open(os.path.join(get_workspace_root(), "agent_approval_request.json"), "w", encoding="utf-8") as f:
             json.dump({"type": args.type, "target": args.target}, f)
     except Exception as e:
         print(f"Warning: Failed to write file-based fallback: {e}")
 
     # Read config.json to get PIN
-    config_path = "config.json"
+    config_path = os.path.join(get_workspace_root(), "config.json")
     if not os.path.exists(config_path):
         print(f"Error: {config_path} not found.")
         sys.exit(3)
@@ -146,9 +155,10 @@ def main():
     exit_code = poll_approval_decision(args.url, token or "", args.timeout)
     
     # Cleanup request file if it exists
-    if os.path.exists("agent_approval_request.json"):
+    req_file_path = os.path.join(get_workspace_root(), "agent_approval_request.json")
+    if os.path.exists(req_file_path):
         try:
-            os.remove("agent_approval_request.json")
+            os.remove(req_file_path)
         except Exception:
             pass
             

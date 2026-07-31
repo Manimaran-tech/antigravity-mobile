@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Antigravity Remote Monitor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Antigravity Remote</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,10 +19,11 @@
             --panel-border: #27272a;
             --text-primary: #fafafa;
             --text-secondary: #a1a1aa;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
             --status-idle: #22c55e;
             --status-busy: #eab308;
             --status-failed: #ef4444;
-            --status-pending: #a1a1aa;
             --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
         }
 
@@ -30,6 +31,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -40,26 +42,20 @@
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
+            padding-bottom: 70px; /* Space for bottom nav */
         }
 
-        /* App Wrapper */
-        #app {
-            width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            flex-grow: 1;
-        }
-
-        /* Header */
+        /* App Header */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
+            padding: 12px 16px;
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--panel-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .brand {
@@ -69,20 +65,26 @@
         }
 
         .brand h1 {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 600;
             letter-spacing: -0.025em;
             color: var(--text-primary);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .connection-status {
             display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             padding: 4px 10px;
-            border-radius: 6px;
-            background: var(--panel-bg);
+            border-radius: 20px;
+            background: var(--bg);
             border: 1px solid var(--panel-border);
         }
 
@@ -97,81 +99,88 @@
             background: var(--status-idle);
         }
 
-        /* Authentication View */
-        #auth-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: var(--bg);
-            z-index: 1000;
+        .shutdown-btn {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 6px;
+            color: rgb(239, 68, 68);
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            font-family: inherit;
+            cursor: pointer;
             display: flex;
-            justify-content: center;
             align-items: center;
-            padding: 20px;
+            gap: 4px;
+            outline: none;
         }
 
-        .auth-card {
-            background: var(--panel-bg);
-            border: 1px solid var(--panel-border);
-            border-radius: 8px;
-            padding: 30px;
+        /* Main Container */
+        #app {
             width: 100%;
-            max-width: 400px;
-            box-shadow: var(--shadow);
-            text-align: center;
+            max-width: 650px;
+            margin: 0 auto;
+            padding: 16px;
             display: flex;
+            flex-direction: column;
+            gap: 16px;
+            flex-grow: 1;
+        }
+
+        /* Tab Navigation Bar (Bottom) */
+        nav.bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--panel-bg);
+            border-top: 1px solid var(--panel-border);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 900;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            font-weight: 500;
+            cursor: pointer;
+            background: none;
+            border: none;
+            width: 25%;
+            padding: 4px 0;
+            transition: color 0.15s ease;
+        }
+
+        .nav-item.active {
+            color: var(--text-primary);
+        }
+
+        .nav-item i {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Views Container */
+        .tab-view {
+            display: none;
             flex-direction: column;
             gap: 16px;
         }
 
-        .auth-card h2 {
-            font-size: 1.25rem;
-            font-weight: 600;
-        }
-
-        .auth-card p {
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-        }
-
-        .pin-inputs {
+        .tab-view.active {
             display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin: 15px 0;
         }
 
-        .pin-input {
-            width: 40px;
-            height: 48px;
-            background: var(--bg);
-            border: 1px solid var(--panel-border);
-            border-radius: 6px;
-            text-align: center;
-            font-size: 1.25rem;
-            font-weight: 500;
-            color: var(--text-primary);
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .pin-input:focus {
-            outline: none;
-            border-color: var(--text-secondary);
-        }
-
-        .auth-error {
-            color: var(--status-failed);
-            font-size: 0.8rem;
-            min-height: 1.2rem;
-        }
-
-        /* Flat Panel Base */
-        .glass-panel {
+        /* Glass Panel Styling */
+        .panel {
             background: var(--panel-bg);
             border: 1px solid var(--panel-border);
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 16px;
             box-shadow: var(--shadow);
         }
@@ -184,16 +193,16 @@
         }
 
         .agent-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 6px;
-            background: var(--panel-border);
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-weight: 500;
-            color: var(--text-primary);
-            font-size: 0.95rem;
+            font-weight: 700;
+            color: white;
+            font-size: 1rem;
         }
 
         .agent-info {
@@ -201,10 +210,11 @@
             flex-direction: column;
             flex-grow: 1;
             gap: 2px;
+            overflow: hidden;
         }
 
         .agent-label {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             color: var(--text-secondary);
@@ -212,7 +222,7 @@
 
         .agent-status-text {
             font-size: 0.95rem;
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .agent-task {
@@ -222,13 +232,12 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 320px;
         }
 
         .status-badge {
             font-size: 0.7rem;
-            font-weight: 500;
-            padding: 2px 8px;
+            font-weight: 600;
+            padding: 3px 8px;
             border-radius: 4px;
             text-transform: uppercase;
         }
@@ -236,21 +245,20 @@
         .badge-idle {
             background: var(--panel-border);
             color: var(--text-secondary);
-            border: 1px solid var(--panel-border);
         }
 
         .badge-busy {
-            background: rgba(234, 179, 8, 0.1);
+            background: rgba(234, 179, 8, 0.15);
             color: var(--status-busy);
-            border: 1px solid rgba(234, 179, 8, 0.2);
+            border: 1px solid rgba(234, 179, 8, 0.3);
         }
 
-        /* System Metrics */
+        /* System Metrics Grid */
         .metrics-grid {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .metric-card {
@@ -264,19 +272,19 @@
 
         .metric-circle {
             position: relative;
-            width: 70px;
-            height: 70px;
+            width: 64px;
+            height: 64px;
         }
 
         .metric-circle svg {
-            width: 70px;
-            height: 70px;
+            width: 64px;
+            height: 64px;
             transform: rotate(-90deg);
         }
 
         .metric-circle circle {
             fill: none;
-            stroke-width: 3;
+            stroke-width: 4;
         }
 
         .metric-circle .bg-circle {
@@ -285,18 +293,9 @@
 
         .metric-circle .progress-circle {
             stroke: var(--text-primary);
-            stroke-dasharray: 201; /* 2 * pi * r (r=32) */
-            stroke-dashoffset: 201;
+            stroke-dasharray: 188; /* 2 * pi * 30 */
+            stroke-dashoffset: 188;
             transition: stroke-dashoffset 0.8s ease;
-            stroke-linecap: square;
-        }
-
-        .metric-circle.memory .progress-circle {
-            stroke: var(--text-primary);
-        }
-
-        .metric-circle.disk .progress-circle {
-            stroke: var(--text-primary);
         }
 
         .metric-value {
@@ -304,115 +303,309 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 0.9rem;
-            font-weight: 500;
+            font-size: 0.85rem;
+            font-weight: 600;
         }
 
         .metric-name {
             font-size: 0.75rem;
             color: var(--text-secondary);
-            font-weight: 500;
         }
 
-        /* Schedule Command Form */
-        .schedule-form {
+        /* Chat View Components */
+        .chat-container {
             display: flex;
             flex-direction: column;
             gap: 10px;
+            height: calc(100vh - 140px);
+            min-height: 480px;
         }
 
-        .schedule-form h3 {
-            font-size: 0.95rem;
-            font-weight: 500;
+        /* Review Quick Chips Bar */
+        .review-chips-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 4px 0;
+            scrollbar-width: none;
+        }
+        .review-chips-bar::-webkit-scrollbar { display: none; }
+        
+        .review-chip {
             display: flex;
             align-items: center;
             gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--panel-border);
+            color: var(--text-primary);
+            transition: all 0.15s ease;
+        }
+        .review-chip:hover {
+            transform: translateY(-1px);
+            border-color: var(--accent);
+        }
+        .review-chip.chip-plan { border-color: #3b82f6; color: #60a5fa; background: rgba(59, 130, 246, 0.12); }
+        .review-chip.chip-walkthrough { border-color: #22c55e; color: #4ade80; background: rgba(34, 197, 94, 0.12); }
+        .review-chip.chip-diff { border-color: #f97316; color: #fb923c; background: rgba(249, 115, 22, 0.12); }
+
+        .chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 12px;
+            background: #09090b;
+            border: 1px solid var(--panel-border);
+            border-radius: 10px;
+        }
+
+        .chat-turn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .chat-turn-group.user { align-items: flex-end; }
+        .chat-turn-group.agent { align-items: flex-start; }
+
+        .chat-sender-label {
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 0 4px;
+        }
+
+        .chat-bubble {
+            max-width: 88%;
+            padding: 11px 15px;
+            border-radius: 14px;
+            font-size: 0.88rem;
+            line-height: 1.48;
+            word-break: break-word;
+            white-space: pre-wrap;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .chat-bubble.user {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #ffffff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-bubble.agent {
+            background: #18181b;
+            border: 1px solid #27272a;
+            color: #f4f4f5;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-time {
+            font-size: 0.65rem;
+            opacity: 0.7;
+            margin-top: 4px;
+            text-align: right;
         }
 
         .input-group {
             position: relative;
             display: flex;
+            gap: 8px;
         }
 
         .command-input {
             width: 100%;
             background: var(--bg);
             border: 1px solid var(--panel-border);
-            border-radius: 6px;
-            padding: 10px 12px;
-            font-family: 'JetBrains Mono', monospace;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: inherit;
             color: var(--text-primary);
-            font-size: 0.85rem;
-            padding-right: 44px;
+            font-size: 0.9rem;
+            outline: none;
         }
 
         .command-input:focus {
-            outline: none;
-            border-color: var(--text-secondary);
+            border-color: var(--accent);
         }
 
         .submit-btn {
-            position: absolute;
-            right: 6px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: var(--panel-bg);
-            border: 1px solid var(--panel-border);
-            width: 32px;
-            height: 32px;
-            border-radius: 4px;
+            background: var(--accent);
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
             display: flex;
             justify-content: center;
             align-items: center;
-            color: var(--text-primary);
+            color: white;
             cursor: pointer;
-            transition: background-color 0.15s;
+            flex-shrink: 0;
         }
 
         .submit-btn:hover {
-            background: var(--panel-border);
+            background: var(--accent-hover);
         }
 
-        /* Task Queue list */
-        .tasks-container {
+        /* History View */
+        .history-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
         }
 
-        .tasks-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .tasks-header h3 {
-            font-size: 0.95rem;
-            font-weight: 500;
-        }
-
-        .tasks-list {
+        .history-item {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
             gap: 8px;
-            max-height: 250px;
-            overflow-y: auto;
-            padding-right: 5px;
+            cursor: pointer;
+            transition: border-color 0.15s ease;
         }
 
-        .task-item {
+        .history-item:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .history-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+
+        .history-meta {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 4px;
+        }
+
+        .continue-btn {
+            background: var(--panel-border);
+            border: 1px solid var(--panel-border);
+            color: var(--text-primary);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .continue-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(9, 9, 11, 0.85);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-card {
             background: var(--panel-bg);
             border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 24px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Auth Overlay */
+        #auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg);
+            z-index: 3000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .pin-inputs {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 15px 0;
+        }
+
+        .pin-input {
+            width: 42px;
+            height: 52px;
+            background: var(--bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .pin-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .auth-error {
+            color: var(--status-failed);
+            font-size: 0.85rem;
+            text-align: center;
+            min-height: 1.2rem;
+        }
+
+        /* Tasks Queue */
+        .task-item {
+            background: var(--bg);
+            border: 1px solid var(--panel-border);
             border-radius: 6px;
-            padding: 10px 12px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             gap: 6px;
-            transition: background-color 0.15s;
-        }
-
-        .task-item:hover {
-            background: var(--panel-border);
         }
 
         .task-top {
@@ -421,7 +614,7 @@
             align-items: center;
         }
 
-        .task-command {
+        .task-cmd {
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.8rem;
             white-space: nowrap;
@@ -430,260 +623,464 @@
             max-width: 70%;
         }
 
-        .task-status {
-            font-size: 0.7rem;
-            font-weight: 500;
-            padding: 2px 6px;
-            border-radius: 4px;
-            text-transform: uppercase;
-        }
-
-        .task-status.pending { background: var(--panel-border); color: var(--text-secondary); border: 1px solid var(--panel-border); }
-        .task-status.running { background: rgba(234, 179, 8, 0.1); color: var(--status-busy); border: 1px solid rgba(234, 179, 8, 0.2); }
-        .task-status.completed { background: rgba(34, 197, 94, 0.1); color: var(--status-idle); border: 1px solid rgba(34, 197, 94, 0.2); }
-        .task-status.failed { background: rgba(239, 68, 68, 0.1); color: var(--status-failed); border: 1px solid rgba(239, 68, 68, 0.2); }
-        .task-status.cancelled { background: var(--panel-border); color: var(--text-secondary); border: 1px solid var(--panel-border); }
-
-        .task-details {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .task-actions {
-            display: flex;
-            gap: 6px;
-        }
-
-        .action-btn {
+        /* Inline Review Cards */
+        .inline-card {
             background: var(--panel-bg);
             border: 1px solid var(--panel-border);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 500;
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .inline-card:hover {
+            border-color: var(--accent);
+            background: rgba(59, 130, 246, 0.08);
+        }
+        .inline-card.plan-card { border-left: 3px solid #3b82f6; }
+        .inline-card.walkthrough-card { border-left: 3px solid #22c55e; }
+        .inline-card.diff-card { border-left: 3px solid #f97316; }
+
+        .inline-card-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow: hidden;
+        }
+        .inline-card-title {
+            font-size: 0.85rem;
+            font-weight: 600;
             color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .inline-card-subtitle {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .inline-card-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 0.72rem;
+            font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 4px;
-            transition: all 0.15s;
+            flex-shrink: 0;
         }
 
-        .action-btn:hover {
-            background: var(--panel-border);
-            border-color: var(--text-secondary);
-        }
-
-        .action-btn.run {
-            background: var(--text-primary);
-            color: var(--bg);
-            border: 1px solid var(--text-primary);
-        }
-
-        .action-btn.run:hover {
-            background: #e4e4e7;
-        }
-
-        .action-btn.cancel {
-            border-color: var(--panel-border);
-            color: var(--status-failed);
-        }
-
-        .action-btn.cancel:hover {
-            background: rgba(239, 68, 68, 0.05);
-            border-color: var(--status-failed);
-        }
-
-        .action-btn.logs {
-            border-color: var(--panel-border);
-            color: var(--text-primary);
-        }
-
-        .action-btn.logs:hover {
-            background: var(--panel-border);
-        }
-
-        /* Terminal Drawer Modal */
-        #terminal-modal {
+        /* Overlay Panel */
+        .full-overlay-panel {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(9, 9, 11, 0.8);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.25s ease;
-        }
-
-        #terminal-modal.open {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .terminal-content {
             background: var(--bg);
-            border-top: 1px solid var(--panel-border);
-            height: 80vh;
-            border-radius: 8px 8px 0 0;
-            display: flex;
+            z-index: 2500;
+            display: none;
             flex-direction: column;
-            box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
-            transform: translateY(100%);
-            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
         }
-
-        #terminal-modal.open .terminal-content {
-            transform: translateY(0);
-        }
-
-        .terminal-header {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--panel-border);
+        .overlay-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--panel-border);
         }
-
-        .terminal-title {
+        .overlay-back-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
             display: flex;
             align-items: center;
             gap: 6px;
             font-size: 0.85rem;
             font-weight: 500;
-        }
-
-        .terminal-close {
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
             cursor: pointer;
         }
+        .overlay-body {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
 
-        .terminal-close:hover {
+        /* Diff Viewer & State Badges */
+        .diff-container {
+            background: #0d0e11;
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            overflow-x: auto;
+            line-height: 1.5;
+            margin-top: 6px;
+        }
+        .diff-line {
+            display: flex;
+            padding: 2px 8px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .diff-line-added {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+        }
+        .diff-line-removed {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+        .diff-line-context {
+            color: #a1a1aa;
+        }
+        .diff-line-header {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            font-weight: 600;
+        }
+        .state-badge {
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .state-badge.state-M { background: rgba(249, 115, 22, 0.2); color: #f97316; border: 1px solid rgba(249, 115, 22, 0.4); }
+        .state-badge.state-A { background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.4); }
+        .state-badge.state-U { background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.4); }
+        .state-badge.state-D { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); }
+        .state-badge.state-R { background: rgba(168, 85, 247, 0.2); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.4); }
+
+        /* Markdown Styling */
+        .md-rendered h1 { font-size: 1.15rem; font-weight: 700; margin: 12px 0 8px; color: var(--text-primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 4px; }
+        .md-rendered h2 { font-size: 1.02rem; font-weight: 600; margin: 10px 0 6px; color: var(--text-primary); }
+        .md-rendered h3 { font-size: 0.92rem; font-weight: 600; margin: 8px 0 4px; color: var(--text-primary); }
+        .md-rendered p { font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); margin-bottom: 8px; }
+        .md-rendered ul, .md-rendered ol { padding-left: 20px; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; }
+        .md-rendered li { margin-bottom: 4px; }
+        .md-rendered pre { background: #0d0e11; border: 1px solid var(--panel-border); border-radius: 6px; padding: 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; overflow-x: auto; margin: 8px 0; }
+        .md-rendered blockquote { background: var(--panel-bg); border-left: 3px solid var(--accent); padding: 8px 12px; margin: 8px 0; border-radius: 0 6px 6px 0; font-size: 0.82rem; }
+
+        /* Directory Browser */
+        .browse-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            overflow-x: auto;
+            white-space: nowrap;
+            padding: 6px 0;
+            margin-bottom: 8px;
+        }
+        .browse-breadcrumb span {
+            cursor: pointer;
+            color: var(--accent);
+            font-weight: 500;
+        }
+        .browse-breadcrumb span:last-child {
+            color: var(--text-primary);
+            cursor: default;
+        }
+        .browse-breadcrumb .sep {
+            color: var(--text-secondary);
+            cursor: default;
+            font-weight: normal;
+        }
+        .dir-entry {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: var(--bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color 0.15s ease, background 0.15s ease;
+            gap: 8px;
+        }
+        .dir-entry:hover {
+            border-color: var(--text-secondary);
+            background: rgba(59, 130, 246, 0.05);
+        }
+        .dir-entry.active-ws {
+            border-color: var(--accent);
+            background: rgba(59, 130, 246, 0.08);
+        }
+        .dir-entry-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
+            flex: 1;
+        }
+        .dir-entry-icon {
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--panel-border);
+        }
+        .dir-entry-icon.git {
+            background: rgba(249, 115, 22, 0.15);
+            color: #f97316;
+        }
+        .dir-entry-icon.agents {
+            background: rgba(139, 92, 246, 0.15);
+            color: #8b5cf6;
+        }
+        .dir-entry-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow: hidden;
+        }
+        .dir-entry-name {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .dir-entry-meta {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .dir-badge {
+            font-size: 0.62rem;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .dir-badge.badge-git { background: rgba(249, 115, 22, 0.2); color: #f97316; }
+        .dir-badge.badge-agents { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
+        .dir-badge.badge-active { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+        .select-ws-btn {
+            background: var(--accent);
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .select-ws-btn:hover {
+            background: var(--accent-hover);
+        }
+        .go-up-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: var(--bg);
+            border: 1px dashed var(--panel-border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .go-up-btn:hover {
+            border-color: var(--accent);
             color: var(--text-primary);
         }
-
-        .terminal-body {
-            flex-grow: 1;
-            padding: 16px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-            line-height: 1.4;
-            overflow-y: auto;
-            color: #fafafa;
-            background: var(--bg);
-            white-space: pre-wrap;
-        }
-
-        /* Utility styles */
-        .empty-text {
+        .workspace-path-tag {
+            font-size: 0.68rem;
             color: var(--text-secondary);
-            text-align: center;
-            padding: 20px;
-            font-size: 0.85rem;
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg);
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid var(--panel-border);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+            display: inline-block;
         }
     </style>
 </head>
 <body>
 
-    <!-- Authentication Overlay -->
-    <div id="auth-overlay">
-        <div class="auth-card">
-            <h2>Remote Access Auth</h2>
-            <p>Enter the 6-digit security PIN generated on your terminal to connect</p>
-            <div class="pin-inputs">
-                <input type="text" maxlength="1" class="pin-input" data-idx="0">
-                <input type="text" maxlength="1" class="pin-input" data-idx="1">
-                <input type="text" maxlength="1" class="pin-input" data-idx="2">
-                <input type="text" maxlength="1" class="pin-input" data-idx="3">
-                <input type="text" maxlength="1" class="pin-input" data-idx="4">
-                <input type="text" maxlength="1" class="pin-input" data-idx="5">
-            </div>
-            <div id="auth-error-msg" class="auth-error"></div>
+    <!-- Header -->
+    <header>
+        <div class="brand">
+            <i data-lucide="smartphone" style="width: 20px; height: 20px; color: var(--accent);"></i>
+            <h1>Antigravity Remote</h1>
         </div>
-    </div>
+        <div class="header-actions">
+            <div class="connection-status">
+                <div id="ws-dot" class="status-dot"></div>
+                <span id="ws-text">Connecting...</span>
+            </div>
+            <button id="shutdown-btn" class="shutdown-btn" title="Turn Off Tunnel">
+                <i data-lucide="power" style="width: 13px; height: 13px;"></i>
+            </button>
+        </div>
+    </header>
 
-    <!-- Main Viewport -->
+    <!-- Main Container -->
     <div id="app">
-        <header>
-            <div class="brand">
-                <h1>Antigravity Remote</h1>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <div class="connection-status">
-                    <div id="ws-status-dot" class="status-dot"></div>
-                    <span id="ws-status-text">Disconnected</span>
-                </div>
-                <button id="shutdown-btn" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; color: rgb(239, 68, 68); padding: 4px 8px; font-size: 0.8rem; font-family: inherit; cursor: pointer; display: flex; align-items: center; gap: 4px; outline: none; transition: background 0.2s;" title="Close Tunnel">
-                    <i data-lucide="power" style="width: 14px; height: 14px;"></i>
-                    <span>Off Tunnel</span>
-                </button>
-            </div>
-        </header>
 
-        <!-- Agent Status -->
-        <div class="glass-panel agent-card">
-            <div class="agent-avatar">AG</div>
-            <div class="agent-info">
-                <div class="agent-label">Agent State</div>
-                <div id="agent-state-label" class="agent-status-text">Detecting...</div>
-                <div id="agent-task-text" class="agent-task">Initial workspace handshake</div>
+        <!-- TAB 1: DASHBOARD -->
+        <div id="tab-dashboard" class="tab-view active">
+            <!-- Agent State Card -->
+            <div class="panel agent-card">
+                <div class="agent-avatar">AG</div>
+                <div class="agent-info">
+                    <div class="agent-label">Agent Status</div>
+                    <div id="agent-state-label" class="agent-status-text">Connecting...</div>
+                    <div id="agent-task-text" class="agent-task">Initializing connection</div>
+                </div>
+                <span id="agent-badge" class="status-badge badge-idle">Idle</span>
             </div>
-            <span id="agent-badge" class="status-badge badge-idle">Idle</span>
-        </div>
 
-        <!-- Metrics -->
-        <div class="glass-panel metrics-grid">
-            <!-- CPU -->
-            <div class="metric-card">
-                <div class="metric-circle cpu">
-                    <svg>
-                        <circle class="bg-circle" cx="35" cy="35" r="32"></circle>
-                        <circle id="cpu-circle" class="progress-circle" cx="35" cy="35" r="32"></circle>
-                    </svg>
-                    <div id="cpu-value" class="metric-value">0%</div>
+            <!-- Metrics Grid -->
+            <div class="panel metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-circle">
+                        <svg>
+                            <circle class="bg-circle" cx="32" cy="32" r="30"></circle>
+                            <circle id="cpu-circle" class="progress-circle" cx="32" cy="32" r="30"></circle>
+                        </svg>
+                        <div id="cpu-val" class="metric-value">0%</div>
+                    </div>
+                    <div class="metric-name">CPU</div>
                 </div>
-                <div class="metric-name">CPU</div>
-            </div>
-            <!-- RAM -->
-            <div class="metric-card">
-                <div class="metric-circle memory">
-                    <svg>
-                        <circle class="bg-circle" cx="35" cy="35" r="32"></circle>
-                        <circle id="ram-circle" class="progress-circle" cx="35" cy="35" r="32"></circle>
-                    </svg>
-                    <div id="ram-value" class="metric-value">0%</div>
+                <div class="metric-card">
+                    <div class="metric-circle">
+                        <svg>
+                            <circle class="bg-circle" cx="32" cy="32" r="30"></circle>
+                            <circle id="ram-circle" class="progress-circle" cx="32" cy="32" r="30"></circle>
+                        </svg>
+                        <div id="ram-val" class="metric-value">0%</div>
+                    </div>
+                    <div class="metric-name">RAM</div>
                 </div>
-                <div class="metric-name">Memory</div>
-            </div>
-            <!-- Disk -->
-            <div class="metric-card">
-                <div class="metric-circle disk">
-                    <svg>
-                        <circle class="bg-circle" cx="35" cy="35" r="32"></circle>
-                        <circle id="disk-circle" class="progress-circle" cx="35" cy="35" r="32"></circle>
-                    </svg>
-                    <div id="disk-value" class="metric-value">0%</div>
+                <div class="metric-card">
+                    <div class="metric-circle">
+                        <svg>
+                            <circle class="bg-circle" cx="32" cy="32" r="30"></circle>
+                            <circle id="disk-circle" class="progress-circle" cx="32" cy="32" r="30"></circle>
+                        </svg>
+                        <div id="disk-val" class="metric-value">0%</div>
+                    </div>
+                    <div class="metric-name">Disk</div>
                 </div>
-                <div class="metric-name">Disk</div>
             </div>
-        </div>
 
-        <!-- Model Selector & Limits -->
-        <div class="glass-panel" style="display: flex; flex-direction: column; gap: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="font-size: 0.95rem; font-weight: 500; display: flex; align-items: center; gap: 6px; margin: 0;">
-                    <i data-lucide="cpu" style="width:16px;height:16px;color:var(--text-primary)"></i> Model Control
+            <!-- Quick Task Scheduler -->
+            <div class="panel">
+                <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="play-circle" style="width: 16px; height: 16px; color: var(--accent);"></i> Schedule Terminal Task
                 </h3>
-                <select id="model-select" style="background: var(--bg); border: 1px solid var(--panel-border); border-radius: 6px; color: var(--text-primary); padding: 4px 8px; font-family: inherit; font-size: 0.8rem; outline: none; cursor: pointer;">
+                <div class="input-group">
+                    <input type="text" id="dash-cmd-input" class="command-input" placeholder="e.g. pytest or npm test">
+                    <button id="dash-cmd-btn" class="submit-btn"><i data-lucide="play" style="width: 16px; height: 16px;"></i></button>
+                </div>
+            </div>
+
+            <!-- Task Queue -->
+            <div class="panel">
+                <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="list-todo" style="width: 16px; height: 16px; color: var(--accent);"></i> Task Queue
+                    </span>
+                    <span id="tasks-count" style="font-size: 0.75rem; color: var(--text-secondary); font-weight: normal;">0 tasks</span>
+                </h3>
+                <div id="dash-tasks-list" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="empty-state">No scheduled tasks yet</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: CHAT -->
+        <div id="tab-chat" class="tab-view">
+            <div class="panel chat-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--panel-border); padding-bottom: 8px;">
+                    <h3 style="font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="message-square" style="width: 16px; height: 16px; color: var(--accent);"></i> Agent Conversation
+                    </h3>
+                    <span id="chat-status-badge" style="font-size: 0.7rem; color: var(--text-secondary);">Ready</span>
+                </div>
+
+                <!-- Review Quick Chips Bar (Plan, Walkthrough, Code Review) -->
+                <div id="inline-review-cards" class="review-chips-bar"></div>
+
+                <!-- Chat Turn Messages Container -->
+                <div id="chat-messages" class="chat-messages">
+                    <div class="chat-turn-group agent">
+                        <div class="chat-sender-label">Antigravity AI</div>
+                        <div class="chat-bubble agent">
+                            Hello! Ask me anything or send a command to start working.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Agent Log Bar -->
+                <div style="background: #111115; border: 1px solid var(--panel-border); border-radius: 6px; padding: 6px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; display: flex; align-items: center; justify-content: space-between;" id="live-logs-container">
+                    <span style="color: var(--text-secondary); font-size: 0.68rem; font-weight: 600;">LOGS</span>
+                    <span id="live-logs-box" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85%; color: #a1a1aa;">Agent idle</span>
+                </div>
+
+                <!-- Input box -->
+                <div class="input-group">
+                    <input type="text" id="chat-prompt-input" class="command-input" placeholder="Ask Antigravity to build or edit code...">
+                    <button id="chat-send-btn" class="submit-btn"><i data-lucide="send" style="width: 16px; height: 16px;"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: HISTORY -->
+        <div id="tab-history" class="tab-view">
+            <div class="panel">
+                <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="history" style="width: 16px; height: 16px; color: var(--accent);"></i> Past Conversations
+                </h3>
+                <div id="history-sessions-list" class="history-list">
+                    <div class="empty-state">Loading history...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: CONTROL / SETTINGS -->
+        <div id="tab-control" class="tab-view">
+            <!-- Model Control -->
+            <div class="panel" style="display: flex; flex-direction: column; gap: 10px;">
+                <h3 style="font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="cpu" style="width: 16px; height: 16px; color: var(--accent);"></i> AI Model Selection
+                </h3>
+                <select id="control-model-select" class="command-input" style="cursor: pointer;">
                     <option value="gemini-3-6-flash-high">Gemini 3.6 Flash (High)</option>
                     <option value="gemini-3-6-flash-medium">Gemini 3.6 Flash (Medium)</option>
                     <option value="gemini-3-6-flash-low">Gemini 3.6 Flash (Low)</option>
@@ -697,183 +1094,141 @@
                     <option value="gpt-oss-120b">GPT-OSS 120B (Medium)</option>
                 </select>
             </div>
-        </div>
 
-        <!-- Agent Command Center (Prompt Box) -->
-        <div class="glass-panel" style="display: flex; flex-direction: column; gap: 12px;">
-            <h3 style="font-size: 0.95rem; font-weight: 500; display: flex; align-items: center; gap: 6px; margin: 0;">
-                <i data-lucide="message-square" style="width:16px;height:16px;color:var(--text-primary)"></i> Agent Commands
-            </h3>
-            
-            <div id="agent-active-prompt-card" style="display: none; background: var(--bg); border: 1px solid var(--panel-border); border-radius: 6px; padding: 10px 12px; flex-direction: column; gap: 8px;">
+            <!-- Workspace Directory Browser -->
+            <div class="panel" style="display: flex; flex-direction: column; gap: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 0.75rem; color: var(--text-secondary);">Active Remote Prompt</span>
-                    <span id="agent-prompt-status" class="task-status pending">Executing</span>
+                    <h3 style="font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="folder-open" style="width: 16px; height: 16px; color: var(--accent);"></i> Workspace Directory
+                    </h3>
+                    <span id="current-ws-label" style="font-size: 0.68rem; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace;">Loading...</span>
                 </div>
-                <div id="agent-prompt-text" style="font-family: inherit; font-size: 0.85rem; font-weight: 500; word-break: break-word;">Write a summary report...</div>
-                
-                <div id="agent-prompt-response-wrapper" style="display: none; flex-direction: column; gap: 4px;">
-                    <span style="font-size: 0.75rem; color: var(--text-secondary);">Response:</span>
-                    <div id="agent-prompt-response-box" style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; background: var(--bg); padding: 8px; border-radius: 4px; max-height: 120px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; color: var(--text-primary);">Finished successfully.</div>
+                <!-- Quick Switch (Git Repos) -->
+                <div id="quick-projects-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                <!-- Full Directory Browser -->
+                <div style="border-top: 1px solid var(--panel-border); padding-top: 10px; margin-top: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-primary);">Browse All Directories</span>
+                    </div>
+                    <div id="browse-breadcrumb" class="browse-breadcrumb"></div>
+                    <div id="browse-entries" style="display: flex; flex-direction: column; gap: 6px;"></div>
                 </div>
-            </div>
-
-            <!-- Agent Thought Stream / Execution Console -->
-            <div id="agent-logs-panel" style="display: flex; flex-direction: column; gap: 6px; background: var(--bg); border: 1px solid var(--panel-border); border-radius: 6px; padding: 10px 12px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; border-bottom: 1px solid var(--panel-border); padding-bottom: 6px;">
-                    <span style="color: var(--text-secondary); font-weight: 500; display: flex; align-items: center; gap: 4px;">
-                        <i data-lucide="terminal" style="width:12px;height:12px;color:var(--text-primary)"></i> Live Agent Output
-                    </span>
-                    <span style="font-size: 0.75rem; color: var(--text-secondary);" id="agent-logs-active-badge">Idle</span>
-                </div>
-                <pre id="agent-logs-box" style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-primary); max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; margin: 0; padding-top: 6px; line-height: 1.4;">No output logs yet.</pre>
-            </div>
-
-            <div class="input-group">
-                <input type="text" id="agent-prompt-input" class="command-input" placeholder="Ask Antigravity to perform a task...">
-                <button id="send-prompt-btn" class="submit-btn"><i data-lucide="send" style="width:14px;height:14px;"></i></button>
             </div>
         </div>
 
-        <!-- Schedule task -->
-        <div class="glass-panel schedule-form">
-            <h3><i data-lucide="plus-circle" style="width:16px;height:16px;color:var(--text-primary)"></i> Schedule Task</h3>
-            <div class="input-group">
-                <input type="text" id="cmd-input" class="command-input" placeholder="e.g., pytest tests/test_server.py">
-                <button id="schedule-btn" class="submit-btn"><i data-lucide="play" style="width:14px;height:14px;"></i></button>
-            </div>
-        </div>
+    </div>
 
-        <!-- Tasks list -->
-        <div class="glass-panel tasks-container">
-            <div class="tasks-header">
-                <h3>Task Queue</h3>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <button id="summary-btn" class="action-btn" style="border-color: var(--panel-border); color: var(--text-primary); padding: 4px 8px; display: flex; align-items: center; gap: 4px;">
-                        <i data-lucide="file-text" style="width:12px;height:12px"></i> Summary
-                    </button>
-                    <span id="tasks-count" style="font-size:0.75rem;color:var(--text-secondary)">0 tasks</span>
-                </div>
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" data-tab="tab-dashboard">
+            <i data-lucide="layout-dashboard"></i>
+            <span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-tab="tab-chat">
+            <i data-lucide="message-square"></i>
+            <span>Chat</span>
+        </button>
+        <button class="nav-item" data-tab="tab-history">
+            <i data-lucide="history"></i>
+            <span>History</span>
+        </button>
+        <button class="nav-item" data-tab="tab-control">
+            <i data-lucide="sliders"></i>
+            <span>Control</span>
+        </button>
+    </nav>
+
+    <!-- Authentication Overlay -->
+    <div id="auth-overlay">
+        <div class="modal-card" style="text-align: center;">
+            <h2 style="font-size: 1.2rem; font-weight: 600;">Antigravity Remote Access</h2>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">Enter the 6-digit PIN shown on your PC terminal</p>
+            <div class="pin-inputs">
+                <input type="text" maxlength="1" class="pin-input" data-idx="0">
+                <input type="text" maxlength="1" class="pin-input" data-idx="1">
+                <input type="text" maxlength="1" class="pin-input" data-idx="2">
+                <input type="text" maxlength="1" class="pin-input" data-idx="3">
+                <input type="text" maxlength="1" class="pin-input" data-idx="4">
+                <input type="text" maxlength="1" class="pin-input" data-idx="5">
             </div>
-            <div id="tasks-list" class="tasks-list">
-                <div class="empty-text">No scheduled tasks yet</div>
+            <div id="auth-error-msg" class="auth-error"></div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="approval-overlay" class="modal-overlay">
+        <div class="modal-card">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="shield-alert" style="width: 20px; height: 20px; color: var(--accent);"></i>
+                <h2 style="font-size: 1.1rem; font-weight: 600;">Action Approval Required</h2>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">The AI agent is requesting permission to execute:</p>
+            <div style="background: var(--bg); border: 1px solid var(--panel-border); border-radius: 6px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; word-break: break-all;" id="approval-target-box">
+                npm test
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button id="approve-yes-btn" class="submit-btn" style="flex: 1; background: var(--status-idle);">Approve (Yes)</button>
+                <button id="approve-no-btn" class="submit-btn" style="flex: 1; background: var(--status-failed);">Reject (No)</button>
             </div>
         </div>
     </div>
 
-    <!-- Interactive Remote Approval Modal -->
-    <div id="approval-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(9, 9, 11, 0.8); z-index: 2000; display: none; justify-content: center; align-items: center; padding: 20px;">
-        <div class="auth-card" style="max-width: 450px; text-align: left; padding: 24px; gap: 12px;">
-            <div style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--panel-border); padding-bottom: 10px;">
-                <i data-lucide="shield-alert" style="width: 20px; height: 20px; color: var(--text-primary);"></i>
-                <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0;">Action Approval Required</h2>
-            </div>
-            
-            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">The Antigravity Agent is requesting permission to execute the following action on your local PC:</p>
-            
-            <div style="background: var(--bg); border: 1px solid var(--panel-border); border-radius: 6px; padding: 12px;">
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; letter-spacing: 0.05em;" id="approval-action-type">Command</span>
-                    <pre style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-primary); white-space: pre-wrap; word-break: break-all; margin: 0;" id="approval-action-target">npm run build</pre>
-                </div>
-            </div>
-            
-            <div style="display: grid; grid-template-cols: 1fr 1fr; gap: 10px; margin-top: 8px; width: 100%;">
-                <button id="approve-yes-btn" class="action-btn run" style="justify-content: center; padding: 10px; font-size: 0.85rem; border-radius: 6px;">
-                    <i data-lucide="check" style="width: 14px; height: 14px;"></i> Approve (Yes)
-                </button>
-                <button id="approve-no-btn" class="action-btn cancel" style="justify-content: center; padding: 10px; font-size: 0.85rem; border-radius: 6px;">
-                    <i data-lucide="x" style="width: 14px; height: 14px;"></i> Reject (No)
-                </button>
-            </div>
+    <!-- Full-Screen Review Overlay Panel (Plan, Walkthrough, Code Review) -->
+    <div id="review-overlay" class="full-overlay-panel">
+        <div class="overlay-header">
+            <button id="review-overlay-close-btn" class="overlay-back-btn">
+                <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i>
+                <span id="review-overlay-title">Details</span>
+            </button>
+            <div id="review-overlay-actions"></div>
         </div>
-    </div>
-
-    <!-- Terminal Output Drawer Modal -->
-    <div id="terminal-modal">
-        <div class="terminal-content">
-            <div class="terminal-header">
-                <div class="terminal-title">
-                    <i data-lucide="terminal" style="width:18px;height:18px;color:var(--text-primary)"></i>
-                    <span id="terminal-task-cmd">echo "Hello World"</span>
-                </div>
-                <button id="terminal-close-btn" class="terminal-close">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <pre id="terminal-body" class="terminal-body">Connecting to logs...</pre>
-        </div>
+        <div id="review-overlay-body" class="overlay-body"></div>
     </div>
 
     <script>
-        // DOM Elements
-        const authOverlay = document.getElementById('auth-overlay');
-        const authErrorMsg = document.getElementById('auth-error-msg');
+        async function fetchWithAuth(url, options = {}) {
+            options.headers = options.headers || {};
+            if (token) {
+                options.headers['Authorization'] = `Bearer ${token}`;
+            }
+            const res = await fetch(url, options);
+            if (res.status === 401 && url !== '/api/login') {
+                localStorage.removeItem('remote_auth_token');
+                window.location.reload();
+            }
+            return res;
+        }
+
+        // Tab Switching
+        const navItems = document.querySelectorAll('.nav-item');
+        const tabViews = document.querySelectorAll('.tab-view');
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const targetTab = item.getAttribute('data-tab');
+                navItems.forEach(n => n.classList.remove('active'));
+                tabViews.forEach(v => v.classList.remove('active'));
+                item.classList.add('active');
+                document.getElementById(targetTab).classList.add('active');
+                if (targetTab === 'tab-history') fetchHistorySessions();
+                if (targetTab === 'tab-control') initBrowserOnControlTab();
+            });
+        });
+
+        // App State
+        let token = localStorage.getItem('remote_auth_token') || '';
+        let ws = null;
+
+        // PIN Inputs Navigation
         const pinInputs = document.querySelectorAll('.pin-input');
-        const wsStatusDot = document.getElementById('ws-status-dot');
-        const wsStatusText = document.getElementById('ws-status-text');
-        
-        const cpuCircle = document.getElementById('cpu-circle');
-        const cpuValue = document.getElementById('cpu-value');
-        const ramCircle = document.getElementById('ram-circle');
-        const ramValue = document.getElementById('ram-value');
-        const diskCircle = document.getElementById('disk-circle');
-        const diskValue = document.getElementById('disk-value');
-
-        const agentStateLabel = document.getElementById('agent-state-label');
-        const agentTaskText = document.getElementById('agent-task-text');
-        const agentBadge = document.getElementById('agent-badge');
-
-        const cmdInput = document.getElementById('cmd-input');
-        const scheduleBtn = document.getElementById('schedule-btn');
-        const tasksList = document.getElementById('tasks-list');
-        const tasksCount = document.getElementById('tasks-count');
-
-        const terminalModal = document.getElementById('terminal-modal');
-        const terminalTaskCmd = document.getElementById('terminal-task-cmd');
-        const terminalBody = document.getElementById('terminal-body');
-        const terminalCloseBtn = document.getElementById('terminal-close-btn');
-        const summaryBtn = document.getElementById('summary-btn');
-
-        const modelSelect = document.getElementById('model-select');
-
-        const agentActivePromptCard = document.getElementById('agent-active-prompt-card');
-        const agentPromptStatus = document.getElementById('agent-prompt-status');
-        const agentPromptText = document.getElementById('agent-prompt-text');
-        const agentPromptResponseWrapper = document.getElementById('agent-prompt-response-wrapper');
-        const agentPromptResponseBox = document.getElementById('agent-prompt-response-box');
-        const agentPromptInput = document.getElementById('agent-prompt-input');
-        const sendPromptBtn = document.getElementById('send-prompt-btn');
-
-        const agentLogsActiveBadge = document.getElementById('agent-logs-active-badge');
-        const agentLogsBox = document.getElementById('agent-logs-box');
-
-        const approvalOverlay = document.getElementById('approval-overlay');
-        const approvalActionType = document.getElementById('approval-action-type');
-        const approvalActionTarget = document.getElementById('approval-action-target');
-        const approveYesBtn = document.getElementById('approve-yes-btn');
-        const approveNoBtn = document.getElementById('approve-no-btn');
-
-        // Application State
-        let token = localStorage.getItem('remote_auth_token');
-        let statusSocket = null;
-        let logsSocket = null;
-
-        // Auto PIN code navigation helper
         pinInputs.forEach((input, index) => {
             input.addEventListener('keyup', (e) => {
-                const val = input.value;
-                if (val.length === 1 && index < 5) {
+                if (input.value.length === 1 && index < 5) {
                     pinInputs[index + 1].focus();
                 }
-                
-                // Trigger check if all inputs filled
                 const pin = Array.from(pinInputs).map(i => i.value).join('');
-                if (pin.length === 6) {
-                    tryLogin(pin);
-                }
+                if (pin.length === 6) tryLogin(pin);
             });
-
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Backspace' && input.value === '' && index > 0) {
                     pinInputs[index - 1].focus();
@@ -881,519 +1236,723 @@
             });
         });
 
-        // Initialize Authentication Status
-        async function validateTokenAndConnect() {
-            if (token) {
-                try {
-                    const response = await fetch('/api/status', {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    if (response.ok) {
-                        authOverlay.style.display = 'none';
-                        connectWS();
-                    } else {
-                        handleUnauthorized();
-                    }
-                } catch (err) {
-                    console.error("Token validation error:", err);
-                    // If server is offline/unreachable, we still try to connect
-                    authOverlay.style.display = 'none';
-                    connectWS();
-                }
-            } else {
-                handleUnauthorized();
-            }
-        }
-
-        validateTokenAndConnect();
-
         async function tryLogin(pin) {
             try {
-                const response = await fetch('/api/login', {
+                const res = await fetchWithAuth('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ pin })
                 });
-
-                if (response.ok) {
-                    const data = await response.json();
+                if (res.ok) {
+                    const data = await res.json();
                     token = data.token;
                     localStorage.setItem('remote_auth_token', token);
-                    authOverlay.style.display = 'none';
-                    authErrorMsg.textContent = '';
-                    connectWS();
+                    document.getElementById('auth-overlay').style.display = 'none';
+                    initWS();
                 } else {
-                    authErrorMsg.textContent = 'Invalid PIN. Try again.';
-                    clearPinInputs();
+                    document.getElementById('auth-error-msg').textContent = 'Invalid PIN code.';
+                    pinInputs.forEach(i => i.value = '');
+                    pinInputs[0].focus();
                 }
-            } catch (err) {
-                authErrorMsg.textContent = 'Failed to connect to authentication API.';
+            } catch (e) {
+                document.getElementById('auth-error-msg').textContent = 'Connection error.';
             }
         }
 
-        function clearPinInputs() {
-            pinInputs.forEach(i => i.value = '');
-            pinInputs[0].focus();
+        async function validateToken() {
+            if (!token) {
+                document.getElementById('auth-overlay').style.display = 'flex';
+                return;
+            }
+            try {
+                const res = await fetchWithAuth('/api/status', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    document.getElementById('auth-overlay').style.display = 'none';
+                    initWS();
+                } else {
+                    localStorage.removeItem('remote_auth_token');
+                    token = '';
+                    document.getElementById('auth-overlay').style.display = 'flex';
+                }
+            } catch (e) {
+                document.getElementById('auth-overlay').style.display = 'none';
+                initWS();
+            }
         }
 
-        // WebSocket Connection
-        function connectWS() {
+        // WebSocket Connection (FIXED PROTOCOL BUG: wss: vs ws:)
+        function initWS() {
             const loc = window.location;
             const wsProtocol = loc.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = `${wsProtocol}//${loc.host}/ws/status?token=${token}`;
 
-            statusSocket = new WebSocket(wsUrl);
+            ws = new WebSocket(wsUrl);
 
-            statusSocket.onopen = () => {
-                wsStatusDot.classList.add('connected');
-                wsStatusText.textContent = 'Connected';
+            ws.onopen = () => {
+                document.getElementById('ws-dot').classList.add('connected');
+                document.getElementById('ws-text').textContent = 'Connected';
             };
 
-            statusSocket.onmessage = (event) => {
+            ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
-                updateDashboard(data);
+                updateUI(data);
             };
 
-            statusSocket.onerror = () => {
-                console.error("Status Socket Error");
-            };
-
-            statusSocket.onclose = (event) => {
-                wsStatusDot.classList.remove('connected');
-                wsStatusText.textContent = 'Disconnected';
-                if (event.code === 1008) {
-                    console.log("WebSocket status connection rejected (Unauthorized). Logging out.");
-                    handleUnauthorized();
-                } else {
-                    // Attempt reconnection after 3 seconds with token validation
-                    setTimeout(validateTokenAndConnect, 3000);
-                }
+            ws.onclose = () => {
+                document.getElementById('ws-dot').classList.remove('connected');
+                document.getElementById('ws-text').textContent = 'Disconnected';
+                setTimeout(initWS, 3000);
             };
         }
 
-        // Update Interface
-        function updateDashboard(data) {
-            // Metrics circles
-            updateProgressCircle(cpuCircle, cpuValue, data.cpu);
-            updateProgressCircle(ramCircle, ramValue, data.memory);
-            updateProgressCircle(diskCircle, diskValue, data.disk);
+        // Update Dashboard & State
+        function updateUI(data) {
+            // Metrics
+            updateCircle('cpu-circle', 'cpu-val', data.cpu);
+            updateCircle('ram-circle', 'ram-val', data.memory);
+            updateCircle('disk-circle', 'disk-val', data.disk);
 
-            // Agent state
-            agentStateLabel.textContent = `Antigravity 2.0 (${data.agent_status.toUpperCase()})`;
-            agentTaskText.textContent = data.agent_task || 'No active work';
-            
+            // Agent Status
+            const statusLabel = document.getElementById('agent-state-label');
+            const taskText = document.getElementById('agent-task-text');
+            const badge = document.getElementById('agent-badge');
+
+            statusLabel.textContent = `Antigravity (${data.agent_status.toUpperCase()})`;
+            taskText.textContent = data.agent_task || 'No active work';
+
             if (data.agent_status === 'busy' || data.agent_status === 'working') {
-                agentBadge.className = 'status-badge badge-busy';
-                agentBadge.textContent = 'Busy';
+                badge.className = 'status-badge badge-busy';
+                badge.textContent = 'Busy';
             } else {
-                agentBadge.className = 'status-badge badge-idle';
-                agentBadge.textContent = 'Idle';
+                badge.className = 'status-badge badge-idle';
+                badge.textContent = 'Idle';
             }
 
-            // Tasks
-            updateTasksList(data.tasks);
-
-            // Update live agent output logs
+            // Live Execution Logs
             if (data.agent_logs) {
-                agentLogsBox.textContent = data.agent_logs;
-                agentLogsBox.scrollTop = agentLogsBox.scrollHeight;
-            } else {
-                agentLogsBox.textContent = "No active execution output.";
+                document.getElementById('live-logs-box').textContent = data.agent_logs;
             }
 
-            if (data.agent_status === 'busy' || data.agent_status === 'working') {
-                agentLogsActiveBadge.textContent = "Executing...";
-                agentLogsActiveBadge.style.color = "var(--text-primary)";
-            } else {
-                agentLogsActiveBadge.textContent = "Idle";
-                agentLogsActiveBadge.style.color = "var(--text-secondary)";
-            }
-
-            // Update agent info (models, limits, remote prompts, approvals)
-            if (data.agent_info) {
-                updateAgentInfo(data.agent_info);
-            }
-        }
-
-        function updateAgentInfo(info) {
-            // 1. Model selection
-            if (document.activeElement !== modelSelect) {
-                modelSelect.value = info.current_model;
-            }
-
-            // 3. Remote Prompt Chat Box status
-            const promptState = info.remote_prompt;
-            if (promptState && promptState.status !== 'idle' && promptState.status !== '') {
-                agentActivePromptCard.style.display = 'flex';
-                agentPromptText.textContent = promptState.prompt;
-                agentPromptStatus.textContent = promptState.status;
-                agentPromptStatus.className = `task-status ${promptState.status}`;
-                
-                if (promptState.response) {
-                    agentPromptResponseWrapper.style.display = 'flex';
-                    agentPromptResponseBox.textContent = promptState.response;
-                } else {
-                    agentPromptResponseWrapper.style.display = 'none';
+            // Models
+            if (data.agent_info && data.agent_info.current_model) {
+                const modelSelect = document.getElementById('control-model-select');
+                if (document.activeElement !== modelSelect) {
+                    modelSelect.value = data.agent_info.current_model;
                 }
-            } else {
-                agentActivePromptCard.style.display = 'none';
             }
 
-            // 4. Interactive approvals overlay popup modal
-            const approval = info.remote_approval;
-            if (approval && approval.status === 'pending') {
-                approvalActionType.textContent = approval.type;
-                approvalActionTarget.textContent = approval.target;
-                approvalOverlay.style.display = 'flex';
+            // Projects List (quick switch)
+            if (data.target && data.target.projects) {
+                renderQuickProjects(data.target.projects, data.target.workspace_path);
+                document.getElementById('current-ws-label').textContent = data.target.workspace_path || '';
+            }
+
+            // Approval Request Overlay Modal
+            if (data.agent_info && data.agent_info.remote_approval && data.agent_info.remote_approval.status === 'pending') {
+                document.getElementById('approval-target-box').textContent = data.agent_info.remote_approval.target;
+                document.getElementById('approval-overlay').style.display = 'flex';
             } else {
-                approvalOverlay.style.display = 'none';
+                document.getElementById('approval-overlay').style.display = 'none';
+            }
+
+            // Sync Chat turns into Chat view if available
+            const chatTurns = data.chat_info && data.chat_info.chat;
+            if (chatTurns && chatTurns.length > 0) {
+                renderChatTurns(chatTurns);
+            }
+
+            // Render Inline Review Cards in Chat view
+            renderInlineCards(data);
+        }
+
+        function updateCircle(circleId, textId, val) {
+            const circle = document.getElementById(circleId);
+            const text = document.getElementById(textId);
+            if (circle && text) {
+                const max = 188;
+                const offset = max - (val / 100) * max;
+                circle.style.strokeDashoffset = offset;
+                text.textContent = `${Math.round(val)}%`;
             }
         }
 
-        function updateProgressCircle(circleEl, textEl, value) {
-            // value is 0 - 100
-            const maxOffset = 201; // 2 * pi * r
-            const offset = maxOffset - (value / 100) * maxOffset;
-            circleEl.style.strokeDashoffset = offset;
-            textEl.textContent = `${Math.round(value)}%`;
-        }
-
-        function updateTasksList(tasks) {
-            tasksCount.textContent = `${tasks.length} task${tasks.length === 1 ? '' : 's'}`;
-            
-            if (tasks.length === 0) {
-                tasksList.innerHTML = '<div class="empty-text">No scheduled tasks yet</div>';
-                return;
-            }
-
-            // Sort tasks by created_at descending
-            tasks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-            tasksList.innerHTML = tasks.map(task => {
-                const isPending = task.status === 'pending';
-                const isRunning = task.status === 'running';
-                
-                let buttons = '';
-                if (isPending) {
-                    buttons = `
-                        <button class="action-btn run" onclick="confirmTask('${task.id}')">
-                            <i data-lucide="check" style="width:12px;height:12px"></i> Confirm & Run
-                        </button>
-                        <button class="action-btn cancel" onclick="cancelTask('${task.id}')">
-                            <i data-lucide="x" style="width:12px;height:12px"></i> Cancel
-                        </button>
-                    `;
-                } else if (isRunning) {
-                    buttons = `
-                        <button class="action-btn logs" onclick="viewLogs('${task.id}', '${task.command}')">
-                            <i data-lucide="terminal" style="width:12px;height:12px"></i> Logs
-                        </button>
-                        <button class="action-btn cancel" onclick="cancelTask('${task.id}')">
-                            <i data-lucide="square" style="width:12px;height:12px"></i> Stop
-                        </button>
-                    `;
-                } else {
-                    buttons = `
-                        <button class="action-btn logs" onclick="viewLogs('${task.id}', '${task.command}')">
-                            <i data-lucide="file-text" style="width:12px;height:12px"></i> View Logs
-                        </button>
-                    `;
-                }
-
+        // Render Chat Messages
+        function renderChatTurns(turns) {
+            const container = document.getElementById('chat-messages');
+            if (!container) return;
+            container.innerHTML = turns.map(t => {
+                const isUser = t.sender === 'user';
+                const label = isUser ? 'You' : 'Antigravity AI';
                 return `
-                    <div class="task-item">
-                        <div class="task-top">
-                            <span class="task-command" title="${escapeHtml(task.command)}">${escapeHtml(task.command)}</span>
-                            <span class="task-status ${task.status}">${task.status}</span>
-                        </div>
-                        <div class="task-details">
-                            <span>ID: ${task.id} | ${formatTime(task.created_at)}</span>
-                            <div class="task-actions">
-                                ${buttons}
-                            </div>
+                    <div class="chat-turn-group ${t.sender}">
+                        <div class="chat-sender-label">${label}</div>
+                        <div class="chat-bubble ${t.sender}">
+                            ${escapeHtml(t.text)}
                         </div>
                     </div>
                 `;
             }).join('');
-
-            // Reparse icons
-            lucide.createIcons();
+            container.scrollTop = container.scrollHeight;
         }
 
         function escapeHtml(str) {
-            return str
+            return (str || '')
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
+                .replace(/"/g, "&quot;");
         }
 
-        function formatTime(isoStr) {
-            const date = new Date(isoStr);
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        }
-
-        // Action Handlers
-        async function apiPost(endpoint) {
+        // Send Prompt
+        async function sendPrompt(promptText) {
+            if (!promptText.trim()) return;
             try {
-                const res = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.status === 401) {
-                    handleUnauthorized();
-                }
-                return res.ok;
-            } catch (err) {
-                console.error(err);
-                return false;
-            }
-        }
-
-        function handleUnauthorized() {
-            localStorage.removeItem('remote_auth_token');
-            authOverlay.style.display = 'flex';
-            clearPinInputs();
-            if (statusSocket) {
-                statusSocket.close();
-            }
-        }
-
-        async function confirmTask(taskId) {
-            await apiPost(`/api/tasks/${taskId}/confirm`);
-        }
-
-        async function cancelTask(taskId) {
-            await apiPost(`/api/tasks/${taskId}/cancel`);
-        }
-
-        // Schedule Task
-        scheduleBtn.addEventListener('click', async () => {
-            const command = cmdInput.value.trim();
-            if (!command) return;
-
-            try {
-                const res = await fetch('/api/schedule', {
+                const res = await fetchWithAuth('/api/agent/prompt', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ command })
+                    body: JSON.stringify({ prompt: promptText })
                 });
-
-                if (res.status === 401) {
-                    handleUnauthorized();
-                    return;
-                }
-
                 if (res.ok) {
-                    cmdInput.value = '';
-                } else {
-                    alert('Failed to schedule command');
+                    const container = document.getElementById('chat-messages');
+                    container.innerHTML += `
+                        <div class="chat-turn-group user">
+                            <div class="chat-sender-label">You</div>
+                            <div class="chat-bubble user">${escapeHtml(promptText)}</div>
+                        </div>
+                    `;
+                    container.scrollTop = container.scrollHeight;
                 }
-            } catch (err) {
-                console.error(err);
+            } catch (e) {
+                console.error(e);
             }
-        });
-
-        cmdInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                scheduleBtn.click();
-            }
-        });
-
-        // View Logs
-        function viewLogs(taskId, command) {
-            terminalTaskCmd.textContent = command;
-            terminalBody.textContent = 'Connecting to real-time logs...\n';
-            terminalModal.classList.add('open');
-
-            if (logsSocket) {
-                logsSocket.close();
-            }
-
-            const loc = window.location;
-            const wsProtocol = loc.protocol === 'https:' ? 'wss:' : 'ws';
-            const wsUrl = `${wsProtocol}//${loc.host}/ws/logs/${taskId}?token=${token}`;
-
-            logsSocket = new WebSocket(wsUrl);
-
-            logsSocket.onmessage = (event) => {
-                terminalBody.textContent += event.data;
-                // Auto scroll to bottom
-                terminalBody.scrollTop = terminalBody.scrollHeight;
-            };
-
-            logsSocket.onerror = () => {
-                terminalBody.textContent += '\n[WebSocket logs connection error]\n';
-            };
-
-            logsSocket.onclose = (event) => {
-                if (event.code === 1008) {
-                    console.log("WebSocket logs connection rejected (Unauthorized). Logging out.");
-                    handleUnauthorized();
-                } else {
-                    terminalBody.textContent += '\n[Stream closed]\n';
-                }
-            };
         }
 
-        terminalCloseBtn.addEventListener('click', () => {
-            terminalModal.classList.remove('open');
-            if (logsSocket) {
-                logsSocket.close();
-                logsSocket = null;
+        document.getElementById('chat-send-btn').addEventListener('click', () => {
+            const input = document.getElementById('chat-prompt-input');
+            sendPrompt(input.value);
+            input.value = '';
+        });
+
+        document.getElementById('chat-prompt-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                sendPrompt(e.target.value);
+                e.target.value = '';
             }
         });
 
-        // Generate and View Task Summary
-        summaryBtn.addEventListener('click', async () => {
+        // History Sessions Fetching & Continue Conversation
+        async function fetchHistorySessions() {
+            const container = document.getElementById('history-sessions-list');
             try {
-                // 1. Request server to generate summary.md
-                const genRes = await fetch('/api/tasks/summary', {
-                    method: 'POST',
+                const res = await fetchWithAuth('/api/history/sessions', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-
-                if (genRes.status === 401) {
-                    handleUnauthorized();
-                    return;
-                }
-
-                if (genRes.ok) {
-                    const data = await genRes.json();
-                    
-                    // 2. Display summary.md content in the terminal overlay drawer
-                    terminalTaskCmd.textContent = "summary.md (Generated Workspace File)";
-                    terminalBody.textContent = data.content;
-                    terminalModal.classList.add('open');
-                    
-                    // Scroll to top
-                    terminalBody.scrollTop = 0;
-                } else {
-                    alert('Failed to generate task summary');
-                }
-            } catch (err) {
-                console.error(err);
-                alert('Failed to connect to server');
-            }
-        });
-
-        // Change Model Selection
-        modelSelect.addEventListener('change', async () => {
-            const selectedModel = modelSelect.value;
-            try {
-                const res = await fetch('/api/agent/model', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ model: selectedModel })
-                });
-                if (res.status === 401) {
-                    handleUnauthorized();
-                    return;
-                }
-                if (!res.ok) {
-                    alert('Failed to switch model selection');
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        });
-
-        // Close Tunnel
-        const shutdownBtn = document.getElementById('shutdown-btn');
-        if (shutdownBtn) {
-            shutdownBtn.addEventListener('click', () => {
-                if (!confirm("Are you sure you want to turn off the localtunnel?")) {
-                    return;
-                }
-                // Show confirmation immediately since the tunnel connection will sever
-                alert("Localtunnel shutdown command sent. The connection will close now.");
-                
-                fetch('/api/shutdown', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
+                if (res.ok) {
+                    const data = await res.json();
+                    if (!data.sessions || data.sessions.length === 0) {
+                        container.innerHTML = '<div class="empty-state">No conversation history found</div>';
+                        return;
                     }
-                }).catch(err => {
-                    console.warn("Ignored shutdown connection closed:", err);
-                });
-            });
+
+                    container.innerHTML = data.sessions.map(s => `
+                        <div class="history-item">
+                            <div class="history-header">
+                                <div class="history-title">${escapeHtml(s.title)}</div>
+                            </div>
+                            ${s.workspace_path ? `
+                            <div style="margin-top: 4px; display: flex; align-items: center; gap: 4px; overflow: hidden;">
+                                <i data-lucide="folder" style="width: 12px; height: 12px; color: var(--text-secondary); flex-shrink: 0;"></i>
+                                <span class="workspace-path-tag" title="${escapeHtml(s.workspace_path)}">${escapeHtml(s.workspace_path)}</span>
+                            </div>
+                            ` : ''}
+                            <div class="history-meta" style="margin-top: 8px;">
+                                <span>${s.turn_count} turns • ${s.age}</span>
+                                <button class="continue-btn" onclick="continueSession('${s.session_id}')">
+                                    <i data-lucide="play-circle" style="width: 12px; height: 12px;"></i> Continue
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                    lucide.createIcons();
+                }
+            } catch (e) {
+                container.innerHTML = '<div class="empty-state">Failed to load history</div>';
+            }
         }
 
-        // Send Prompt to Agent
-        sendPromptBtn.addEventListener('click', async () => {
-            const promptVal = agentPromptInput.value.trim();
-            if (!promptVal) return;
-            
+        async function continueSession(sessionId) {
             try {
-                const res = await fetch('/api/agent/prompt', {
+                const res = await fetchWithAuth(`/api/history/session/${sessionId}/continue`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ prompt: promptVal })
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
-                
-                if (res.status === 401) {
-                    handleUnauthorized();
-                    return;
-                }
-                
                 if (res.ok) {
-                    agentPromptInput.value = '';
+                    const data = await res.json();
+                    alert(`Workspace switched to:\n${data.workspace_path}\n\nConversation loaded (${data.turns_loaded} turns).`);
+                    // Switch to chat tab to show the loaded conversation
+                    document.querySelector('[data-tab="tab-chat"]').click();
+                    // Also trigger a directory browser refresh
+                    browseDirectory(null);
                 } else {
-                    const errData = await res.json();
-                    alert(errData.detail || 'Failed to submit prompt');
+                    const errData = await res.json().catch(() => ({}));
+                    alert(`Could not switch workspace.\n${errData.detail || 'Unknown error'}`);
                 }
-            } catch (err) {
-                console.error(err);
-                alert('Connection error');
+            } catch (e) {
+                alert('Connection error switching session workspace.');
             }
-        });
+        }
 
-        agentPromptInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                sendPromptBtn.click();
+        // Render Inline Review Chips in Chat view
+        function renderInlineCards(data) {
+            const container = document.getElementById('inline-review-cards');
+            if (!container) return;
+            
+            let chipsHtml = '';
+            
+            // 1. Implementation Plan Chip
+            if (data.brain_plan && data.brain_plan.has_content) {
+                chipsHtml += `
+                    <div class="review-chip chip-plan" onclick="openPlanOverlay('${escapeHtml(data.brain_plan.session_id)}')">
+                        <span>📋 Plan</span>
+                        <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i>
+                    </div>
+                `;
             }
-        });
+            
+            // 2. Walkthrough Chip
+            if (data.brain_walkthrough && data.brain_walkthrough.has_content) {
+                chipsHtml += `
+                    <div class="review-chip chip-walkthrough" onclick="openWalkthroughOverlay('${escapeHtml(data.brain_walkthrough.session_id)}')">
+                        <span>📝 Walkthrough</span>
+                        <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i>
+                    </div>
+                `;
+            }
+            
+            // 3. Code Review / Diffs Chip
+            if (data.diffs_summary && data.diffs_summary.modified_files && data.diffs_summary.modified_files.length > 0) {
+                const count = data.diffs_summary.modified_files.length;
+                chipsHtml += `
+                    <div class="review-chip chip-diff" onclick="openCodeReviewOverlay()">
+                        <span>🔍 Code Diffs (${count})</span>
+                        <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = chipsHtml;
+            if (chipsHtml) lucide.createIcons();
+        }
 
-        // Confirmations Responses (Yes / No)
-        async function submitApproval(decision) {
+        // Overlay Navigation & Handlers
+        function closeReviewOverlay() {
+            document.getElementById('review-overlay').style.display = 'none';
+        }
+        document.getElementById('review-overlay-close-btn').addEventListener('click', closeReviewOverlay);
+
+        async function openPlanOverlay(sessionId) {
+            const overlay = document.getElementById('review-overlay');
+            const title = document.getElementById('review-overlay-title');
+            const actions = document.getElementById('review-overlay-actions');
+            const body = document.getElementById('review-overlay-body');
+
+            title.textContent = "Implementation Plan";
+            actions.innerHTML = `<button class="submit-btn" style="height: 32px; padding: 0 12px; font-size: 0.75rem; background: var(--status-idle);" onclick="proceedPlanAction()">Proceed</button>`;
+            body.innerHTML = `<div class="empty-state">Loading plan...</div>`;
+            overlay.style.display = 'flex';
+
             try {
-                const res = await fetch('/api/agent/approve/response', {
+                const res = await fetchWithAuth(`/api/brain/plan/${sessionId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    body.innerHTML = `
+                        <div class="panel md-rendered">
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 12px; display: flex; justify-content: space-between;">
+                                <span>Session: ${data.session_id}</span>
+                                <span>${data.age}</span>
+                            </div>
+                            ${renderMarkdown(data.content)}
+                            <div style="margin-top: 16px; border-top: 1px solid var(--panel-border); padding-top: 12px;">
+                                <h4 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Add Review / Comment to IDE Plan</h4>
+                                <div class="input-group">
+                                    <input type="text" id="plan-comment-input" class="command-input" placeholder="Type feedback or suggestion for IDE...">
+                                    <button class="submit-btn" onclick="submitPlanComment('${data.session_id}')">Send</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    body.innerHTML = `<div class="empty-state">Failed to load implementation plan.</div>`;
+                }
+            } catch (e) {
+                body.innerHTML = `<div class="empty-state">Connection error loading plan.</div>`;
+            }
+        }
+
+        async function openWalkthroughOverlay(sessionId) {
+            const overlay = document.getElementById('review-overlay');
+            const title = document.getElementById('review-overlay-title');
+            const actions = document.getElementById('review-overlay-actions');
+            const body = document.getElementById('review-overlay-body');
+
+            title.textContent = "Walkthrough";
+            actions.innerHTML = '';
+            body.innerHTML = `<div class="empty-state">Loading walkthrough...</div>`;
+            overlay.style.display = 'flex';
+
+            try {
+                const res = await fetchWithAuth(`/api/brain/walkthrough/${sessionId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    body.innerHTML = `
+                        <div class="panel md-rendered">
+                            ${renderMarkdown(data.content)}
+                        </div>
+                    `;
+                } else {
+                    body.innerHTML = `<div class="empty-state">Failed to load walkthrough.</div>`;
+                }
+            } catch (e) {
+                body.innerHTML = `<div class="empty-state">Connection error loading walkthrough.</div>`;
+            }
+        }
+
+        async function openCodeReviewOverlay() {
+            const overlay = document.getElementById('review-overlay');
+            const title = document.getElementById('review-overlay-title');
+            const actions = document.getElementById('review-overlay-actions');
+            const body = document.getElementById('review-overlay-body');
+
+            title.textContent = "Code Review (Git Diffs)";
+            actions.innerHTML = '';
+            body.innerHTML = `<div class="empty-state">Loading git diffs...</div>`;
+            overlay.style.display = 'flex';
+
+            try {
+                const res = await fetchWithAuth(`/api/project/diffs/detailed`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (!data.files || data.files.length === 0) {
+                        body.innerHTML = `<div class="empty-state">No changed files detected in workspace.</div>`;
+                        return;
+                    }
+
+                    let html = `<div style="display: flex; flex-direction: column; gap: 12px;">`;
+                    for (const f of data.files) {
+                        html += `
+                            <div class="panel" style="padding: 12px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); word-break: break-all;">
+                                        ${escapeHtml(f.file)}
+                                    </span>
+                                    <span class="state-badge state-${f.state}">${f.state_label || f.state}</span>
+                                </div>
+                                <div class="diff-container">
+                                    ${renderDiffHtml(f.diff)}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    html += `</div>`;
+                    body.innerHTML = html;
+                } else {
+                    body.innerHTML = `<div class="empty-state">Failed to load code diffs.</div>`;
+                }
+            } catch (e) {
+                body.innerHTML = `<div class="empty-state">Connection error loading code review.</div>`;
+            }
+        }
+
+        async function submitPlanComment(sessionId) {
+            const input = document.getElementById('plan-comment-input');
+            if (!input || !input.value.trim()) return;
+            const comment = input.value.trim();
+            try {
+                const res = await fetchWithAuth('/api/brain/plan/comment', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ approved: decision })
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        section_text: "General Feedback",
+                        comment: comment
+                    })
                 });
-                
-                if (res.status === 401) {
-                    handleUnauthorized();
-                    return;
-                }
-                
                 if (res.ok) {
-                    approvalOverlay.style.display = 'none';
+                    alert("Feedback sent to IDE!");
+                    input.value = '';
                 }
-            } catch (err) {
-                console.error(err);
+            } catch (e) {
+                alert("Error sending comment.");
             }
         }
 
-        approveYesBtn.addEventListener('click', () => submitApproval(true));
-        approveNoBtn.addEventListener('click', () => submitApproval(false));
+        async function proceedPlanAction() {
+            try {
+                const res = await fetchWithAuth('/api/brain/plan/proceed', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    alert("Plan approved! Agent notified to proceed.");
+                    closeReviewOverlay();
+                }
+            } catch (e) {
+                alert("Error approving plan.");
+            }
+        }
 
-        // Initialize lucide
+        function renderDiffHtml(diffText) {
+            if (!diffText) return '<div class="diff-line diff-line-context">No diff content</div>';
+            const lines = diffText.split('\n');
+            return lines.map(line => {
+                let cls = 'diff-line-context';
+                if (line.startsWith('+') && !line.startsWith('+++')) cls = 'diff-line-added';
+                else if (line.startsWith('-') && !line.startsWith('---')) cls = 'diff-line-removed';
+                else if (line.startsWith('@@') || line.startsWith('diff ') || line.startsWith('index ')) cls = 'diff-line-header';
+                return `<div class="diff-line ${cls}">${escapeHtml(line)}</div>`;
+            }).join('');
+        }
+
+        function renderMarkdown(mdText) {
+            if (!mdText) return '';
+            let html = escapeHtml(mdText);
+            // Code blocks
+            html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+            // Headings
+            html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+            html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+            html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+            // Bold
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            // Blockquotes / Alerts
+            html = html.replace(/^&gt; (.*$)/gim, '<blockquote>$1</blockquote>');
+            // Paragraphs
+            html = html.replace(/\n\n/g, '</p><p>');
+            return `<div class="md-rendered"><p>${html}</p></div>`;
+        }
+
+        // Render Quick Projects List in Control Tab (Git Repositories Only — compact)
+        function renderQuickProjects(projects, currentPath) {
+            const container = document.getElementById('quick-projects-list');
+            if (!container) return;
+            if (!projects || projects.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            container.innerHTML = projects.map(p => {
+                const isCurrent = p.path.toLowerCase() === (currentPath || '').toLowerCase();
+                return `
+                    <div class="dir-entry ${isCurrent ? 'active-ws' : ''}" onclick="${isCurrent ? '' : `switchWorkspace('${escapeHtml(p.path)}')`}" style="${isCurrent ? 'cursor: default;' : ''}">
+                        <div class="dir-entry-left">
+                            <div class="dir-entry-icon git">
+                                <i data-lucide="git-branch" style="width: 16px; height: 16px;"></i>
+                            </div>
+                            <div class="dir-entry-info">
+                                <div class="dir-entry-name">${escapeHtml(p.name)}</div>
+                                <div class="dir-entry-meta">
+                                    <span class="dir-badge badge-git">git</span>
+                                    <span>${escapeHtml(p.branch || 'main')}</span>
+                                    ${isCurrent ? '<span class="dir-badge badge-active">active</span>' : ''}
+                                </div>
+                            </div>
+                        </div>
+                        ${!isCurrent ? `<button class="select-ws-btn" onclick="event.stopPropagation(); switchWorkspace('${escapeHtml(p.path)}')">Switch</button>` : ''}
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        // Full Directory Browser
+        let currentBrowsePath = null;
+
+        async function browseDirectory(path) {
+            const breadcrumbEl = document.getElementById('browse-breadcrumb');
+            const entriesEl = document.getElementById('browse-entries');
+            if (!breadcrumbEl || !entriesEl) return;
+
+            entriesEl.innerHTML = '<div class="empty-state">Loading...</div>';
+
+            try {
+                let url = '/api/browse';
+                if (path) url += `?path=${encodeURIComponent(path)}`;
+                const res = await fetchWithAuth(url, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) {
+                    entriesEl.innerHTML = '<div class="empty-state">Failed to browse directory</div>';
+                    return;
+                }
+                const data = await res.json();
+                currentBrowsePath = data.path;
+
+                // Render breadcrumb
+                renderBrowseBreadcrumb(data.path, breadcrumbEl);
+
+                // Render entries
+                let html = '';
+
+                // Go Up button
+                if (data.parent) {
+                    html += `
+                        <div class="go-up-btn" onclick="browseDirectory('${escapeHtml(data.parent)}')">
+                            <i data-lucide="corner-left-up" style="width: 14px; height: 14px;"></i>
+                            Go up to parent
+                        </div>
+                    `;
+                }
+
+                if (data.error) {
+                    html += `<div class="empty-state">${escapeHtml(data.error)}</div>`;
+                }
+
+                if (data.entries && data.entries.length > 0) {
+                    for (const entry of data.entries) {
+                        const iconClass = entry.has_git ? 'git' : (entry.has_agents ? 'agents' : '');
+                        const iconName = entry.has_git ? 'git-branch' : (entry.has_agents ? 'bot' : 'folder');
+                        html += `
+                            <div class="dir-entry" onclick="browseDirectory('${escapeHtml(entry.path)}')">
+                                <div class="dir-entry-left">
+                                    <div class="dir-entry-icon ${iconClass}">
+                                        <i data-lucide="${iconName}" style="width: 16px; height: 16px;"></i>
+                                    </div>
+                                    <div class="dir-entry-info">
+                                        <div class="dir-entry-name">${escapeHtml(entry.name)}</div>
+                                        <div class="dir-entry-meta">
+                                            ${entry.has_git ? `<span class="dir-badge badge-git">git</span><span>${escapeHtml(entry.branch || '')}</span>` : ''}
+                                            ${entry.has_agents ? '<span class="dir-badge badge-agents">remote</span>' : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="select-ws-btn" onclick="event.stopPropagation(); switchWorkspace('${escapeHtml(entry.path)}')">Open</button>
+                            </div>
+                        `;
+                    }
+                } else if (!data.error) {
+                    html += '<div class="empty-state">No subdirectories found</div>';
+                }
+
+                entriesEl.innerHTML = html;
+                lucide.createIcons();
+            } catch (e) {
+                entriesEl.innerHTML = '<div class="empty-state">Connection error</div>';
+            }
+        }
+
+        function renderBrowseBreadcrumb(fullPath, container) {
+            if (!fullPath) { container.innerHTML = ''; return; }
+            // Split path into segments: C:/tempo/project -> ["C:", "tempo", "project"]
+            const parts = fullPath.replace(/\\/g, '/').split('/').filter(Boolean);
+            let html = '';
+            let accumulated = '';
+            for (let i = 0; i < parts.length; i++) {
+                accumulated += (i === 0 ? '' : '/') + parts[i];
+                const pathSoFar = accumulated;
+                const isLast = i === parts.length - 1;
+                if (isLast) {
+                    html += `<span>${escapeHtml(parts[i])}</span>`;
+                } else {
+                    html += `<span onclick="browseDirectory('${escapeHtml(pathSoFar)}')">${escapeHtml(parts[i])}</span><span class="sep">/</span>`;
+                }
+            }
+            container.innerHTML = html;
+        }
+
+        async function switchWorkspace(path) {
+            if (!confirm(`Switch workspace to:\n${path}\n\nThis will reload the IDE and create a new chat.`)) return;
+            try {
+                const res = await fetchWithAuth('/api/agent/targets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ workspace_path: path })
+                });
+                if (res.ok) {
+                    alert(`Workspace switched to:\n${path}\n\nRemote config files copied. IDE will reload.`);
+                    // Refresh the browser to reflect the new workspace
+                    browseDirectory(null);
+                    // Switch to chat tab to start fresh conversation
+                    document.querySelector('[data-tab="tab-chat"]').click();
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Failed to switch workspace.');
+            }
+        }
+
+        // Initialize directory browser when Control tab is opened
+        function initBrowserOnControlTab() {
+            if (!currentBrowsePath) {
+                browseDirectory(null);
+            }
+        }
+
+        // Model Switch Handler
+        document.getElementById('control-model-select').addEventListener('change', async (e) => {
+            try {
+                await fetchWithAuth('/api/agent/model', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ model: e.target.value })
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        // Approvals
+        document.getElementById('approve-yes-btn').addEventListener('click', () => sendApproval(true));
+        document.getElementById('approve-no-btn').addEventListener('click', () => sendApproval(false));
+
+        async function sendApproval(approved) {
+            try {
+                await fetchWithAuth('/api/agent/approve/response', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ approved })
+                });
+                document.getElementById('approval-overlay').style.display = 'none';
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Shutdown Tunnel
+        document.getElementById('shutdown-btn').addEventListener('click', async () => {
+            if (confirm("Shutdown localtunnel connection?")) {
+                await fetchWithAuth('/api/shutdown', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                alert("Localtunnel connection shutting down.");
+            }
+        });
+
+        // Init Lucide & Validate Token
         lucide.createIcons();
+        validateToken();
     </script>
 </body>
 </html>
