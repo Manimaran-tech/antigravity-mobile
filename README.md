@@ -184,6 +184,12 @@ antigravity-mobile/
 
 ---
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Manimaran-tech/antigravity-mobile&type=Date)](https://star-history.com/#Manimaran-tech/antigravity-mobile&Date)
+
+---
+
 ## License
 
 MIT
