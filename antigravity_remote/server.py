@@ -54,7 +54,7 @@ def get_git_branch(repo_path: str = None) -> str:
     try:
         res = subprocess.run(
             ["git", "branch", "--show-current"],
-            capture_output=True, text=True, cwd=cwd, timeout=3
+            capture_output=True, encoding="utf-8", errors="replace", cwd=cwd, timeout=3
         )
         branch = res.stdout.strip()
         if branch and branch != "HEAD":
@@ -66,7 +66,7 @@ def get_git_branch(repo_path: str = None) -> str:
     try:
         res = subprocess.run(
             ["git", "symbolic-ref", "--short", "HEAD"],
-            capture_output=True, text=True, cwd=cwd, timeout=3
+            capture_output=True, encoding="utf-8", errors="replace", cwd=cwd, timeout=3
         )
         branch = res.stdout.strip()
         if branch and branch != "HEAD":
@@ -78,7 +78,7 @@ def get_git_branch(repo_path: str = None) -> str:
     try:
         res = subprocess.run(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            capture_output=True, text=True, cwd=cwd, timeout=3
+            capture_output=True, encoding="utf-8", errors="replace", cwd=cwd, timeout=3
         )
         branch = res.stdout.strip()
         if branch and branch != "HEAD":
@@ -124,8 +124,14 @@ def get_brain_sessions() -> List[Dict[str, Any]]:
     sessions.sort(key=lambda s: s["mtime"], reverse=True)
     return sessions
 
+_LATEST_PLAN_CACHE = {"time": 0, "data": None}
+
 def get_latest_brain_plan() -> Dict[str, Any]:
     """Find and parse the most recent implementation_plan.md from the brain directory."""
+    global _LATEST_PLAN_CACHE
+    if time.time() - _LATEST_PLAN_CACHE["time"] < 5:
+        return _LATEST_PLAN_CACHE["data"]
+
     sessions = get_brain_sessions()
     for session in sessions:
         plan_path = os.path.join(BRAIN_DIR, session["id"], "implementation_plan.md")
@@ -157,7 +163,7 @@ def get_latest_brain_plan() -> Dict[str, Any]:
                     if line.strip().startswith("# "):
                         title = line.strip()[2:].strip()
                         break
-                return {
+                result = {
                     "session_id": session["id"],
                     "title": title,
                     "content": content,
@@ -166,12 +172,22 @@ def get_latest_brain_plan() -> Dict[str, Any]:
                     "meta": meta,
                     "path": plan_path.replace("\\", "/")
                 }
+                _LATEST_PLAN_CACHE = {"time": time.time(), "data": result}
+                return result
             except Exception:
                 continue
+                
+    _LATEST_PLAN_CACHE = {"time": time.time(), "data": {}}
     return {}
+
+_LATEST_WALKTHROUGH_CACHE = {"time": 0, "data": None}
 
 def get_latest_brain_walkthrough() -> Dict[str, Any]:
     """Find and parse the most recent walkthrough.md from the brain directory."""
+    global _LATEST_WALKTHROUGH_CACHE
+    if time.time() - _LATEST_WALKTHROUGH_CACHE["time"] < 5:
+        return _LATEST_WALKTHROUGH_CACHE["data"]
+        
     sessions = get_brain_sessions()
     for session in sessions:
         walk_path = os.path.join(BRAIN_DIR, session["id"], "walkthrough.md")
@@ -194,7 +210,7 @@ def get_latest_brain_walkthrough() -> Dict[str, Any]:
                     if line.strip().startswith("# "):
                         title = line.strip()[2:].strip()
                         break
-                return {
+                result = {
                     "session_id": session["id"],
                     "title": title,
                     "content": content,
@@ -202,8 +218,12 @@ def get_latest_brain_walkthrough() -> Dict[str, Any]:
                     "mtime": mtime,
                     "path": walk_path.replace("\\", "/")
                 }
+                _LATEST_WALKTHROUGH_CACHE = {"time": time.time(), "data": result}
+                return result
             except Exception:
                 continue
+                
+    _LATEST_WALKTHROUGH_CACHE = {"time": time.time(), "data": {}}
     return {}
 
 def read_brain_artifact(session_id: str, filename: str) -> Optional[str]:
@@ -217,24 +237,52 @@ def read_brain_artifact(session_id: str, filename: str) -> Optional[str]:
             pass
     return None
 
+def is_system_automation_text(text: str) -> bool:
+    if not text:
+        return True
+    t = text.lower()
+    if "start the daemon server" in t:
+        return True
+    if "directory has been switched successfully" in t:
+        return True
+    if "switched workspace" in t:
+        return True
+    if "[critical: you must perform this task" in t:
+        return True
+    if "daemon started in new workspace" in t:
+        return True
+    return False
+
 def clean_prompt_text(text: str) -> str:
-    """Strip XML-style system wrappers from user prompt text for clean display."""
+    """Strip XML-style system wrappers and workspace prefixes from user prompt text for clean display."""
     if not text:
         return ""
     clean = text
+    if "[CRITICAL: YOU MUST PERFORM THIS TASK" in clean:
+        parts = clean.split("]\n")
+        if len(parts) > 1:
+            clean = parts[-1]
+        else:
+            clean = clean.split("]")[-1]
     if "<USER_REQUEST>" in clean:
         parts = clean.split("<USER_REQUEST>")
         if len(parts) > 1:
             clean = parts[1].split("</USER_REQUEST>")[0]
-    # Strip metadata tags if present
     if "<ADDITIONAL_METADATA>" in clean:
         clean = clean.split("<ADDITIONAL_METADATA>")[0]
     if "<USER_SETTINGS_CHANGE>" in clean:
         clean = clean.split("<USER_SETTINGS_CHANGE>")[0]
-    return clean.strip()
+    
+    res = clean.strip()
+    if is_system_automation_text(res):
+        return ""
+    return res
+
+_SESSION_CACHE = {}
 
 def get_conversation_sessions() -> List[Dict[str, Any]]:
     """Scan the brain directory for session transcripts and return summarized session history."""
+    global _SESSION_CACHE
     sessions = []
     if not os.path.exists(BRAIN_DIR):
         return sessions
@@ -246,6 +294,23 @@ def get_conversation_sessions() -> List[Dict[str, Any]]:
             if not os.path.exists(transcript_path):
                 continue
             
+            mtime = os.path.getmtime(transcript_path)
+            if entry.name in _SESSION_CACHE and _SESSION_CACHE[entry.name]["mtime"] == mtime:
+                session_data = _SESSION_CACHE[entry.name]["data"]
+                # Update dynamic age
+                age_secs = time.time() - mtime
+                if age_secs < 60:
+                    age_str = f"{int(age_secs)}s ago"
+                elif age_secs < 3600:
+                    age_str = f"{int(age_secs / 60)}m ago"
+                elif age_secs < 86400:
+                    age_str = f"{int(age_secs / 3600)}h ago"
+                else:
+                    age_str = f"{int(age_secs / 86400)}d ago"
+                session_data["age"] = age_str
+                sessions.append(session_data)
+                continue
+
             first_prompt = ""
             turn_count = 0
             created_at = ""
@@ -272,7 +337,6 @@ def get_conversation_sessions() -> List[Dict[str, Any]]:
                 continue
 
             if turn_count > 0:
-                mtime = os.path.getmtime(transcript_path)
                 age_secs = time.time() - mtime
                 if age_secs < 60:
                     age_str = f"{int(age_secs)}s ago"
@@ -284,7 +348,7 @@ def get_conversation_sessions() -> List[Dict[str, Any]]:
                     age_str = f"{int(age_secs / 86400)}d ago"
 
                 ws_path = find_session_workspace(entry.name)
-                sessions.append({
+                session_data = {
                     "session_id": entry.name,
                     "title": first_prompt[:80] or "Conversation Session",
                     "turn_count": turn_count,
@@ -292,7 +356,9 @@ def get_conversation_sessions() -> List[Dict[str, Any]]:
                     "age": age_str,
                     "created_at": created_at,
                     "workspace_path": ws_path
-                })
+                }
+                _SESSION_CACHE[entry.name] = {"mtime": mtime, "data": session_data}
+                sessions.append(session_data)
     except Exception:
         pass
 
@@ -411,29 +477,52 @@ app = FastAPI(title="Antigravity Remote Monitor")
 security = HTTPBearer()
 logger = logging.getLogger("antigravity_remote.server")
 
+LAST_STATE_CHANGE = time.time()
+def notify_state_change():
+    global LAST_STATE_CHANGE
+    LAST_STATE_CHANGE = time.time()
+
 def file_executor_loop():
+    current_cwd = None
     while True:
         try:
-            req_file = os.path.join(get_workspace_root(), "agent_execute_request.json")
+            req_file = os.path.join(get_workspace_root(), ".agents", "state", "agent_execute_request.json")
             if os.path.exists(req_file):
                 with open(req_file, "r", encoding="utf-8") as f:
                     req = json.load(f)
                 
                 cmd = req.get("command")
-                cwd = req.get("cwd", get_workspace_root())
+                
+                # Initialize current_cwd on first run or if it's invalid
+                if not current_cwd or not os.path.exists(current_cwd):
+                    current_cwd = req.get("cwd", get_workspace_root())
                 
                 try:
-                    result = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, timeout=300)
-                    resp = {
-                        "status": "success" if result.returncode == 0 else "error",
-                        "returncode": result.returncode,
-                        "stdout": result.stdout,
-                        "stderr": result.stderr
-                    }
+                    cmd_str = str(cmd).strip()
+                    if cmd_str.startswith("cd "):
+                        target = cmd_str[3:].strip()
+                        # Remove quotes if present
+                        if (target.startswith('"') and target.endswith('"')) or (target.startswith("'") and target.endswith("'")):
+                            target = target[1:-1]
+                        
+                        new_cwd = os.path.abspath(os.path.join(current_cwd, target))
+                        if os.path.exists(new_cwd) and os.path.isdir(new_cwd):
+                            current_cwd = new_cwd
+                            resp = {"status": "success", "returncode": 0, "stdout": "", "stderr": ""}
+                        else:
+                            resp = {"status": "error", "returncode": 1, "stdout": "", "stderr": f"Directory not found: {new_cwd}"}
+                    else:
+                        result = subprocess.run(cmd, shell=True, cwd=current_cwd, capture_output=True, encoding="utf-8", errors="replace", timeout=300)
+                        resp = {
+                            "status": "success" if result.returncode == 0 else "error",
+                            "returncode": result.returncode,
+                            "stdout": result.stdout,
+                            "stderr": result.stderr
+                        }
                 except Exception as e:
                     resp = {"status": "error", "error": str(e)}
                 
-                with open(os.path.join(get_workspace_root(), "agent_execute_response.json"), "w", encoding="utf-8") as f:
+                with open(os.path.join(get_workspace_root(), ".agents", "state", "agent_execute_response.json"), "w", encoding="utf-8") as f:
                     json.dump(resp, f)
                     
                 try:
@@ -587,7 +676,7 @@ def get_system_limits():
             "five_hour_used_pct": 100
         }
     }
-    limits_file = os.path.join(get_workspace_root(), "ide_limits.json")
+    limits_file = os.path.join(get_workspace_root(), ".agents", "config", "ide_limits.json")
     if not os.path.exists(limits_file):
         try:
             with open(limits_file, "w") as f:
@@ -613,6 +702,7 @@ def get_system_limits():
 # State managers
 REMOTE_PROMPT = {"id": "", "prompt": "", "status": "idle", "response": ""}
 REMOTE_PROMPTS_HISTORY = []
+REMOTE_TASKS_QUEUE = []
 REMOTE_APPROVAL = {"status": "idle", "type": "", "target": "", "decision": ""}
 
 # Start with empty plan — real plans are read from the brain directory
@@ -628,6 +718,15 @@ REMOTE_TARGET = {
 
 
 
+def run_git_cmd(args: list, cwd: str, timeout: int = 5) -> str:
+    try:
+        res = subprocess.run(args, capture_output=True, cwd=cwd, timeout=timeout)
+        if res.stdout:
+            return res.stdout.decode('utf-8', errors='replace')
+        return ""
+    except Exception:
+        return ""
+
 _GIT_DIFFS_CACHE = {"time": 0, "data": None, "root": ""}
 
 def get_git_diffs() -> Dict[str, Any]:
@@ -638,8 +737,8 @@ def get_git_diffs() -> Dict[str, Any]:
         
     try:
         root = get_workspace_root()
-        res = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, cwd=root, timeout=3)
-        lines = res.stdout.strip().splitlines()
+        status_output = run_git_cmd(["git", "status", "--porcelain"], cwd=root, timeout=3)
+        lines = status_output.strip().splitlines()
         modified_files = []
         for line in lines:
             if line:
@@ -674,13 +773,13 @@ def get_git_diffs() -> Dict[str, Any]:
                     "file": filename
                 })
         
-        diff_res = subprocess.run(["git", "diff", "--stat"], capture_output=True, text=True, cwd=root, timeout=3)
+        diff_stat = run_git_cmd(["git", "diff", "--stat"], cwd=root, timeout=3)
         branch = get_git_branch(root)
         result = {
             "is_git": True,
             "branch": branch,
             "modified_files": modified_files,
-            "diff_stat": diff_res.stdout.strip()
+            "diff_stat": diff_stat.strip()
         }
         _GIT_DIFFS_CACHE = {"time": time.time(), "data": result, "root": root}
         return result
@@ -697,21 +796,28 @@ def get_git_diffs() -> Dict[str, Any]:
 def get_all_chat_turns() -> List[Dict[str, Any]]:
     turns = []
     for item in REMOTE_PROMPTS_HISTORY:
-        turns.append({
-            "id": f"remote_{item['sender']}_{hash(item['text'])}",
-            "sender": item["sender"],
-            "text": item["text"]
-        })
+        if is_system_automation_text(item.get("text", "")):
+            continue
+        clean = clean_prompt_text(item["text"])
+        if clean:
+            turns.append({
+                "id": f"remote_{item['sender']}_{hash(item['text'])}",
+                "sender": item["sender"],
+                "text": clean
+            })
             
     # Also include the currently executing or pending REMOTE_PROMPT if it's not yet in the history
     if REMOTE_PROMPT.get("prompt") and REMOTE_PROMPT.get("status") in ("pending", "executing"):
-        has_prompt = any(t.get("sender") == "user" and REMOTE_PROMPT["prompt"] in t.get("text", "") for t in turns)
-        if not has_prompt:
-            turns.append({
-                "id": "remote_user_prompt_active",
-                "sender": "user",
-                "text": REMOTE_PROMPT["prompt"]
-            })
+        if not is_system_automation_text(REMOTE_PROMPT["prompt"]):
+            clean_p = clean_prompt_text(REMOTE_PROMPT["prompt"])
+            if clean_p:
+                has_prompt = any(t.get("sender") == "user" and clean_p in t.get("text", "") for t in turns)
+                if not has_prompt:
+                    turns.append({
+                        "id": "remote_user_prompt_active",
+                        "sender": "user",
+                        "text": clean_p
+                    })
             
     return turns
 
@@ -818,7 +924,7 @@ def get_system_status():
     # Read agent_status.json if it exists in the workspace
     agent_status = "idle"
     agent_task = ""
-    status_file = os.path.join(get_workspace_root(), "agent_status.json")
+    status_file = os.path.join(get_workspace_root(), ".agents", "state", "agent_status.json")
     if os.path.exists(status_file):
         try:
             with open(status_file, "r") as f:
@@ -828,7 +934,7 @@ def get_system_status():
         except Exception:
             pass
 
-    response_file = os.path.join(get_workspace_root(), "agent_response.json")
+    response_file = os.path.join(get_workspace_root(), ".agents", "state", "agent_response.json")
     if os.path.exists(response_file):
         try:
             with open(response_file, "r", encoding="utf-8") as f:
@@ -846,7 +952,7 @@ def get_system_status():
         except Exception:
             pass
 
-    req_file = os.path.join(get_workspace_root(), "agent_approval_request.json")
+    req_file = os.path.join(get_workspace_root(), ".agents", "state", "agent_approval_request.json")
     if os.path.exists(req_file):
         try:
             with open(req_file, "r", encoding="utf-8") as f:
@@ -861,7 +967,7 @@ def get_system_status():
         except Exception:
             pass
 
-    q_req_file = os.path.join(get_workspace_root(), "agent_question_request.json")
+    q_req_file = os.path.join(get_workspace_root(), ".agents", "state", "agent_question_request.json")
     if os.path.exists(q_req_file):
         try:
             with open(q_req_file, "r", encoding="utf-8") as f:
@@ -881,7 +987,7 @@ def get_system_status():
             pass
 
     agent_logs = ""
-    log_file = os.path.join(get_workspace_root(), "agent_execution.log")
+    log_file = os.path.join(get_workspace_root(), ".agents", "state", "agent_execution.log")
     if os.path.exists(log_file):
         try:
             with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
@@ -899,18 +1005,22 @@ def get_system_status():
         "agent_status": agent_status,
         "agent_task": agent_task,
         "agent_logs": agent_logs,
+        "tasks_queue": REMOTE_TASKS_QUEUE,
         "timestamp": datetime.datetime.now().isoformat()
     }
 
 # Directory Tree helper
-def get_workspace_tree(path=None):
+def get_workspace_tree(path=None, current_depth=0, max_depth=3):
     if path is None:
         path = get_workspace_root()
     tree = []
+    if current_depth > max_depth:
+        return tree
+
     try:
         for entry in os.scandir(path):
             # Ignore hidden files, virtualenvs, __pycache__, logs, .git
-            if entry.name.startswith(".") or entry.name in ("__pycache__", "venv", ".venv", "logs", "tasks.json", "config.json"):
+            if entry.name.startswith(".") or entry.name in ("__pycache__", "venv", ".venv", "logs", "tasks.json"):
                 continue
             
             info = {
@@ -919,8 +1029,11 @@ def get_workspace_tree(path=None):
                 "is_dir": entry.is_dir()
             }
             if entry.is_dir():
-                # Limit depth to 3 to prevent huge returns
-                info["children"] = get_workspace_tree(entry.path)
+                # Limit depth to max_depth to prevent huge returns
+                if current_depth < max_depth:
+                    info["children"] = get_workspace_tree(entry.path, current_depth + 1, max_depth)
+                else:
+                    info["children"] = []
             else:
                 info["size"] = entry.stat().st_size
             tree.append(info)
@@ -971,8 +1084,8 @@ def login(req: LoginRequest, request: Request):
     raise HTTPException(status_code=401, detail="Invalid PIN")
 
 @app.get("/api/status")
-def status_endpoint(token: str = Depends(verify_token)):
-    return get_system_status()
+async def status_endpoint(token: str = Depends(verify_token)):
+    return await asyncio.to_thread(get_system_status)
 
 @app.get("/api/workspace")
 def workspace_endpoint(token: str = Depends(verify_token)):
@@ -1063,9 +1176,24 @@ def get_api_file_content(path: str, token: str = Depends(verify_token)):
         logger.error(f"Error reading file {real_path}: {e}")
         raise HTTPException(status_code=500, detail="Internal error reading file")
 
+def verify_query_token(token: str):
+    if not _is_token_valid(token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired session token",
+        )
+    return token
+
+@app.get("/api/media")
+def get_media_file(path: str, token: str = Depends(verify_query_token)):
+    real_path = os.path.realpath(path)
+    if not os.path.exists(real_path) or os.path.isdir(real_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(real_path)
+
 @app.get("/api/agent/status")
-def get_agent_status(token: str = Depends(verify_token)):
-    current_model = get_antigravity_model()
+async def get_agent_status(token: str = Depends(verify_token)):
+    current_model = await asyncio.to_thread(get_antigravity_model)
     return {
         "current_model": current_model,
         "model_details": MODEL_LIMITS.get(current_model, {"name": current_model, "category": "gemini"}),
@@ -1086,17 +1214,26 @@ def switch_model_endpoint(req: ModelRequest, token: str = Depends(verify_token))
     # Generate and execute VBScript to simulate typing '/model {model_name}'
     try:
         model_name = MODEL_LIMITS[req.model]["name"]
-        # Escape parenthesis for SendKeys
-        safe_model_name = model_name.replace("(", "{(}").replace(")", "{)}")
+        safe_model_name = ""
+        for ch in model_name:
+            if ch in ['+', '^', '%', '~', '(', ')', '[', ']', '{', '}']:
+                safe_model_name += f"{{{ch}}}"
+            elif ch == '"':
+                safe_model_name += '""'
+            else:
+                safe_model_name += ch
+                
         import tempfile
         import subprocess
         vbs_script = (
-            "Set WshShell = WScript.CreateObject(\"WScript.Shell\")\n"
-            "WshShell.AppActivate \"Antigravity IDE\"\n"
-            "WScript.Sleep 500\n"
-            "WshShell.AppActivate \"Visual Studio Code\"\n"
-            "WScript.Sleep 500\n"
-            f"WshShell.SendKeys \"/model {safe_model_name}{{ENTER}}\"\n"
+            'Set WshShell = WScript.CreateObject("WScript.Shell")\n'
+            'Set objWMI = GetObject("winmgmts:\\\\.\\root\\cimv2")\n'
+            'Set col = objWMI.ExecQuery("Select * From Win32_Process Where Name LIKE \'%Antigravity%\' OR Name = \'Code.exe\'")\n'
+            'For Each obj In col\n'
+            '    WshShell.AppActivate obj.ProcessId\n'
+            'Next\n'
+            'WScript.Sleep 500\n'
+            f'WshShell.SendKeys "/model {safe_model_name}{{ENTER}}"\n'
         )
         with tempfile.NamedTemporaryFile(delete=False, suffix=".vbs", mode="w", encoding="utf-8") as f:
             f.write(vbs_script)
@@ -1128,10 +1265,13 @@ def shutdown_endpoint(token: str = Depends(verify_token)):
     loop.call_later(0.5, kill_tunnel)
     return {"status": "success", "message": "Tunnel shutting down..."}
 
+PROMPT_START_TIMESTAMP: float = 0.0
+
 @app.post("/api/agent/prompt")
 def post_remote_prompt(req: PromptRequest, token: str = Depends(verify_token)):
-    global REMOTE_PROMPT, REMOTE_PROMPTS_HISTORY, REMOTE_TARGET
+    global REMOTE_PROMPT, REMOTE_PROMPTS_HISTORY, REMOTE_TARGET, PROMPT_START_TIMESTAMP, REMOTE_TASKS_QUEUE
     
+    PROMPT_START_TIMESTAMP = time.time()
     final_prompt = req.prompt
     # Automatically inject the critical workspace override if we have a target workspace
     if 'REMOTE_TARGET' in globals() and REMOTE_TARGET.get("workspace_path"):
@@ -1153,24 +1293,35 @@ def post_remote_prompt(req: PromptRequest, token: str = Depends(verify_token)):
         "text": req.prompt
     })
     
+    # Add to tasks queue
+    REMOTE_TASKS_QUEUE.append({
+        "id": REMOTE_PROMPT["id"],
+        "description": req.prompt,
+        "status": "working",
+        "created_at": time.time()
+    })
+    
+    notify_state_change()
     return REMOTE_PROMPT
 
 @app.get("/api/agent/prompt/check")
-def check_remote_prompt(token: str = Depends(verify_token)):
+async def check_remote_prompt(token: str = Depends(verify_token)):
     global REMOTE_PROMPT
     # Idempotent: return the active prompt as long as it's pending or executing
-    # The daemon polls this repeatedly; don't lose the prompt on first read
-    if REMOTE_PROMPT["status"] in ("pending", "executing"):
-        if REMOTE_PROMPT["status"] == "pending":
-            REMOTE_PROMPT["status"] = "executing"
-        resp = dict(REMOTE_PROMPT)
-        resp["workspace_path"] = get_workspace_root()
-        return resp
+    # The daemon uses long-polling; wait up to 20 seconds for a prompt
+    for _ in range(40):
+        if REMOTE_PROMPT["status"] in ("pending", "executing"):
+            if REMOTE_PROMPT["status"] == "pending":
+                REMOTE_PROMPT["status"] = "executing"
+            resp = dict(REMOTE_PROMPT)
+            resp["workspace_path"] = get_workspace_root()
+            return resp
+        await asyncio.sleep(0.5)
     return {"status": "idle"}
 
 @app.post("/api/agent/response")
 def post_agent_response(req: ResponseRequest, token: str = Depends(verify_token)):
-    global REMOTE_PROMPT, REMOTE_PROMPTS_HISTORY
+    global REMOTE_PROMPT, REMOTE_PROMPTS_HISTORY, REMOTE_TASKS_QUEUE
     if REMOTE_PROMPT["status"] != "executing":
         raise HTTPException(status_code=400, detail="No active executing prompt")
     REMOTE_PROMPT["status"] = req.status
@@ -1181,6 +1332,13 @@ def post_agent_response(req: ResponseRequest, token: str = Depends(verify_token)
         "sender": "agent",
         "text": req.output
     })
+    
+    # Update tasks queue
+    for t in REMOTE_TASKS_QUEUE:
+        if t["id"] == REMOTE_PROMPT["id"]:
+            t["status"] = "completed"
+            break
+    notify_state_change()
     return {"status": "success"}
 
 @app.post("/api/agent/approve/request")
@@ -1195,11 +1353,11 @@ def post_approval_request(req: ApprovalRequest, token: str = Depends(verify_toke
     return REMOTE_APPROVAL
 
 @app.get("/api/agent/approve/status")
-def get_approval_status(token: str = Depends(verify_token)):
+async def get_approval_status(token: str = Depends(verify_token)):
     return REMOTE_APPROVAL
 
 @app.get("/api/agent/approve/check")
-def check_approval_decision(token: str = Depends(verify_token)):
+async def check_approval_decision(token: str = Depends(verify_token)):
     return REMOTE_APPROVAL
 
 @app.post("/api/agent/approve/response")
@@ -1213,19 +1371,20 @@ def post_approval_response(req: ApprovalResponse, token: str = Depends(verify_to
     
     # Write decision to agent_approval_response.json in workspace
     try:
-        response_file = os.path.join(get_workspace_root(), "agent_approval_response.json")
+        response_file = os.path.join(get_workspace_root(), ".agents", "state", "agent_approval_response.json")
         with open(response_file, "w", encoding="utf-8") as f:
             json.dump({"status": decision}, f)
     except Exception:
         pass
         
+    notify_state_change()
     return {"status": "success", "decision": decision}
 
 # AG2R Extended API Routes
 
 # 1. Plan Management Endpoints
 @app.get("/api/agent/plan")
-def get_plan(token: str = Depends(verify_token)):
+async def get_plan(token: str = Depends(verify_token)):
     return REMOTE_PLAN
 
 @app.post("/api/agent/plan")
@@ -1238,6 +1397,7 @@ def set_plan(req: PlanRequestModel, token: str = Depends(verify_token)):
         "status": req.status,
         "steps": req.steps
     }
+    notify_state_change()
     return REMOTE_PLAN
 
 @app.post("/api/agent/plan/approve")
@@ -1246,16 +1406,18 @@ def approve_plan_step(req: PlanStepApproveModel, token: str = Depends(verify_tok
     for step in REMOTE_PLAN.get("steps", []):
         if step["id"] == req.step_id:
             step["status"] = "completed" if req.approved else "failed"
+            notify_state_change()
             return {"status": "success", "step": step}
     if req.step_id == "all":
         REMOTE_PLAN["status"] = "approved" if req.approved else "rejected"
         decision = "approved" if req.approved else "rejected"
         try:
-            response_file = os.path.join(get_workspace_root(), "agent_approval_response.json")
+            response_file = os.path.join(get_workspace_root(), ".agents", "state", "agent_approval_response.json")
             with open(response_file, "w", encoding="utf-8") as f:
                 json.dump({"status": decision}, f)
         except Exception:
             pass
+        notify_state_change()
         return {"status": "success", "plan_status": REMOTE_PLAN["status"]}
     raise HTTPException(status_code=404, detail="Step not found")
 
@@ -1287,12 +1449,13 @@ def comment_plan_step(req: PlanCommentModel, token: str = Depends(verify_token))
             except Exception:
                 pass
                 
+            notify_state_change()
             return {"status": "success", "comments": step["comments"]}
     raise HTTPException(status_code=404, detail="Step not found")
 
 # 2. Interactive Questions Endpoints
 @app.get("/api/agent/questions")
-def get_questions(token: str = Depends(verify_token)):
+async def get_questions(token: str = Depends(verify_token)):
     return {"questions": REMOTE_QUESTIONS}
 
 @app.post("/api/agent/questions/request")
@@ -1308,6 +1471,7 @@ def post_question_request(req: QuestionRequestModel, token: str = Depends(verify
         "answers": []
     }
     REMOTE_QUESTIONS.append(q_obj)
+    notify_state_change()
     return q_obj
 
 @app.post("/api/agent/questions/response")
@@ -1320,7 +1484,7 @@ def post_question_response(req: QuestionResponseModel, token: str = Depends(veri
                 
             # Write to agent_question_response.json in workspace
             try:
-                response_file = os.path.join(get_workspace_root(), "agent_question_response.json")
+                response_file = os.path.join(get_workspace_root(), ".agents", "state", "agent_question_response.json")
                 with open(response_file, "w", encoding="utf-8") as f:
                     json.dump({
                         "question_id": req.question_id,
@@ -1329,6 +1493,7 @@ def post_question_response(req: QuestionResponseModel, token: str = Depends(veri
             except Exception:
                 pass
                 
+            notify_state_change()
             return {"status": "success", "question": q}
     raise HTTPException(status_code=404, detail="Question not found")
 
@@ -1348,12 +1513,14 @@ def post_btw(req: BTWRequestModel, token: str = Depends(verify_token)):
         "timestamp": int(time.time() * 1000)
     }
     REMOTE_BTW.insert(0, item)
+    notify_state_change()
     return item
 
 @app.delete("/api/agent/btw/{btw_id}")
 def delete_btw(btw_id: str, token: str = Depends(verify_token)):
     global REMOTE_BTW
     REMOTE_BTW = [b for b in REMOTE_BTW if b["id"] != btw_id]
+    notify_state_change()
     return {"status": "success"}
 
 # 4. Actions Panel Endpoints
@@ -1535,33 +1702,53 @@ def get_ide_executable() -> str:
     return "antigravity-ide"
 
 def do_switch_workspace(target_path: str) -> bool:
-    global REMOTE_TARGET, REMOTE_PROMPT, REMOTE_PROMPTS_HISTORY
+    global REMOTE_TARGET, REMOTE_PROMPT, REMOTE_PROMPTS_HISTORY, REMOTE_TASKS_QUEUE
     norm_path = target_path.replace("\\", "/")
     if os.path.exists(norm_path) and os.path.isdir(norm_path):
         # Reset prompt and prompt history so new prompts in new workspace start cleanly
         REMOTE_PROMPT = {"id": "", "prompt": "", "status": "idle", "response": ""}
         REMOTE_PROMPTS_HISTORY = []
+        REMOTE_TASKS_QUEUE = []
 
         # Remove stale remote_prompt.json in current and target directories
         current_root = get_workspace_root()
         for root_dir in [current_root, norm_path]:
-            p_file = os.path.join(root_dir, "remote_prompt.json")
+            p_file = os.path.join(root_dir, ".agents", "state", "remote_prompt.json")
             if os.path.exists(p_file):
                 try:
                     os.remove(p_file)
                 except Exception:
                     pass
-
+        
         # Copy config.json, remote_mode.json, and ide_limits.json to target workspace
         for filename in ["config.json", "remote_mode.json", "ide_limits.json"]:
-            src = os.path.join(current_root, filename)
-            dst = os.path.join(norm_path, filename)
+            src = os.path.join(current_root, ".agents", "config", filename)
+            dst = os.path.join(norm_path, ".agents", "config", filename)
             if os.path.exists(src) and src != dst:
                 try:
+                    os.makedirs(os.path.dirname(dst), exist_ok=True)
                     shutil.copy2(src, dst)
                 except Exception:
                     pass
+
+        # Disable remote mode in the old workspace so the old IDE stops polling
+        if current_root and current_root != norm_path:
+            old_mode_file = os.path.join(current_root, ".agents", "config", "remote_mode.json")
+            try:
+                with open(old_mode_file, "w", encoding="utf-8") as f:
+                    json.dump({"enabled": False}, f)
+            except Exception:
+                pass
         
+        # Ensure .agents/state directory exists and is gitignored
+        state_dir = os.path.join(norm_path, ".agents", "state")
+        os.makedirs(state_dir, exist_ok=True)
+        try:
+            with open(os.path.join(norm_path, ".agents", ".gitignore"), "w", encoding="utf-8") as f:
+                f.write("state/\n")
+        except Exception:
+            pass
+
         # Copy .agents directory (AGENTS.md + skills) so remote control works in the new workspace
         src_agents = os.path.join(current_root, ".agents")
         dst_agents = os.path.join(norm_path, ".agents")
@@ -1601,7 +1788,8 @@ def do_switch_workspace(target_path: str) -> bool:
                     pass
         
         # Ensure remote_mode.json exists and is enabled in target workspace
-        dst_mode = os.path.join(norm_path, "remote_mode.json")
+        dst_mode = os.path.join(norm_path, ".agents", "config", "remote_mode.json")
+        os.makedirs(os.path.dirname(dst_mode), exist_ok=True)
         if not os.path.exists(dst_mode):
             try:
                 with open(dst_mode, "w") as f:
@@ -1639,15 +1827,19 @@ def do_switch_workspace(target_path: str) -> bool:
         except Exception as e:
             logger.error(f"Failed to kill daemon: {e}")
 
-        # Open the target workspace in a new IDE window
+        # Open the target workspace in the current IDE window
         try:
             ide_cmd = get_ide_executable()
             # On Windows, we use a list without shell=True to avoid cmd.exe quote stripping issues
-            subprocess.Popen([ide_cmd, norm_path])
+            subprocess.Popen([ide_cmd, "-r", norm_path])
         except Exception as e:
             logger.error(f"Failed to open IDE: {e}")
             
         REMOTE_TARGET["workspace_path"] = norm_path
+        try:
+            os.chdir(norm_path)
+        except Exception:
+            pass
         
         # Inject the initialization prompt directly into the target workspace
         # This wakes up the agent in the new IDE so it can start the daemon server
@@ -1655,7 +1847,7 @@ def do_switch_workspace(target_path: str) -> bool:
         final_prompt = prefix + "start the daemon server"
         
         try:
-            with open(os.path.join(norm_path, "remote_prompt.json"), "w", encoding="utf-8") as f:
+            with open(os.path.join(norm_path, ".agents", "state", "remote_prompt.json"), "w", encoding="utf-8") as f:
                 json.dump({
                     "id": "init_" + str(uuid.uuid4())[:8],
                     "prompt": final_prompt,
@@ -1664,24 +1856,36 @@ def do_switch_workspace(target_path: str) -> bool:
         except Exception as e:
             logger.error(f"Failed to inject init prompt: {e}")
             
+        # Give the IDE ample time to reload the workspace window
+        time.sleep(5)
+        
         # Automate typing the prompt in the new IDE window and hitting Enter
         try:
             prefix = f"[CRITICAL: YOU MUST PERFORM THIS TASK IN THE FOLLOWING DIRECTORY: {norm_path}] "
-            # Escape characters that have special meaning in SendKeys
-            safe_text = (prefix + "start the daemon server").replace('"', '\\"').replace('[', '{[}').replace(']', '{]}')
+            raw_text = prefix + "start the daemon server"
+            safe_text = ""
+            for ch in raw_text:
+                if ch in ['+', '^', '%', '~', '(', ')', '[', ']', '{', '}']:
+                    safe_text += f"{{{ch}}}"
+                elif ch == '"':
+                    safe_text += '""'
+                else:
+                    safe_text += ch
+                    
             folder_name = os.path.basename(norm_path)
             
             vbs_script = (
                 'On Error Resume Next\n'
                 'Set WshShell = WScript.CreateObject("WScript.Shell")\n'
                 'success = False\n'
-                'For i = 1 To 20\n'
-                f'    If WshShell.AppActivate("{folder_name} - Antigravity IDE") Then\n'
+                'For i = 1 To 15\n'
+                '    Set objWMI = GetObject("winmgmts:\\\\.\\root\\cimv2")\n'
+                '    Set col = objWMI.ExecQuery("Select * From Win32_Process Where Name LIKE \'%Antigravity%\' OR Name = \'Code.exe\'")\n'
+                '    For Each obj In col\n'
+                '        WshShell.AppActivate obj.ProcessId\n'
                 '        success = True\n'
-                '        Exit For\n'
-                '    End If\n'
-                f'    If WshShell.AppActivate("{folder_name} - Visual Studio Code") Then\n'
-                '        success = True\n'
+                '    Next\n'
+                '    If success Then\n'
                 '        Exit For\n'
                 '    End If\n'
                 '    WScript.Sleep 500\n'
@@ -1704,7 +1908,7 @@ def do_switch_workspace(target_path: str) -> bool:
             logger.error(f"Failed to run VBScript for auto-start: {e}")
             
         try:
-            with open(os.path.join(norm_path, "agent_response.json"), "w", encoding="utf-8") as f:
+            with open(os.path.join(norm_path, ".agents", "state", "agent_response.json"), "w", encoding="utf-8") as f:
                 json.dump({
                     "status": "completed",
                     "output": "Directory has been switched successfully. You can continue your work."
@@ -1712,11 +1916,9 @@ def do_switch_workspace(target_path: str) -> bool:
         except Exception as e:
             logger.error(f"Failed to write agent response: {e}")
         
-        # Add a note to chat history
-        REMOTE_PROMPTS_HISTORY = [{
-            "sender": "user",
-            "text": "Switched workspace. Launched new IDE window and starting daemon..."
-        }]
+        # Reset chat history silently
+        REMOTE_PROMPTS_HISTORY = []
+        notify_state_change()
         return True
     return False
 
@@ -1761,19 +1963,17 @@ def get_project_file_content(path: str, token: str = Depends(verify_token)):
 def get_file_diff(path: str, token: str = Depends(verify_token)):
     try:
         norm_path = path.replace("\\", "/")
-        status_res = subprocess.run(["git", "status", "--porcelain", "--", norm_path], capture_output=True, text=True, cwd=get_workspace_root(), timeout=3)
-        is_untracked = status_res.stdout.startswith("??")
+        root = get_workspace_root()
+        status_output = run_git_cmd(["git", "status", "--porcelain", "--", norm_path], cwd=root, timeout=3)
+        is_untracked = status_output.startswith("??")
         
         if is_untracked:
             null_device = "NUL" if os.name == "nt" else "/dev/null"
-            res = subprocess.run(["git", "diff", "--no-index", "--", null_device, norm_path], capture_output=True, text=True, cwd=get_workspace_root(), timeout=5)
-            diff_output = res.stdout
+            diff_output = run_git_cmd(["git", "diff", "--no-index", "--", null_device, norm_path], cwd=root, timeout=5)
         else:
-            res = subprocess.run(["git", "diff", "HEAD", "--", norm_path], capture_output=True, text=True, cwd=get_workspace_root(), timeout=5)
-            diff_output = res.stdout
+            diff_output = run_git_cmd(["git", "diff", "HEAD", "--", norm_path], cwd=root, timeout=5)
             if not diff_output.strip():
-                res = subprocess.run(["git", "diff", "--", norm_path], capture_output=True, text=True, cwd=get_workspace_root(), timeout=5)
-                diff_output = res.stdout
+                diff_output = run_git_cmd(["git", "diff", "--", norm_path], cwd=root, timeout=5)
                 
         return {"path": norm_path, "diff": diff_output}
     except Exception as e:
@@ -1801,11 +2001,11 @@ def get_detailed_diffs(token: str = Depends(verify_token)):
         # Get diff for this file
         try:
             norm_path = fpath.replace("\\", "/")
+            diff_text = ""
             if state_code == 'U':
                 null_device = "NUL" if os.name == "nt" else "/dev/null"
-                res = subprocess.run(["git", "diff", "--no-index", "--", null_device, norm_path], capture_output=True, text=True, cwd=root, timeout=4)
-                diff_text = res.stdout
-                if not diff_text and os.path.exists(os.path.join(root, norm_path)):
+                diff_text = run_git_cmd(["git", "diff", "--no-index", "--", null_device, norm_path], cwd=root, timeout=4)
+                if not diff_text.strip() and os.path.exists(os.path.join(root, norm_path)):
                     try:
                         with open(os.path.join(root, norm_path), "r", encoding="utf-8", errors="ignore") as uf:
                             lines = uf.readlines()[:500]  # max 500 lines
@@ -1813,17 +2013,17 @@ def get_detailed_diffs(token: str = Depends(verify_token)):
                     except Exception:
                         pass
             else:
-                res = subprocess.run(["git", "diff", "HEAD", "--", norm_path], capture_output=True, text=True, cwd=root, timeout=4)
-                diff_text = res.stdout
+                diff_text = run_git_cmd(["git", "diff", "--", norm_path], cwd=root, timeout=4)
                 if not diff_text.strip():
-                    res = subprocess.run(["git", "diff", "--", norm_path], capture_output=True, text=True, cwd=root, timeout=4)
-                    diff_text = res.stdout
+                    diff_text = run_git_cmd(["git", "diff", "--staged", "--", norm_path], cwd=root, timeout=4)
+                if not diff_text.strip():
+                    diff_text = run_git_cmd(["git", "diff", "HEAD", "--", norm_path], cwd=root, timeout=4)
             
             files_diffs.append({
                 "file": fpath,
                 "state": state_code,
                 "state_label": state_label,
-                "diff": diff_text or "No text changes detected."
+                "diff": diff_text.strip() if diff_text and diff_text.strip() else "No text changes detected."
             })
         except Exception as e:
             files_diffs.append({
@@ -1848,62 +2048,101 @@ async def ws_status(websocket: WebSocket, token: str = Query(...)):
         
     await websocket.accept()
     try:
+        loop_count = 0
+        last_heavy_data = {}
+        last_transcript_mtime = 0
+        last_processed_change = 0
         while True:
+            # Check for transcript changes
+            try:
+                transcript_path = os.path.join(get_workspace_root(), ".agents", "system_generated", "logs", "transcript.jsonl")
+                if os.path.exists(transcript_path):
+                    mtime = os.path.getmtime(transcript_path)
+                    if mtime > last_transcript_mtime:
+                        if last_transcript_mtime != 0:
+                            notify_state_change()
+                        last_transcript_mtime = mtime
+            except Exception:
+                pass
+                
             status_data = await asyncio.to_thread(get_system_status)
-            status_data["tasks"] = [t.to_dict() for t in runner.list_tasks()]
+            is_busy = status_data.get("agent_status") in ("busy", "working")
             
-            current_model = get_antigravity_model()
-            status_data["agent_info"] = {
-                "current_model": current_model,
-                "model_details": MODEL_LIMITS.get(current_model, {"name": current_model, "category": "gemini"}),
-                "all_models": MODEL_LIMITS,
-                "ide_limits": get_system_limits(),
-                "remote_prompt": REMOTE_PROMPT,
-                "remote_approval": REMOTE_APPROVAL
-            }
-            status_data["chat_info"] = {
-                "chat": get_all_chat_turns()
-            }
-            status_data["plan"] = REMOTE_PLAN
-            status_data["questions"] = REMOTE_QUESTIONS
-            status_data["btw"] = REMOTE_BTW
-            
-            target_projects = await asyncio.to_thread(get_sibling_projects)
-            status_data["target"] = {
-                "workspace_path": REMOTE_TARGET.get("workspace_path"),
-                "active_file": REMOTE_TARGET.get("active_file"),
-                "projects": target_projects
-            }
-            diffs = await asyncio.to_thread(get_git_diffs)
-            status_data["diffs_summary"] = diffs
-            status_data["git_branch"] = diffs.get("branch", "unknown")
-            
-            # Include latest brain plan info
-            brain_plan = await asyncio.to_thread(get_latest_brain_plan)
-            if brain_plan:
-                status_data["brain_plan"] = {
-                    "session_id": brain_plan.get("session_id"),
-                    "title": brain_plan.get("title"),
-                    "age": brain_plan.get("age"),
-                    "has_content": True
+            needs_heavy_update = False
+            if LAST_STATE_CHANGE > last_processed_change:
+                needs_heavy_update = True
+            elif is_busy and (loop_count % 4 == 0): # Every 2s if busy
+                needs_heavy_update = True
+            elif loop_count % 20 == 0: # Every 10s fallback
+                needs_heavy_update = True
+                
+            if needs_heavy_update or not last_heavy_data:
+                heavy_data = {}
+                heavy_data["tasks"] = [t.to_dict() for t in runner.list_tasks()]
+                
+                current_model = get_antigravity_model()
+                heavy_data["agent_info"] = {
+                    "current_model": current_model,
+                    "model_details": MODEL_LIMITS.get(current_model, {"name": current_model, "category": "gemini"}),
+                    "all_models": MODEL_LIMITS,
+                    "ide_limits": get_system_limits(),
+                    "remote_prompt": REMOTE_PROMPT,
+                    "remote_approval": REMOTE_APPROVAL
                 }
-            else:
-                status_data["brain_plan"] = None
+                heavy_data["chat_info"] = {
+                    "chat": get_all_chat_turns()
+                }
+                heavy_data["plan"] = REMOTE_PLAN
+                heavy_data["questions"] = REMOTE_QUESTIONS
+                heavy_data["btw"] = REMOTE_BTW
+                
+                target_projects = await asyncio.to_thread(get_sibling_projects)
+                heavy_data["target"] = {
+                    "workspace_path": REMOTE_TARGET.get("workspace_path"),
+                    "active_file": REMOTE_TARGET.get("active_file"),
+                    "projects": target_projects
+                }
+                diffs = await asyncio.to_thread(get_git_diffs)
+                heavy_data["diffs_summary"] = diffs
+                heavy_data["git_branch"] = diffs.get("branch", "unknown")
+                
+                # Include latest brain plan info
+                brain_plan = await asyncio.to_thread(get_latest_brain_plan)
+                if brain_plan:
+                    heavy_data["brain_plan"] = {
+                        "session_id": brain_plan.get("session_id"),
+                        "title": brain_plan.get("title"),
+                        "age": brain_plan.get("age"),
+                        "has_content": True
+                    }
+                else:
+                    heavy_data["brain_plan"] = None
 
-            # Include latest brain walkthrough info
-            brain_walkthrough = await asyncio.to_thread(get_latest_brain_walkthrough)
-            if brain_walkthrough:
-                status_data["brain_walkthrough"] = {
-                    "session_id": brain_walkthrough.get("session_id"),
-                    "title": brain_walkthrough.get("title"),
-                    "age": brain_walkthrough.get("age"),
-                    "has_content": True
-                }
-            else:
-                status_data["brain_walkthrough"] = None
+                # Include latest brain walkthrough info
+                brain_walkthrough = await asyncio.to_thread(get_latest_brain_walkthrough)
+                if brain_walkthrough:
+                    heavy_data["brain_walkthrough"] = {
+                        "session_id": brain_walkthrough.get("session_id"),
+                        "title": brain_walkthrough.get("title"),
+                        "age": brain_walkthrough.get("age"),
+                        "has_content": True
+                    }
+                else:
+                    heavy_data["brain_walkthrough"] = None
+                    
+                last_heavy_data = heavy_data
+                last_processed_change = LAST_STATE_CHANGE
+                
+            status_data.update(last_heavy_data)
             
-            await websocket.send_json(status_data)
-            await asyncio.sleep(2)
+            # We send data if:
+            # 1. State changed recently (needs_heavy_update)
+            # 2. Every 2 seconds (loop_count % 4 == 0) to keep CPU metrics live
+            if needs_heavy_update or (loop_count % 4 == 0):
+                await websocket.send_json(status_data)
+            
+            loop_count += 1
+            await asyncio.sleep(0.5)
     except WebSocketDisconnect:
         pass
     except Exception as e:
@@ -2010,6 +2249,28 @@ def get_brain_plan_by_session(session_id: str, token: str = Depends(verify_token
         "age": age_str
     }
 
+class BrainPlanSaveModel(BaseModel):
+    session_id: Optional[str] = None
+    content: str
+
+@app.post("/api/brain/plan/save")
+def save_brain_plan_endpoint(req: BrainPlanSaveModel, token: str = Depends(verify_token)):
+    """Save user edits to the implementation plan."""
+    plan_path = None
+    if req.session_id:
+        p = os.path.join(BRAIN_DIR, req.session_id, "implementation_plan.md")
+        if os.path.exists(p):
+            plan_path = p
+    if not plan_path:
+        plan_path = os.path.join(get_workspace_root(), "implementation_plan.md")
+    
+    try:
+        with open(plan_path, "w", encoding="utf-8") as f:
+            f.write(req.content)
+        return {"status": "success", "message": "Plan saved successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save plan: {str(e)}")
+
 @app.get("/api/brain/sessions")
 def get_brain_sessions_endpoint(token: str = Depends(verify_token)):
     """List all brain sessions that have artifacts."""
@@ -2040,7 +2301,7 @@ def proceed_brain_plan(token: str = Depends(verify_token)):
     global REMOTE_APPROVAL
     # Write approval file to workspace for file-based protocol
     try:
-        response_file = os.path.join(get_workspace_root(), "agent_approval_response.json")
+        response_file = os.path.join(get_workspace_root(), ".agents", "state", "agent_approval_response.json")
         with open(response_file, "w", encoding="utf-8") as f:
             json.dump({"status": "approved"}, f)
     except Exception:

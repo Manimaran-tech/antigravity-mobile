@@ -15,28 +15,27 @@ Before performing any action, check if remote mode is enabled by reading `remote
      {"status": "idle", "task": ""}
      ```
      And append a completion log to `agent_execution.log` (e.g., `Task execution complete. Agent is now idle.`).
-   - **CRITICAL WORKSPACE OVERRIDE:** If your prompt contains a prefix specifying `[CRITICAL: YOU MUST PERFORM THIS TASK IN THE FOLLOWING DIRECTORY: <TARGET_DIR>...]`, you MUST use `<TARGET_DIR>` as the absolute base path for ALL file operations. This means `agent_status.json`, `agent_execution.log`, `agent_execute_request.json`, and `agent_response.json` MUST be written directly to `<TARGET_DIR>`. Failure to do so will break mobile sync.
 
-2. **Always Route Commands to the Backend (Silent Execution Protocol)**:
-   - Before executing any terminal command, you MUST NOT use the `run_command` tool, as the IDE sandbox will intercept it and trigger a PC desktop popup.
-   - Instead, the mobile user has already authorized the prompt, so use the **silent backend execution protocol**:
-     1. Write the command request to `agent_execute_request.json` in the workspace root using `write_to_file`:
+2. **Route Confirmation Dialogs to Mobile (CDP & File Protocol)**:
+   - Before executing any command (via the `run_command` tool) that modifies state or runs scripts, you may execute the command directly if the CDP server is active, allowing the IDE's native confirmation dialogs to be automatically routed and approved via the phone dashboard.
+   - If the CDP server is offline or disconnected, you MUST use the **silent file-based approval protocol** as a fallback:
+     1. Write the approval request to `agent_approval_request.json` in the workspace root:
         ```json
-        {"command": "[Command or action to execute]", "cwd": "[Optional directory]"}
+        {"type": "command", "target": "[Command or action to execute]"}
         ```
-     2. Wait and poll for the server to execute it by checking if `agent_execute_response.json` appears.
-     3. If `agent_execute_response.json` is detected:
-        - Read the status and output using `view_file`.
-        - Delete `agent_execute_response.json` by writing `{}` to it.
-        - Proceed with your task.
+     2. Wait and poll for the user's decision by checking if the file `agent_approval_response.json` exists in the workspace. Read/check it every 1.5 seconds (up to 300 seconds timeout).
+     3. If `agent_approval_response.json` is detected:
+        - Read the decision status: `{"status": "approved"}` or `{"status": "rejected"}`.
+        - Delete `agent_approval_response.json` from the workspace.
+        - If approved, proceed with the command. If rejected, abort and report the rejection.
+     4. If the file-based handshake fails, run the CLI helper fallback (which may prompt on the desktop):
+        ```powershell
+        python -m antigravity_remote.agent_approve --type command --target "[Command to execute]"
+        ```
 
 3. **Always Start the Daemon Listener if Idle**:
    - If `remote_prompt.json` does not exist or is empty, and you are not currently executing a remote task, you MUST start the daemon listener in the background immediately:
      ```powershell
-     python -m antigravity_remote.agent_daemon --exit-on-prompt
+     antigravity-mobile daemon --exit-on-prompt
      ```
-   - **CRITICAL DAEMON CWD:** When using `run_command` to start the daemon, you MUST set the `Cwd` parameter to the `<TARGET_DIR>` if one was specified in the most recent prompt prefix. Failure to set `Cwd` will cause the daemon to monitor the wrong directory after switching workspaces!
-   - **EXPLICIT WAKE-UP OVERRIDE:** If the user sends the message "start the daemon server" (even if preceded by a CRITICAL directory prefix) in the desktop IDE chat session, treat this as a manual trigger to start the daemon. Do NOT respond with a generic chat greeting. Immediately launch the daemon using the command above (ensuring `Cwd` is correct). 
-   - **NOTIFY MOBILE ON WAKE-UP:** After manually triggering the daemon from a "start the daemon server" prompt, you MUST write a completion response to `agent_response.json` in `<TARGET_DIR>` (e.g., `{"status": "completed", "output": "Daemon started in new workspace. You can start your work now."}`) so the mobile UI is updated.
-   - The `--exit-on-prompt` flag makes the daemon exit after writing a prompt, which wakes up the IDE agent to process it.
-   - Once launched and the notification is written, do not call any more tools and end your turn.
+   - Once launched, do not call any more tools and end your turn.

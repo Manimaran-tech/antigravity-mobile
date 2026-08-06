@@ -1,30 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Antigravity Remote</title>
-    <!-- Google Fonts -->
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Antigravity Mobile IDE</title>
+
+    <!-- Typography & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-    
-    <!-- Lucide Icons -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+        rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Anime.js v3 Animation Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 
     <style>
         :root {
-            --bg: #09090b;
-            --panel-bg: #18181b;
-            --panel-border: #27272a;
-            --text-primary: #fafafa;
-            --text-secondary: #a1a1aa;
-            --accent: #3b82f6;
-            --accent-hover: #2563eb;
-            --status-idle: #22c55e;
-            --status-busy: #eab308;
-            --status-failed: #ef4444;
-            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+            /* IDE Dark Theme Palette (BkLit & Motion.dev inspired) */
+            --bg-dark: #07080a;
+            --bg-editor: #0d0f12;
+            --bg-panel: #121418;
+            --bg-panel-hover: #1a1d24;
+            --bg-panel-active: #222630;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-subtle: rgba(255, 255, 255, 0.04);
+
+            --text-main: #f3f4f6;
+            --text-muted: #8b949e;
+            --text-dim: #545d68;
+
+            /* Accent Glow Colors */
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-purple: #8b5cf6;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+
+            --glow-blue: rgba(59, 130, 246, 0.15);
+            --glass-bg: rgba(18, 20, 24, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.1);
+
+            --shadow-md: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+            --shadow-lg: 0 10px 30px -5px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Custom Thin Dark Scrollbar (Eliminates white scrollbars) */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        html,
+        body {
+            height: 100%;
+            height: 100dvh;
+            width: 100vw;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
         }
 
         * {
@@ -32,1118 +83,1258 @@
             margin: 0;
             padding: 0;
             -webkit-tap-highlight-color: transparent;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text-primary);
-            min-height: 100vh;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
             display: flex;
             flex-direction: column;
-            overflow-x: hidden;
-            padding-bottom: 70px; /* Space for bottom nav */
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
         }
 
-        /* App Header */
-        header {
+        /* Top IDE Header */
+        header.ide-header {
+            height: 48px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border-color);
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            padding: 12px 16px;
-            background: var(--panel-bg);
-            border-bottom: 1px solid var(--panel-border);
-            position: sticky;
-            top: 0;
+            padding: 0 12px;
             z-index: 100;
+            flex-shrink: 0;
         }
 
-        .brand {
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .brand-icon-box {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        .brand-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(90deg, #ffffff, #a5b4fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .branch-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(139, 92, 246, 0.15);
+            color: #a78bfa;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            max-width: 120px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .header-controls {
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .brand h1 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            letter-spacing: -0.025em;
-            color: var(--text-primary);
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .connection-status {
+        .conn-pill {
             display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 0.75rem;
-            padding: 4px 10px;
+            font-size: 0.7rem;
+            padding: 3px 8px;
             border-radius: 20px;
-            background: var(--bg);
-            border: 1px solid var(--panel-border);
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
         }
 
-        .status-dot {
+        .conn-dot {
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: var(--status-failed);
+            background: var(--accent-rose);
+            box-shadow: 0 0 6px var(--accent-rose);
         }
 
-        .status-dot.connected {
-            background: var(--status-idle);
+        .conn-dot.active {
+            background: var(--accent-emerald);
+            box-shadow: 0 0 6px var(--accent-emerald);
         }
 
-        .shutdown-btn {
-            background: rgba(239, 68, 68, 0.15);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 6px;
-            color: rgb(239, 68, 68);
-            padding: 4px 8px;
-            font-size: 0.75rem;
-            font-family: inherit;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            outline: none;
-        }
-
-        /* Main Container */
-        #app {
-            width: 100%;
-            max-width: 650px;
-            margin: 0 auto;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            flex-grow: 1;
-        }
-
-        /* Tab Navigation Bar (Bottom) */
-        nav.bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--panel-bg);
-            border-top: 1px solid var(--panel-border);
-            display: flex;
-            justify-content: space-around;
-            padding: 8px 0;
-            z-index: 900;
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            color: var(--text-secondary);
-            font-size: 0.7rem;
-            font-weight: 500;
-            cursor: pointer;
+        .btn-icon {
             background: none;
-            border: none;
-            width: 25%;
-            padding: 4px 0;
-            transition: color 0.15s ease;
-        }
-
-        .nav-item.active {
-            color: var(--text-primary);
-        }
-
-        .nav-item i {
-            width: 20px;
-            height: 20px;
-        }
-
-        /* Views Container */
-        .tab-view {
-            display: none;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .tab-view.active {
-            display: flex;
-        }
-
-        /* Glass Panel Styling */
-        .panel {
-            background: var(--panel-bg);
-            border: 1px solid var(--panel-border);
-            border-radius: 10px;
-            padding: 16px;
-            box-shadow: var(--shadow);
-        }
-
-        /* Agent State Card */
-        .agent-card {
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
-            gap: 12px;
-        }
-
-        .agent-avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            display: flex;
             justify-content: center;
-            align-items: center;
-            font-weight: 700;
-            color: white;
-            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
         }
 
-        .agent-info {
+        .btn-icon:hover {
+            color: var(--text-main);
+            border-color: var(--text-muted);
+            background: var(--bg-panel-hover);
+        }
+
+        /* Main Workspace Container */
+        .ide-body {
+            flex: 1;
+            min-height: 0;
             display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-            gap: 2px;
+            position: relative;
             overflow: hidden;
         }
 
-        .agent-label {
-            font-size: 0.7rem;
+        /* Left Sliding Sidebar (Explorer) */
+        aside.ide-sidebar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 80%;
+            max-width: 320px;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border-color);
+            z-index: 500;
+            transform: translateX(-100%);
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-lg);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        aside.ide-sidebar.open {
+            transform: translateX(0);
+        }
+
+        .sidebar-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(3px);
+            z-index: 450;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .sidebar-header {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-title {
+            font-size: 0.75rem;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: var(--text-secondary);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .agent-status-text {
+        .file-tree-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 4px;
+        }
+
+        .tree-node {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            color: var(--text-main);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.12s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tree-node:hover {
+            background: var(--bg-panel-hover);
+        }
+
+        .tree-node.file-active {
+            background: var(--glow-blue);
+            color: #60a5fa;
+            border-left: 2px solid var(--accent-blue);
+        }
+
+        .tree-children {
+            padding-left: 14px;
+            display: none;
+        }
+
+        .tree-children.open {
+            display: block;
+        }
+
+        /* Active Main View Area */
+        main.ide-view-area {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            background: var(--bg-dark);
+        }
+
+        /* View Panels (Tabs) */
+        .view-panel {
+            display: none;
+            flex: 1;
+            min-height: 0;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            padding: 10px;
+            overflow-y: auto;
+            gap: 10px;
+        }
+
+        .view-panel.active {
+            display: flex;
+        }
+
+        /* Cards / Panels (BkLit style) */
+        .glass-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: var(--shadow-md);
+            backdrop-filter: blur(10px);
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Agent Status Card */
+        .status-hero {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 140px;
+            height: 140px;
+            background: radial-gradient(circle, var(--glow-blue) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .avatar-glow {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            flex-shrink: 0;
+        }
+
+        .status-meta {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .status-sub {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+        }
+
+        .status-main {
             font-size: 0.95rem;
             font-weight: 600;
+            color: var(--text-main);
         }
 
-        .agent-task {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
+        .status-task {
+            font-size: 0.78rem;
+            color: var(--text-muted);
             font-family: 'JetBrains Mono', monospace;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .status-badge {
-            font-size: 0.7rem;
-            font-weight: 600;
+        .badge-pill {
+            font-size: 0.68rem;
+            font-weight: 700;
             padding: 3px 8px;
-            border-radius: 4px;
+            border-radius: 6px;
             text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
         .badge-idle {
-            background: var(--panel-border);
-            color: var(--text-secondary);
+            background: var(--bg-panel-hover);
+            color: var(--text-muted);
         }
 
         .badge-busy {
-            background: rgba(234, 179, 8, 0.15);
-            color: var(--status-busy);
-            border: 1px solid rgba(234, 179, 8, 0.3);
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-amber);
+            border: 1px solid rgba(245, 158, 11, 0.3);
         }
 
-        /* System Metrics Grid */
-        .metrics-grid {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        /* Metrics Row */
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
             gap: 8px;
         }
 
-        .metric-card {
-            flex: 1;
-            text-align: center;
+        .metric-box {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 6px;
+            padding: 10px 4px;
         }
 
-        .metric-circle {
-            position: relative;
-            width: 64px;
-            height: 64px;
-        }
-
-        .metric-circle svg {
-            width: 64px;
-            height: 64px;
+        .metric-svg {
+            width: 56px;
+            height: 56px;
             transform: rotate(-90deg);
         }
 
-        .metric-circle circle {
+        .metric-svg circle {
             fill: none;
             stroke-width: 4;
         }
 
-        .metric-circle .bg-circle {
-            stroke: var(--panel-border);
+        .metric-bg {
+            stroke: var(--border-color);
         }
 
-        .metric-circle .progress-circle {
-            stroke: var(--text-primary);
-            stroke-dasharray: 188; /* 2 * pi * 30 */
-            stroke-dashoffset: 188;
-            transition: stroke-dashoffset 0.8s ease;
+        .metric-bar {
+            stroke: var(--accent-blue);
+            stroke-dasharray: 163;
+            stroke-dashoffset: 163;
+            transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .metric-value {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+        .metric-val {
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-top: -38px;
+            margin-bottom: 20px;
+        }
+
+        .metric-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* Inputs & Controls */
+        .input-bar {
+            display: flex;
+            gap: 8px;
+        }
+
+        .ide-input {
+            flex: 1;
+            background: var(--bg-editor);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: var(--text-main);
             font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+
+        .ide-input:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px var(--glow-blue);
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+            border: none;
+            color: white;
+            padding: 0 14px;
+            border-radius: 8px;
+            font-size: 0.82rem;
             font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: opacity 0.15s ease;
         }
 
-        .metric-name {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
+        .btn-action:hover {
+            opacity: 0.9;
         }
 
-        /* Chat View Components */
+        /* Chat View Components (Refactored Aesthetics) */
         .chat-container {
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            height: calc(100vh - 140px);
-            min-height: 480px;
-        }
-
-        /* Review Quick Chips Bar */
-        .review-chips-bar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            overflow-x: auto;
-            padding: 4px 0;
-            scrollbar-width: none;
-        }
-        .review-chips-bar::-webkit-scrollbar { display: none; }
-        
-        .review-chip {
-            display: flex;
-            align-items: center;
+            flex: 1;
+            min-height: 0;
             gap: 6px;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--panel-border);
-            color: var(--text-primary);
-            transition: all 0.15s ease;
         }
-        .review-chip:hover {
-            transform: translateY(-1px);
-            border-color: var(--accent);
-        }
-        .review-chip.chip-plan { border-color: #3b82f6; color: #60a5fa; background: rgba(59, 130, 246, 0.12); }
-        .review-chip.chip-walkthrough { border-color: #22c55e; color: #4ade80; background: rgba(34, 197, 94, 0.12); }
-        .review-chip.chip-diff { border-color: #f97316; color: #fb923c; background: rgba(249, 115, 22, 0.12); }
 
-        .chat-messages {
-            flex-grow: 1;
+        .chat-feed {
+            flex: 1;
+            min-height: 0;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            padding: 12px;
-            background: #09090b;
-            border: 1px solid var(--panel-border);
-            border-radius: 10px;
+            gap: 10px;
+            padding: 10px;
+            background: #08090c;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
         }
 
-        .chat-turn-group {
+        .chat-group {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 2px;
+            width: 100%;
         }
 
-        .chat-turn-group.user { align-items: flex-end; }
-        .chat-turn-group.agent { align-items: flex-start; }
+        .chat-group.user {
+            align-items: flex-end;
+        }
 
-        .chat-sender-label {
-            font-size: 0.68rem;
+        .chat-group.agent {
+            align-items: flex-start;
+        }
+
+        .chat-sender {
+            font-size: 0.65rem;
             font-weight: 600;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.04em;
             padding: 0 4px;
+            letter-spacing: 0.04em;
         }
 
         .chat-bubble {
-            max-width: 88%;
-            padding: 11px 15px;
-            border-radius: 14px;
-            font-size: 0.88rem;
-            line-height: 1.48;
+            max-width: 85%;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            line-height: 1.45;
             word-break: break-word;
-            white-space: pre-wrap;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            white-space: pre-line;
+            box-shadow: var(--shadow-md);
         }
 
         .chat-bubble.user {
             background: linear-gradient(135deg, #2563eb, #1d4ed8);
             color: #ffffff;
-            border-bottom-right-radius: 4px;
+            border-bottom-right-radius: 2px;
         }
 
         .chat-bubble.agent {
-            background: #18181b;
-            border: 1px solid #27272a;
-            color: #f4f4f5;
-            border-bottom-left-radius: 4px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            color: #f3f4f6;
+            border-bottom-left-radius: 2px;
         }
 
-        .chat-time {
-            font-size: 0.65rem;
-            opacity: 0.7;
-            margin-top: 4px;
-            text-align: right;
-        }
-
-        .input-group {
-            position: relative;
-            display: flex;
-            gap: 8px;
-        }
-
-        .command-input {
-            width: 100%;
-            background: var(--bg);
-            border: 1px solid var(--panel-border);
-            border-radius: 8px;
-            padding: 12px;
-            font-family: inherit;
-            color: var(--text-primary);
-            font-size: 0.9rem;
-            outline: none;
-        }
-
-        .command-input:focus {
-            border-color: var(--accent);
-        }
-
-        .submit-btn {
-            background: var(--accent);
-            border: none;
-            width: 44px;
-            height: 44px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-
-        .submit-btn:hover {
-            background: var(--accent-hover);
-        }
-
-        /* History View */
-        .history-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .history-item {
-            background: var(--panel-bg);
-            border: 1px solid var(--panel-border);
-            border-radius: 8px;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            cursor: pointer;
-            transition: border-color 0.15s ease;
-        }
-
-        .history-item:hover {
-            border-color: var(--text-secondary);
-        }
-
-        .history-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 8px;
-        }
-
-        .history-title {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            line-height: 1.3;
-        }
-
-        .history-meta {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 4px;
-        }
-
-        .continue-btn {
-            background: var(--panel-border);
-            border: 1px solid var(--panel-border);
-            color: var(--text-primary);
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .continue-btn:hover {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: white;
-        }
-
-        /* Modal Overlay */
-        .modal-overlay {
+        /* Toast Notification Banner (BkLit & Motion style) */
+        .toast-container {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(9, 9, 11, 0.85);
-            z-index: 2000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .modal-card {
-            background: var(--panel-bg);
-            border: 1px solid var(--panel-border);
-            border-radius: 12px;
-            padding: 24px;
-            width: 100%;
-            max-width: 450px;
-            box-shadow: var(--shadow);
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        /* Auth Overlay */
-        #auth-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: var(--bg);
+            top: 54px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
             z-index: 3000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            width: 92%;
+            max-width: 400px;
+            pointer-events: none;
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+            opacity: 0;
         }
-
-        .pin-inputs {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin: 15px 0;
+        .toast-container.active {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+            pointer-events: auto;
         }
-
-        .pin-input {
-            width: 42px;
-            height: 52px;
-            background: var(--bg);
-            border: 1px solid var(--panel-border);
-            border-radius: 8px;
-            text-align: center;
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .pin-input:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-
-        .auth-error {
-            color: var(--status-failed);
-            font-size: 0.85rem;
-            text-align: center;
-            min-height: 1.2rem;
-        }
-
-        /* Tasks Queue */
-        .task-item {
-            background: var(--bg);
-            border: 1px solid var(--panel-border);
-            border-radius: 6px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .task-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .task-cmd {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 70%;
-        }
-
-        /* Inline Review Cards */
-        .inline-card {
-            background: var(--panel-bg);
-            border: 1px solid var(--panel-border);
-            border-radius: 8px;
+        .toast-card {
+            background: rgba(18, 20, 24, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 12px;
             padding: 10px 14px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 10px;
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-        .inline-card:hover {
-            border-color: var(--accent);
-            background: rgba(59, 130, 246, 0.08);
-        }
-        .inline-card.plan-card { border-left: 3px solid #3b82f6; }
-        .inline-card.walkthrough-card { border-left: 3px solid #22c55e; }
-        .inline-card.diff-card { border-left: 3px solid #f97316; }
-
-        .inline-card-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            overflow: hidden;
-        }
-        .inline-card-title {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .inline-card-subtitle {
-            font-size: 0.72rem;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .inline-card-btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 5px 10px;
-            font-size: 0.72rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            flex-shrink: 0;
-        }
-
-        /* Overlay Panel */
-        .full-overlay-panel {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: var(--bg);
-            z-index: 2500;
-            display: none;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        .overlay-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            background: var(--panel-bg);
-            border-bottom: 1px solid var(--panel-border);
-        }
-        .overlay-back-btn {
-            background: none;
-            border: none;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.85rem;
-            font-weight: 500;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(59, 130, 246, 0.2);
             cursor: pointer;
         }
-        .overlay-body {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 16px;
+        .toast-content {
             display: flex;
-            flex-direction: column;
-            gap: 16px;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
         }
-
-        /* Diff Viewer & State Badges */
-        .diff-container {
-            background: #0d0e11;
-            border: 1px solid var(--panel-border);
+        .toast-icon {
+            width: 32px;
+            height: 32px;
             border-radius: 8px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #60a5fa;
+        }
+        .toast-title {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        .toast-sub {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            line-height: 1.3;
+        }
+
+        /* Premium VS Code Mobile Diff Viewer */
+        .diff-block {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.78rem;
+            font-size: 0.76rem;
+            line-height: 1.45;
+            background: #08090c;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
             overflow-x: auto;
-            line-height: 1.5;
-            margin-top: 6px;
+            white-space: pre;
+            padding: 6px 0;
         }
         .diff-line {
             display: flex;
             padding: 2px 8px;
+            min-width: 100%;
+        }
+        .diff-prefix {
+            width: 18px;
+            flex-shrink: 0;
+            color: var(--text-dim);
+            user-select: none;
+            font-weight: 600;
+        }
+        .diff-text {
+            flex: 1;
+            white-space: pre;
+            word-break: break-all;
+        }
+        .diff-add {
+            background: rgba(16, 185, 129, 0.22) !important;
+            color: #34d399 !important;
+        }
+        .diff-add .diff-prefix {
+            color: #10b981 !important;
+            font-weight: 700;
+        }
+        .diff-del {
+            background: rgba(244, 63, 94, 0.22) !important;
+            color: #f87171 !important;
+        }
+        .diff-del .diff-prefix {
+            color: #f43f5e !important;
+            font-weight: 700;
+        }
+        .diff-hunk {
+            background: rgba(6, 182, 212, 0.16) !important;
+            color: #38bdf8 !important;
+            font-weight: 600;
+            margin: 4px 0;
+            border-top: 1px dashed rgba(6, 182, 212, 0.4);
+            border-bottom: 1px dashed rgba(6, 182, 212, 0.4);
+        }
+
+        /* Live Working / Intermediate Execution Bubble */
+        .chat-bubble.working-bubble {
+            background: rgba(14, 165, 233, 0.08);
+            border: 1px dashed rgba(14, 165, 233, 0.5);
+            color: #7dd3fc;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            animation: pulseWorking 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseWorking {
+
+            0%,
+            100% {
+                border-color: rgba(14, 165, 233, 0.4);
+                box-shadow: 0 0 8px rgba(14, 165, 233, 0.1);
+            }
+
+            50% {
+                border-color: rgba(14, 165, 233, 0.9);
+                box-shadow: 0 0 16px rgba(14, 165, 233, 0.25);
+            }
+        }
+
+        .working-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #38bdf8;
+        }
+
+        .working-spinner {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #38bdf8;
+            box-shadow: 0 0 8px #38bdf8;
+            animation: pulseDot 1s infinite ease-in-out alternate;
+        }
+
+        @keyframes pulseDot {
+            from {
+                transform: scale(0.7);
+                opacity: 0.5;
+            }
+
+            to {
+                transform: scale(1.3);
+                opacity: 1;
+            }
+        }
+
+        .working-detail {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            background: rgba(0, 0, 0, 0.4);
+            padding: 6px 8px;
+            border-radius: 6px;
             white-space: pre-wrap;
             word-break: break-all;
         }
-        .diff-line-added {
-            background: rgba(34, 197, 94, 0.15);
-            color: #4ade80;
-        }
-        .diff-line-removed {
-            background: rgba(239, 68, 68, 0.15);
-            color: #f87171;
-        }
-        .diff-line-context {
-            color: #a1a1aa;
-        }
-        .diff-line-header {
-            background: rgba(59, 130, 246, 0.15);
-            color: #60a5fa;
-            font-weight: 600;
-        }
-        .state-badge {
-            font-size: 0.68rem;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            font-family: 'JetBrains Mono', monospace;
-        }
-        .state-badge.state-M { background: rgba(249, 115, 22, 0.2); color: #f97316; border: 1px solid rgba(249, 115, 22, 0.4); }
-        .state-badge.state-A { background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.4); }
-        .state-badge.state-U { background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.4); }
-        .state-badge.state-D { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); }
-        .state-badge.state-R { background: rgba(168, 85, 247, 0.2); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.4); }
 
-        /* Markdown Styling */
-        .md-rendered h1 { font-size: 1.15rem; font-weight: 700; margin: 12px 0 8px; color: var(--text-primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 4px; }
-        .md-rendered h2 { font-size: 1.02rem; font-weight: 600; margin: 10px 0 6px; color: var(--text-primary); }
-        .md-rendered h3 { font-size: 0.92rem; font-weight: 600; margin: 8px 0 4px; color: var(--text-primary); }
-        .md-rendered p { font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); margin-bottom: 8px; }
-        .md-rendered ul, .md-rendered ol { padding-left: 20px; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; }
-        .md-rendered li { margin-bottom: 4px; }
-        .md-rendered pre { background: #0d0e11; border: 1px solid var(--panel-border); border-radius: 6px; padding: 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; overflow-x: auto; margin: 8px 0; }
-        .md-rendered blockquote { background: var(--panel-bg); border-left: 3px solid var(--accent); padding: 8px 12px; margin: 8px 0; border-radius: 0 6px 6px 0; font-size: 0.82rem; }
-
-        /* Directory Browser */
-        .browse-breadcrumb {
+        .review-bar {
             display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
+            gap: 6px;
             overflow-x: auto;
-            white-space: nowrap;
-            padding: 6px 0;
-            margin-bottom: 8px;
+            padding: 2px 0;
+            scrollbar-width: none;
         }
-        .browse-breadcrumb span {
-            cursor: pointer;
-            color: var(--accent);
-            font-weight: 500;
+
+        .review-bar::-webkit-scrollbar {
+            display: none;
         }
-        .browse-breadcrumb span:last-child {
-            color: var(--text-primary);
-            cursor: default;
-        }
-        .browse-breadcrumb .sep {
-            color: var(--text-secondary);
-            cursor: default;
-            font-weight: normal;
-        }
-        .dir-entry {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 12px;
-            background: var(--bg);
-            border: 1px solid var(--panel-border);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: border-color 0.15s ease, background 0.15s ease;
-            gap: 8px;
-        }
-        .dir-entry:hover {
-            border-color: var(--text-secondary);
-            background: rgba(59, 130, 246, 0.05);
-        }
-        .dir-entry.active-ws {
-            border-color: var(--accent);
-            background: rgba(59, 130, 246, 0.08);
-        }
-        .dir-entry-left {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            overflow: hidden;
-            flex: 1;
-        }
-        .dir-entry-icon {
-            flex-shrink: 0;
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--panel-border);
-        }
-        .dir-entry-icon.git {
-            background: rgba(249, 115, 22, 0.15);
-            color: #f97316;
-        }
-        .dir-entry-icon.agents {
-            background: rgba(139, 92, 246, 0.15);
-            color: #8b5cf6;
-        }
-        .dir-entry-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            overflow: hidden;
-        }
-        .dir-entry-name {
-            font-size: 0.88rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .dir-entry-meta {
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-        .dir-badge {
-            font-size: 0.62rem;
-            font-weight: 700;
-            padding: 1px 5px;
-            border-radius: 3px;
-            text-transform: uppercase;
-            font-family: 'JetBrains Mono', monospace;
-        }
-        .dir-badge.badge-git { background: rgba(249, 115, 22, 0.2); color: #f97316; }
-        .dir-badge.badge-agents { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
-        .dir-badge.badge-active { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
-        .select-ws-btn {
-            background: var(--accent);
-            border: none;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
+
+        .review-chip {
+            padding: 5px 10px;
+            border-radius: 20px;
             font-size: 0.72rem;
             font-weight: 600;
             cursor: pointer;
             white-space: nowrap;
-            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            transition: all 0.15s ease;
         }
-        .select-ws-btn:hover {
-            background: var(--accent-hover);
+
+        .review-chip:hover {
+            border-color: var(--accent-blue);
+            transform: translateY(-1px);
         }
-        .go-up-btn {
+
+        /* Code Viewer Full Overlay */
+        .code-viewer-panel {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-editor);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+        }
+
+        .viewer-header {
+            height: 48px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+        }
+
+        .viewer-filename {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-main);
             display: flex;
             align-items: center;
             gap: 6px;
-            padding: 8px 12px;
-            background: var(--bg);
-            border: 1px dashed var(--panel-border);
-            border-radius: 8px;
-            color: var(--text-secondary);
-            font-size: 0.82rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-        .go-up-btn:hover {
-            border-color: var(--accent);
-            color: var(--text-primary);
-        }
-        .workspace-path-tag {
-            font-size: 0.68rem;
-            color: var(--text-secondary);
-            font-family: 'JetBrains Mono', monospace;
-            background: var(--bg);
-            padding: 2px 6px;
-            border-radius: 3px;
-            border: 1px solid var(--panel-border);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 200px;
-            display: inline-block;
+        }
+
+        .viewer-body {
+            flex: 1;
+            overflow: auto;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            color: #d1d5db;
+            background: #090a0d;
+        }
+
+        .code-table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .line-num {
+            width: 40px;
+            color: var(--text-dim);
+            text-align: right;
+            padding-right: 12px;
+            user-select: none;
+            font-size: 0.75rem;
+            border-right: 1px solid var(--border-subtle);
+        }
+
+        .line-content {
+            padding-left: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* Simple Syntax Highlighter Classes */
+        .syn-kw {
+            color: #f472b6;
+            font-weight: 600;
+        }
+
+        .syn-str {
+            color: #34d399;
+        }
+
+        .syn-num {
+            color: #fbbf24;
+        }
+
+        .syn-cmnt {
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .syn-func {
+            color: #60a5fa;
+        }
+
+        .syn-tag {
+            color: #f87171;
+        }
+
+        /* Bottom Activity Navigation Bar */
+        nav.bottom-activity-bar {
+            height: 56px;
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border-color);
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            z-index: 400;
+            flex-shrink: 0;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            cursor: pointer;
+            font-size: 0.65rem;
+            font-weight: 500;
+            transition: color 0.15s ease;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: var(--accent-blue);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 25%;
+            right: 25%;
+            height: 2px;
+            background: var(--accent-blue);
+            border-radius: 0 0 2px 2px;
+            box-shadow: 0 2px 6px var(--accent-blue);
+        }
+
+        /* Persistent IDE Bottom Status Bar */
+        .bottom-status-bar {
+            height: 22px;
+            background: #090a0d;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        /* Auth Overlay */
+        #auth-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-dark);
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .pin-input {
+            width: 40px;
+            height: 50px;
+            background: var(--bg-editor);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-main);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .pin-input:focus {
+            border-color: var(--accent-blue);
+            outline: none;
+        }
+
+        /* Approval & Review Modals */
+        .modal-mask {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .overlay-slide {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-dark);
+            z-index: 2500;
+            display: none;
+            flex-direction: column;
         }
     </style>
 </head>
+
 <body>
 
-    <!-- Header -->
-    <header>
-        <div class="brand">
-            <i data-lucide="smartphone" style="width: 20px; height: 20px; color: var(--accent);"></i>
-            <h1>Antigravity Remote</h1>
-        </div>
-        <div class="header-actions">
-            <div class="connection-status">
-                <div id="ws-dot" class="status-dot"></div>
-                <span id="ws-text">Connecting...</span>
+    <!-- Toast Notification Banner -->
+    <div id="toast-banner" class="toast-container">
+        <div class="toast-card" id="toast-card-btn">
+            <div class="toast-content">
+                <div class="toast-icon" id="toast-icon-box">
+                    <i data-lucide="bell" style="width: 18px; height: 18px;"></i>
+                </div>
+                <div>
+                    <div class="toast-title" id="toast-title">Notification</div>
+                    <div class="toast-sub" id="toast-sub">Tap to view details</div>
+                </div>
             </div>
-            <button id="shutdown-btn" class="shutdown-btn" title="Turn Off Tunnel">
-                <i data-lucide="power" style="width: 13px; height: 13px;"></i>
+            <button class="btn-icon" style="width: 24px; height: 24px; border: none; background: none;" onclick="event.stopPropagation(); hideToastBanner();">
+                <i data-lucide="x" style="width: 14px; height: 14px; color: var(--text-muted);"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="ide-header">
+        <div class="header-brand" id="toggle-explorer-btn">
+            <span class="brand-title">Antigravity IDE</span>
+            <div id="hdr-branch-tag" class="branch-badge">
+                <i data-lucide="git-branch" style="width: 12px; height: 12px;"></i>
+                <span id="hdr-branch-name">main</span>
+            </div>
+        </div>
+        <div class="header-controls">
+            <div class="conn-pill">
+                <div id="ws-dot" class="conn-dot"></div>
+                <span id="ws-text">Connecting</span>
+            </div>
+            <button id="shutdown-btn" class="btn-icon" title="Turn Off Tunnel">
+                <i data-lucide="power" style="width: 14px; height: 14px; color: var(--accent-rose);"></i>
             </button>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <div id="app">
+    <!-- IDE Body Structure -->
+    <div class="ide-body">
 
-        <!-- TAB 1: DASHBOARD -->
-        <div id="tab-dashboard" class="tab-view active">
-            <!-- Agent State Card -->
-            <div class="panel agent-card">
-                <div class="agent-avatar">AG</div>
-                <div class="agent-info">
-                    <div class="agent-label">Agent Status</div>
-                    <div id="agent-state-label" class="agent-status-text">Connecting...</div>
-                    <div id="agent-task-text" class="agent-task">Initializing connection</div>
-                </div>
-                <span id="agent-badge" class="status-badge badge-idle">Idle</span>
+        <!-- Sidebar Overlay -->
+        <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+        <!-- Left Sliding File Explorer Panel -->
+        <aside id="ide-sidebar" class="ide-sidebar">
+            <div class="sidebar-header">
+                <span class="sidebar-title">
+                    <i data-lucide="files" style="width: 14px; height: 14px; color: var(--accent-blue);"></i> Explorer
+                </span>
+                <button id="close-sidebar-btn" class="btn-icon" style="width: 24px; height: 24px;">
+                    <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                </button>
             </div>
+            <div id="file-tree-root" class="file-tree-container">
+                <div style="padding: 12px; font-size: 0.78rem; color: var(--text-muted);">Loading workspace files...
+                </div>
+            </div>
+        </aside>
 
-            <!-- Metrics Grid -->
-            <div class="panel metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-circle">
-                        <svg>
-                            <circle class="bg-circle" cx="32" cy="32" r="30"></circle>
-                            <circle id="cpu-circle" class="progress-circle" cx="32" cy="32" r="30"></circle>
-                        </svg>
-                        <div id="cpu-val" class="metric-value">0%</div>
+        <!-- View Panels Area -->
+        <main class="ide-view-area">
+
+            <!-- TAB 1: EXPLORER VIEW -->
+            <div id="tab-explorer" class="view-panel active">
+                <div class="glass-card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="folder-git-2"
+                                style="width: 16px; height: 16px; color: var(--accent-blue);"></i> Project Explorer
+                        </h3>
+                        <button id="refresh-tree-btn" class="btn-icon" style="width: 26px; height: 26px;"
+                            title="Refresh Tree">
+                            <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i>
+                        </button>
                     </div>
-                    <div class="metric-name">CPU</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-circle">
-                        <svg>
-                            <circle class="bg-circle" cx="32" cy="32" r="30"></circle>
-                            <circle id="ram-circle" class="progress-circle" cx="32" cy="32" r="30"></circle>
-                        </svg>
-                        <div id="ram-val" class="metric-value">0%</div>
+                    <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;">
+                        Tap any file to open in the integrated Code Viewer with syntax highlighting.
+                    </p>
+                    <div id="explorer-tree-inline" class="file-tree-container"
+                        style="background: var(--bg-editor); border-radius: 8px; border: 1px solid var(--border-color); max-height: 480px;">
                     </div>
-                    <div class="metric-name">RAM</div>
                 </div>
-                <div class="metric-card">
-                    <div class="metric-circle">
-                        <svg>
-                            <circle class="bg-circle" cx="32" cy="32" r="30"></circle>
-                            <circle id="disk-circle" class="progress-circle" cx="32" cy="32" r="30"></circle>
-                        </svg>
-                        <div id="disk-val" class="metric-value">0%</div>
+            </div>
+
+            <!-- TAB 2: CHAT VIEW -->
+            <div id="tab-chat" class="view-panel">
+                <div class="chat-container">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="bot" style="width: 16px; height: 16px; color: var(--accent-purple);"></i>
+                            Antigravity AI
+                        </h3>
+                        <span id="chat-status-badge" style="font-size: 0.7rem; color: var(--text-muted);">Ready</span>
                     </div>
-                    <div class="metric-name">Disk</div>
-                </div>
-            </div>
 
-            <!-- Quick Task Scheduler -->
-            <div class="panel">
-                <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                    <i data-lucide="play-circle" style="width: 16px; height: 16px; color: var(--accent);"></i> Schedule Terminal Task
-                </h3>
-                <div class="input-group">
-                    <input type="text" id="dash-cmd-input" class="command-input" placeholder="e.g. pytest or npm test">
-                    <button id="dash-cmd-btn" class="submit-btn"><i data-lucide="play" style="width: 16px; height: 16px;"></i></button>
-                </div>
-            </div>
+                    <!-- Review Quick Chips Bar -->
+                    <div id="inline-review-cards" class="review-bar"></div>
 
-            <!-- Task Queue -->
-            <div class="panel">
-                <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="display: flex; align-items: center; gap: 6px;">
-                        <i data-lucide="list-todo" style="width: 16px; height: 16px; color: var(--accent);"></i> Task Queue
-                    </span>
-                    <span id="tasks-count" style="font-size: 0.75rem; color: var(--text-secondary); font-weight: normal;">0 tasks</span>
-                </h3>
-                <div id="dash-tasks-list" style="display: flex; flex-direction: column; gap: 8px;">
-                    <div class="empty-state">No scheduled tasks yet</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- TAB 2: CHAT -->
-        <div id="tab-chat" class="tab-view">
-            <div class="panel chat-container">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--panel-border); padding-bottom: 8px;">
-                    <h3 style="font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                        <i data-lucide="message-square" style="width: 16px; height: 16px; color: var(--accent);"></i> Agent Conversation
-                    </h3>
-                    <span id="chat-status-badge" style="font-size: 0.7rem; color: var(--text-secondary);">Ready</span>
-                </div>
-
-                <!-- Review Quick Chips Bar (Plan, Walkthrough, Code Review) -->
-                <div id="inline-review-cards" class="review-chips-bar"></div>
-
-                <!-- Chat Turn Messages Container -->
-                <div id="chat-messages" class="chat-messages">
-                    <div class="chat-turn-group agent">
-                        <div class="chat-sender-label">Antigravity AI</div>
-                        <div class="chat-bubble agent">
-                            Hello! Ask me anything or send a command to start working.
+                    <!-- Chat Feed -->
+                    <div id="chat-messages" class="chat-feed">
+                        <div class="chat-group agent">
+                            <span class="chat-sender">Antigravity AI</span>
+                            <div class="chat-bubble agent">Hello! Ask me anything or instruct me to build code.</div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Live Agent Log Bar -->
-                <div style="background: #111115; border: 1px solid var(--panel-border); border-radius: 6px; padding: 6px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; display: flex; align-items: center; justify-content: space-between;" id="live-logs-container">
-                    <span style="color: var(--text-secondary); font-size: 0.68rem; font-weight: 600;">LOGS</span>
-                    <span id="live-logs-box" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85%; color: #a1a1aa;">Agent idle</span>
-                </div>
-
-                <!-- Input box -->
-                <div class="input-group">
-                    <input type="text" id="chat-prompt-input" class="command-input" placeholder="Ask Antigravity to build or edit code...">
-                    <button id="chat-send-btn" class="submit-btn"><i data-lucide="send" style="width: 16px; height: 16px;"></i></button>
-                </div>
-            </div>
-        </div>
-
-        <!-- TAB 3: HISTORY -->
-        <div id="tab-history" class="tab-view">
-            <div class="panel">
-                <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                    <i data-lucide="history" style="width: 16px; height: 16px; color: var(--accent);"></i> Past Conversations
-                </h3>
-                <div id="history-sessions-list" class="history-list">
-                    <div class="empty-state">Loading history...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- TAB 4: CONTROL / SETTINGS -->
-        <div id="tab-control" class="tab-view">
-            <!-- Model Control -->
-            <div class="panel" style="display: flex; flex-direction: column; gap: 10px;">
-                <h3 style="font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                    <i data-lucide="cpu" style="width: 16px; height: 16px; color: var(--accent);"></i> AI Model Selection
-                </h3>
-                <select id="control-model-select" class="command-input" style="cursor: pointer;">
-                    <option value="gemini-3-6-flash-high">Gemini 3.6 Flash (High)</option>
-                    <option value="gemini-3-6-flash-medium">Gemini 3.6 Flash (Medium)</option>
-                    <option value="gemini-3-6-flash-low">Gemini 3.6 Flash (Low)</option>
-                    <option value="gemini-3-5-flash-medium">Gemini 3.5 Flash (Medium)</option>
-                    <option value="gemini-3-5-flash-high">Gemini 3.5 Flash (High)</option>
-                    <option value="gemini-3-5-flash-low">Gemini 3.5 Flash (Low)</option>
-                    <option value="gemini-3-1-pro-low">Gemini 3.1 Pro (Low)</option>
-                    <option value="gemini-3-1-pro-high">Gemini 3.1 Pro (High)</option>
-                    <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (Thinking)</option>
-                    <option value="claude-opus-4-6">Claude Opus 4.6 (Thinking)</option>
-                    <option value="gpt-oss-120b">GPT-OSS 120B (Medium)</option>
-                </select>
-            </div>
-
-            <!-- Workspace Directory Browser -->
-            <div class="panel" style="display: flex; flex-direction: column; gap: 10px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h3 style="font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                        <i data-lucide="folder-open" style="width: 16px; height: 16px; color: var(--accent);"></i> Workspace Directory
-                    </h3>
-                    <span id="current-ws-label" style="font-size: 0.68rem; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace;">Loading...</span>
-                </div>
-                <!-- Quick Switch (Git Repos) -->
-                <div id="quick-projects-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
-                <!-- Full Directory Browser -->
-                <div style="border-top: 1px solid var(--panel-border); padding-top: 10px; margin-top: 4px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-primary);">Browse All Directories</span>
+                    <!-- Live Logs Bar -->
+                    <div
+                        style="background: #090a0d; border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: var(--text-dim); font-weight: 600;">LOGS</span>
+                        <span id="live-logs-box"
+                            style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85%; color: var(--text-muted);">Agent
+                            idle</span>
                     </div>
-                    <div id="browse-breadcrumb" class="browse-breadcrumb"></div>
-                    <div id="browse-entries" style="display: flex; flex-direction: column; gap: 6px;"></div>
+
+                    <!-- Prompt Input -->
+                    <div class="input-bar">
+                        <input type="text" id="chat-prompt-input" class="ide-input"
+                            placeholder="Ask Antigravity to build or edit code...">
+                        <button id="chat-send-btn" class="btn-action"><i data-lucide="send"
+                                style="width: 15px; height: 15px;"></i></button>
+                    </div>
                 </div>
             </div>
-        </div>
 
+            <!-- TAB 3: DASHBOARD VIEW -->
+            <div id="tab-dashboard" class="view-panel">
+                <!-- Agent Status Card -->
+                <div class="glass-card status-hero">
+                    <div class="avatar-glow">AG</div>
+                    <div class="status-meta">
+                        <div class="status-sub">Agent Status</div>
+                        <div id="agent-state-label" class="status-main">Connecting...</div>
+                        <div id="agent-task-text" class="status-task">Initializing</div>
+                    </div>
+                    <span id="agent-badge" class="badge-pill badge-idle">Idle</span>
+                </div>
+
+                <!-- System Metrics Row -->
+                <div class="glass-card metrics-row">
+                    <div class="metric-box">
+                        <svg class="metric-svg">
+                            <circle class="metric-bg" cx="28" cy="28" r="26"></circle>
+                            <circle id="cpu-circle" class="metric-bar" cx="28" cy="28" r="26"></circle>
+                        </svg>
+                        <div id="cpu-val" class="metric-val">0%</div>
+                        <div class="metric-label">CPU</div>
+                    </div>
+                    <div class="metric-box">
+                        <svg class="metric-svg">
+                            <circle class="metric-bg" cx="28" cy="28" r="26"></circle>
+                            <circle id="ram-circle" class="metric-bar" cx="28" cy="28" r="26"></circle>
+                        </svg>
+                        <div id="ram-val" class="metric-val">0%</div>
+                        <div class="metric-label">RAM</div>
+                    </div>
+                    <div class="metric-box">
+                        <svg class="metric-svg">
+                            <circle class="metric-bg" cx="28" cy="28" r="26"></circle>
+                            <circle id="disk-circle" class="metric-bar" cx="28" cy="28" r="26"></circle>
+                        </svg>
+                        <div id="disk-val" class="metric-val">0%</div>
+                        <div class="metric-label">DISK</div>
+                    </div>
+                </div>
+
+                <!-- Schedule Task -->
+                <div class="glass-card">
+                    <h3
+                        style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="terminal" style="width: 15px; height: 15px; color: var(--accent-cyan);"></i>
+                        Schedule Terminal Task
+                    </h3>
+                    <div class="input-bar">
+                        <input type="text" id="dash-cmd-input" class="ide-input" placeholder="e.g. pytest or npm test">
+                        <button id="dash-cmd-btn" class="btn-action"><i data-lucide="play"
+                                style="width: 15px; height: 15px;"></i></button>
+                    </div>
+                </div>
+
+                <!-- Task Queue -->
+                <div class="glass-card">
+                    <h3
+                        style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between;">
+                        <span><i data-lucide="list-checks"
+                                style="width: 15px; height: 15px; color: var(--accent-emerald);"></i> Task Queue</span>
+                        <span id="tasks-count" style="font-size: 0.72rem; color: var(--text-muted);">0 tasks</span>
+                    </h3>
+                    <div id="dash-tasks-list" style="display: flex; flex-direction: column; gap: 6px;">
+                        <div style="font-size: 0.78rem; color: var(--text-muted);">No scheduled tasks</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: HISTORY VIEW -->
+            <div id="tab-history" class="view-panel">
+                <div class="glass-card">
+                    <h3
+                        style="font-size: 0.9rem; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="history" style="width: 16px; height: 16px; color: var(--accent-amber);"></i>
+                        Past Conversations
+                    </h3>
+                    <div id="history-sessions-list" style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="font-size: 0.78rem; color: var(--text-muted);">Loading history...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: CONTROL & SETTINGS -->
+            <div id="tab-control" class="view-panel">
+                <!-- AI Model Selection -->
+                <div class="glass-card">
+                    <h3
+                        style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="cpu" style="width: 15px; height: 15px; color: var(--accent-blue);"></i> AI Model
+                        Selection
+                    </h3>
+                    <select id="control-model-select" class="ide-input" style="cursor: pointer;">
+                        <option value="gemini-3-6-flash-high">Gemini 3.6 Flash (High)</option>
+                        <option value="gemini-3-6-flash-medium">Gemini 3.6 Flash (Medium)</option>
+                        <option value="gemini-3-6-flash-low">Gemini 3.6 Flash (Low)</option>
+                        <option value="gemini-3-5-flash-medium">Gemini 3.5 Flash (Medium)</option>
+                        <option value="gemini-3-5-flash-high">Gemini 3.5 Flash (High)</option>
+                        <option value="gemini-3-5-flash-low">Gemini 3.5 Flash (Low)</option>
+                        <option value="gemini-3-1-pro-low">Gemini 3.1 Pro (Low)</option>
+                        <option value="gemini-3-1-pro-high">Gemini 3.1 Pro (High)</option>
+                        <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (Thinking)</option>
+                        <option value="claude-opus-4-6">Claude Opus 4.6 (Thinking)</option>
+                        <option value="gpt-oss-120b">GPT-OSS 120B (Medium)</option>
+                    </select>
+                </div>
+
+                <!-- Workspace Directory Switcher -->
+                <div class="glass-card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <h3 style="font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="folder-open"
+                                style="width: 15px; height: 15px; color: var(--accent-purple);"></i> Workspace Directory
+                        </h3>
+                        <span id="current-ws-label"
+                            style="font-size: 0.68rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">Loading...</span>
+                    </div>
+                    <div id="quick-projects-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                    <div style="border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 8px;">
+                        <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-main);">Browse All
+                            Directories</span>
+                        <div id="browse-breadcrumb"
+                            style="display: flex; gap: 4px; font-size: 0.72rem; color: var(--text-muted); overflow-x: auto; padding: 4px 0;">
+                        </div>
+                        <div id="browse-entries" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
     </div>
 
-    <!-- Bottom Navigation Bar -->
-    <nav class="bottom-nav">
-        <button class="nav-item active" data-tab="tab-dashboard">
-            <i data-lucide="layout-dashboard"></i>
-            <span>Dashboard</span>
+    <!-- Bottom Activity Navigation Bar -->
+    <nav class="bottom-activity-bar">
+        <button class="tab-btn active" data-tab="tab-explorer">
+            <i data-lucide="files" style="width: 18px; height: 18px;"></i>
+            <span>Explorer</span>
         </button>
-        <button class="nav-item" data-tab="tab-chat">
-            <i data-lucide="message-square"></i>
+        <button class="tab-btn" data-tab="tab-chat">
+            <i data-lucide="message-square" style="width: 18px; height: 18px;"></i>
             <span>Chat</span>
         </button>
-        <button class="nav-item" data-tab="tab-history">
-            <i data-lucide="history"></i>
+        <button class="tab-btn" data-tab="tab-dashboard">
+            <i data-lucide="layout-dashboard" style="width: 18px; height: 18px;"></i>
+            <span>Dashboard</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-history">
+            <i data-lucide="history" style="width: 18px; height: 18px;"></i>
             <span>History</span>
         </button>
-        <button class="nav-item" data-tab="tab-control">
-            <i data-lucide="sliders"></i>
+        <button class="tab-btn" data-tab="tab-control">
+            <i data-lucide="sliders" style="width: 18px; height: 18px;"></i>
             <span>Control</span>
         </button>
     </nav>
 
-    <!-- Authentication Overlay -->
+    <!-- IDE Bottom Status Bar -->
+    <div class="bottom-status-bar">
+        <span style="display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="radio" style="width: 11px; height: 11px; color: var(--accent-emerald);"></i>
+            <span id="st-agent-status">ANTIGRAVITY IDLE</span>
+        </span>
+        <span id="st-ws-name" style="color: var(--text-dim);">antigravity-mobile</span>
+    </div>
+
+    <!-- Code Viewer Overlay -->
+    <div id="code-viewer" class="code-viewer-panel">
+        <div class="viewer-header">
+            <div class="viewer-filename">
+                <i data-lucide="file-code" style="width: 16px; height: 16px; color: var(--accent-blue);"></i>
+                <span id="viewer-filepath">file.py</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button id="copy-code-btn" class="btn-icon" title="Copy Code"><i data-lucide="copy"
+                        style="width: 14px; height: 14px;"></i></button>
+                <button id="close-viewer-btn" class="btn-icon" title="Close"><i data-lucide="x"
+                        style="width: 14px; height: 14px;"></i></button>
+            </div>
+        </div>
+        <div class="viewer-body">
+            <table class="code-table" id="code-table-body"></table>
+        </div>
+    </div>
+
+    <!-- Authentication Modal -->
     <div id="auth-overlay">
-        <div class="modal-card" style="text-align: center;">
-            <h2 style="font-size: 1.2rem; font-weight: 600;">Antigravity Remote Access</h2>
-            <p style="font-size: 0.85rem; color: var(--text-secondary);">Enter the 6-digit PIN shown on your PC terminal</p>
-            <div class="pin-inputs">
+        <div class="glass-card" style="text-align: center; max-width: 320px; width: 100%;">
+            <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 4px;">Antigravity Remote</h2>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px;">Enter 6-digit PIN shown on
+                terminal</p>
+            <div style="display: flex; justify-content: center; gap: 6px; margin-bottom: 12px;">
                 <input type="text" maxlength="1" class="pin-input" data-idx="0">
                 <input type="text" maxlength="1" class="pin-input" data-idx="1">
                 <input type="text" maxlength="1" class="pin-input" data-idx="2">
@@ -1151,41 +1342,61 @@
                 <input type="text" maxlength="1" class="pin-input" data-idx="4">
                 <input type="text" maxlength="1" class="pin-input" data-idx="5">
             </div>
-            <div id="auth-error-msg" class="auth-error"></div>
+            <div id="auth-error-msg" style="color: var(--accent-rose); font-size: 0.78rem; min-height: 1.2em;"></div>
         </div>
     </div>
 
-    <!-- Confirmation Modal -->
-    <div id="approval-overlay" class="modal-overlay">
-        <div class="modal-card">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="shield-alert" style="width: 20px; height: 20px; color: var(--accent);"></i>
-                <h2 style="font-size: 1.1rem; font-weight: 600;">Action Approval Required</h2>
+    <!-- Action Approval Modal -->
+    <div id="approval-overlay" class="modal-mask">
+        <div class="glass-card" style="max-width: 360px; width: 100%;">
+            <h3
+                style="font-size: 1rem; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="shield-alert" style="width: 18px; height: 18px; color: var(--accent-amber);"></i> Action
+                Approval
+            </h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">The AI agent requests
+                permission to execute:</p>
+            <div id="approval-target-box"
+                style="background: var(--bg-editor); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; margin-bottom: 14px; word-break: break-all;">
             </div>
-            <p style="font-size: 0.85rem; color: var(--text-secondary);">The AI agent is requesting permission to execute:</p>
-            <div style="background: var(--bg); border: 1px solid var(--panel-border); border-radius: 6px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; word-break: break-all;" id="approval-target-box">
-                npm test
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <button id="approve-yes-btn" class="submit-btn" style="flex: 1; background: var(--status-idle);">Approve (Yes)</button>
-                <button id="approve-no-btn" class="submit-btn" style="flex: 1; background: var(--status-failed);">Reject (No)</button>
+            <div style="display: flex; gap: 8px;">
+                <button id="approve-yes-btn" class="btn-action"
+                    style="flex: 1; background: var(--accent-emerald);">Approve</button>
+                <button id="approve-no-btn" class="btn-action"
+                    style="flex: 1; background: var(--accent-rose);">Reject</button>
             </div>
         </div>
     </div>
 
-    <!-- Full-Screen Review Overlay Panel (Plan, Walkthrough, Code Review) -->
-    <div id="review-overlay" class="full-overlay-panel">
-        <div class="overlay-header">
-            <button id="review-overlay-close-btn" class="overlay-back-btn">
-                <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i>
+    <!-- Full-Screen Review Overlay (Plan / Walkthrough / Diffs) -->
+    <div id="review-overlay" class="overlay-slide">
+        <div class="viewer-header">
+            <button id="review-overlay-close-btn"
+                style="background: none; border: none; color: var(--text-main); display: flex; align-items: center; gap: 6px; font-size: 0.85rem; cursor: pointer;">
+                <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
                 <span id="review-overlay-title">Details</span>
             </button>
-            <div id="review-overlay-actions"></div>
+            <div id="review-overlay-actions" style="display: flex; align-items: center; gap: 6px;"></div>
         </div>
-        <div id="review-overlay-body" class="overlay-body"></div>
+        <div id="review-overlay-body"
+            style="flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px;"></div>
     </div>
 
+    <!-- Image Lightbox Modal -->
+    <div id="image-lightbox" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; align-items:center; justify-content:center; flex-direction:column;">
+        <button onclick="closeLightbox()" style="position:absolute; top:20px; right:20px; background:none; border:none; color:white; cursor:pointer;"><i data-lucide="x" style="width:24px; height:24px;"></i></button>
+        <img id="lightbox-img" src="" style="max-width:90%; max-height:85%; border-radius:8px; object-fit:contain; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <a id="lightbox-link" href="" target="_blank" style="margin-top:16px; color:var(--accent-blue); font-size:0.9rem; text-decoration:none;">Open in new tab</a>
+    </div>
+
+    <!-- Application Script -->
     <script>
+        // State
+        let token = localStorage.getItem('remote_auth_token') || '';
+        let ws = null;
+        let activeFileContent = '';
+
+        // Helper API Fetch with Authorization
         async function fetchWithAuth(url, options = {}) {
             options.headers = options.headers || {};
             if (token) {
@@ -1199,40 +1410,231 @@
             return res;
         }
 
-        // Tab Switching
-        const navItems = document.querySelectorAll('.nav-item');
-        const tabViews = document.querySelectorAll('.tab-view');
+        // Tab Navigation with Anime.js Spring Animations
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const viewPanels = document.querySelectorAll('.view-panel');
 
-        navItems.forEach(item => {
-            item.addEventListener('click', () => {
-                const targetTab = item.getAttribute('data-tab');
-                navItems.forEach(n => n.classList.remove('active'));
-                tabViews.forEach(v => v.classList.remove('active'));
-                item.classList.add('active');
-                document.getElementById(targetTab).classList.add('active');
-                if (targetTab === 'tab-history') fetchHistorySessions();
-                if (targetTab === 'tab-control') initBrowserOnControlTab();
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.getAttribute('data-tab');
+
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                viewPanels.forEach(p => {
+                    if (p.id === targetId) {
+                        p.classList.add('active');
+                        anime({
+                            targets: p,
+                            opacity: [0, 1],
+                            translateY: [8, 0],
+                            duration: 250,
+                            easing: 'easeOutCubic'
+                        });
+                    } else {
+                        p.classList.remove('active');
+                    }
+                });
+
+                if (targetId === 'tab-explorer') loadWorkspaceTree();
+                if (targetId === 'tab-history') fetchHistorySessions();
+                if (targetId === 'tab-control') browseDirectory(null);
             });
         });
 
-        // App State
-        let token = localStorage.getItem('remote_auth_token') || '';
-        let ws = null;
+        // Sliding Sidebar Explorer Toggle
+        const sidebar = document.getElementById('ide-sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
 
-        // PIN Inputs Navigation
+        function openSidebar() {
+            sidebar.classList.add('open');
+            sidebarOverlay.classList.add('active');
+            loadWorkspaceTree();
+        }
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('active');
+        }
+
+        document.getElementById('toggle-explorer-btn').addEventListener('click', openSidebar);
+        document.getElementById('close-sidebar-btn').addEventListener('click', closeSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+
+        // Load & Render Workspace Tree (Recursive)
+        async function loadWorkspaceTree() {
+            const rootTarget = document.getElementById('file-tree-root');
+            const inlineTarget = document.getElementById('explorer-tree-inline');
+            try {
+                const res = await fetchWithAuth('/api/project/tree');
+                if (res.ok) {
+                    const data = await res.json();
+                    const treeHtml = renderTreeNodes(data.children || []);
+                    if (rootTarget) rootTarget.innerHTML = treeHtml;
+                    if (inlineTarget) inlineTarget.innerHTML = treeHtml;
+                    lucide.createIcons();
+
+                    anime({
+                        targets: '.tree-node',
+                        opacity: [0, 1],
+                        translateX: [-6, 0],
+                        delay: anime.stagger(12),
+                        easing: 'easeOutQuad'
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to load tree:', e);
+            }
+        }
+
+        document.getElementById('refresh-tree-btn')?.addEventListener('click', loadWorkspaceTree);
+
+        function renderTreeNodes(nodes) {
+            if (!nodes || nodes.length === 0) return '<div style="padding:8px; font-size:0.75rem; color:var(--text-muted);">Empty folder</div>';
+            return nodes.map(node => {
+                const isDir = node.is_dir;
+                const icon = getFileIcon(node.name, isDir);
+                if (isDir) {
+                    return `
+                        <div>
+                            <div class="tree-node" onclick="toggleFolder(this)">
+                                <i data-lucide="chevron-right" class="folder-arrow" style="width:12px; height:12px; transition:transform 0.15s ease;"></i>
+                                <i data-lucide="folder" style="width:14px; height:14px; color:var(--accent-blue);"></i>
+                                <span>${escapeHtml(node.name)}</span>
+                            </div>
+                            <div class="tree-children">
+                                ${renderTreeNodes(node.children || [])}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="tree-node" onclick="openFileViewer('${escapeHtml(node.path)}')">
+                            <i data-lucide="${icon.name}" style="width:14px; height:14px; color:${icon.color};"></i>
+                            <span>${escapeHtml(node.name)}</span>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
+        function toggleFolder(el) {
+            const children = el.nextElementSibling;
+            const arrow = el.querySelector('.folder-arrow');
+            if (children) {
+                const isOpen = children.classList.contains('open');
+                if (isOpen) {
+                    children.classList.remove('open');
+                    if (arrow) arrow.style.transform = 'rotate(0deg)';
+                } else {
+                    children.classList.add('open');
+                    if (arrow) arrow.style.transform = 'rotate(90deg)';
+                }
+            }
+        }
+
+        function getFileIcon(filename, isDir) {
+            if (isDir) return { name: 'folder', color: 'var(--accent-blue)' };
+            const ext = filename.split('.').pop().toLowerCase();
+            switch (ext) {
+                case 'py': return { name: 'file-code-2', color: '#60a5fa' };
+                case 'js': return { name: 'file-code', color: '#facc15' };
+                case 'html': return { name: 'file-type-2', color: '#f87171' };
+                case 'json': return { name: 'file-json', color: '#fb923c' };
+                case 'md': return { name: 'file-text', color: '#a78bfa' };
+                case 'css': return { name: 'file-spreadsheet', color: '#38bdf8' };
+                default: return { name: 'file', color: 'var(--text-muted)' };
+            }
+        }
+
+        // Open & Render Code Viewer
+        async function openFileViewer(filePath) {
+            closeSidebar();
+            const viewer = document.getElementById('code-viewer');
+            const titleEl = document.getElementById('viewer-filepath');
+            const bodyEl = document.getElementById('code-table-body');
+
+            titleEl.textContent = filePath.split('/').pop();
+            bodyEl.innerHTML = '<tr><td class="line-content">Loading content...</td></tr>';
+            viewer.style.display = 'flex';
+
+            anime({
+                targets: viewer,
+                opacity: [0, 1],
+                scale: [0.98, 1],
+                duration: 250,
+                easing: 'easeOutCubic'
+            });
+
+            try {
+                const res = await fetchWithAuth(`/api/project/file?path=${encodeURIComponent(filePath)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    activeFileContent = data.content || '';
+                    renderHighlightedCode(data.content, bodyEl);
+                } else {
+                    bodyEl.innerHTML = '<tr><td class="line-content" style="color:var(--accent-rose);">Failed to view file content</td></tr>';
+                }
+            } catch (e) {
+                bodyEl.innerHTML = '<tr><td class="line-content" style="color:var(--accent-rose);">Error opening file</td></tr>';
+            }
+        }
+
+        document.getElementById('close-viewer-btn').addEventListener('click', () => {
+            const viewer = document.getElementById('code-viewer');
+            anime({
+                targets: viewer,
+                opacity: 0,
+                scale: 0.98,
+                duration: 200,
+                easing: 'easeInCubic',
+                complete: () => viewer.style.display = 'none'
+            });
+        });
+
+        document.getElementById('copy-code-btn').addEventListener('click', () => {
+            if (activeFileContent) {
+                navigator.clipboard.writeText(activeFileContent);
+                alert('Code copied to clipboard!');
+            }
+        });
+
+        // Simple Syntax Highlighting Engine
+        function renderHighlightedCode(rawCode, targetEl) {
+            if (!rawCode) {
+                targetEl.innerHTML = '<tr><td class="line-num">1</td><td class="line-content">Empty file</td></tr>';
+                return;
+            }
+            const lines = rawCode.split('\n');
+            const html = lines.map((line, idx) => {
+                const highlighted = highlightSyntax(escapeHtml(line));
+                return `
+                    <tr>
+                        <td class="line-num">${idx + 1}</td>
+                        <td class="line-content">${highlighted || ' '}</td>
+                    </tr>
+                `;
+            }).join('');
+            targetEl.innerHTML = html;
+        }
+
+        function highlightSyntax(line) {
+            return line
+                .replace(/(#.*|\/\/.*)/g, '<span class="syn-cmnt">$1</span>')
+                .replace(/\b(def|class|import|from|return|if|else|elif|for|while|async|await|try|except|const|let|var|function|export|default)\b/g, '<span class="syn-kw">$1</span>')
+                .replace(/(".*?"|'.*?'|`.*?`)/g, '<span class="syn-str">$1</span>')
+                .replace(/\b(\d+)\b/g, '<span class="syn-num">$1</span>');
+        }
+
+        // Auth & WebSocket Connection
         const pinInputs = document.querySelectorAll('.pin-input');
         pinInputs.forEach((input, index) => {
             input.addEventListener('keyup', (e) => {
-                if (input.value.length === 1 && index < 5) {
-                    pinInputs[index + 1].focus();
-                }
+                if (input.value.length === 1 && index < 5) pinInputs[index + 1].focus();
                 const pin = Array.from(pinInputs).map(i => i.value).join('');
                 if (pin.length === 6) tryLogin(pin);
             });
             input.addEventListener('keydown', (e) => {
-                if (e.key === 'Backspace' && input.value === '' && index > 0) {
-                    pinInputs[index - 1].focus();
-                }
+                if (e.key === 'Backspace' && input.value === '' && index > 0) pinInputs[index - 1].focus();
             });
         });
 
@@ -1265,9 +1667,7 @@
                 return;
             }
             try {
-                const res = await fetchWithAuth('/api/status', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const res = await fetchWithAuth('/api/status');
                 if (res.ok) {
                     document.getElementById('auth-overlay').style.display = 'none';
                     initWS();
@@ -1282,7 +1682,6 @@
             }
         }
 
-        // WebSocket Connection (FIXED PROTOCOL BUG: wss: vs ws:)
         function initWS() {
             const loc = window.location;
             const wsProtocol = loc.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -1291,7 +1690,7 @@
             ws = new WebSocket(wsUrl);
 
             ws.onopen = () => {
-                document.getElementById('ws-dot').classList.add('connected');
+                document.getElementById('ws-dot').classList.add('active');
                 document.getElementById('ws-text').textContent = 'Connected';
             };
 
@@ -1301,13 +1700,13 @@
             };
 
             ws.onclose = () => {
-                document.getElementById('ws-dot').classList.remove('connected');
+                document.getElementById('ws-dot').classList.remove('active');
                 document.getElementById('ws-text').textContent = 'Disconnected';
                 setTimeout(initWS, 3000);
             };
         }
 
-        // Update Dashboard & State
+        // Real-Time Dashboard & Status Updates
         function updateUI(data) {
             // Metrics
             updateCircle('cpu-circle', 'cpu-val', data.cpu);
@@ -1318,113 +1717,246 @@
             const statusLabel = document.getElementById('agent-state-label');
             const taskText = document.getElementById('agent-task-text');
             const badge = document.getElementById('agent-badge');
+            const stStatus = document.getElementById('st-agent-status');
 
-            statusLabel.textContent = `Antigravity (${data.agent_status.toUpperCase()})`;
+            const stateText = (data.agent_status || 'idle').toUpperCase();
+            statusLabel.textContent = `Antigravity (${stateText})`;
             taskText.textContent = data.agent_task || 'No active work';
+            stStatus.textContent = `ANTIGRAVITY ${stateText}`;
 
             if (data.agent_status === 'busy' || data.agent_status === 'working') {
-                badge.className = 'status-badge badge-busy';
+                badge.className = 'badge-pill badge-busy';
                 badge.textContent = 'Busy';
             } else {
-                badge.className = 'status-badge badge-idle';
+                badge.className = 'badge-pill badge-idle';
                 badge.textContent = 'Idle';
             }
 
-            // Live Execution Logs
+            // Branch & Workspace
+            if (data.git_branch) {
+                document.getElementById('hdr-branch-name').textContent = data.git_branch;
+            }
+            if (data.target && data.target.workspace_path) {
+                const name = data.target.workspace_path.split('/').pop() || data.target.workspace_path;
+                document.getElementById('st-ws-name').textContent = name;
+                document.getElementById('current-ws-label').textContent = data.target.workspace_path;
+            }
+
+            // Logs
             if (data.agent_logs) {
                 document.getElementById('live-logs-box').textContent = data.agent_logs;
             }
 
-            // Models
+            // Model
             if (data.agent_info && data.agent_info.current_model) {
-                const modelSelect = document.getElementById('control-model-select');
-                if (document.activeElement !== modelSelect) {
-                    modelSelect.value = data.agent_info.current_model;
-                }
+                const sel = document.getElementById('control-model-select');
+                if (document.activeElement !== sel) sel.value = data.agent_info.current_model;
             }
 
-            // Projects List (quick switch)
+            // Approval Modal (Redirected to Chat)
+            let pendingApproval = null;
+            if (data.agent_info && data.agent_info.remote_approval && data.agent_info.remote_approval.status === 'pending') {
+                pendingApproval = data.agent_info.remote_approval;
+            }
+            document.getElementById('approval-overlay').style.display = 'none';
+
+            // Chat Turns
+            if (data.chat_info && data.chat_info.chat) {
+                renderChatTurns(data.chat_info.chat, pendingApproval);
+            }
+
+            // Intermediate Working State & Progress Indicator
+            const isWorking = (data.agent_status === 'working' || data.agent_status === 'busy');
+            const chatBadge = document.getElementById('chat-status-badge');
+
+            if (isWorking) {
+                if (chatBadge) {
+                    chatBadge.innerHTML = `<span class="working-spinner"></span> Working...`;
+                    chatBadge.style.color = '#38bdf8';
+                }
+                updateLiveWorkingBubble(data.agent_task, data.agent_logs);
+            } else {
+                if (chatBadge) {
+                    chatBadge.textContent = 'Ready';
+                    chatBadge.style.color = 'var(--text-muted)';
+                }
+                removeLiveWorkingBubble();
+            }
+
+            // Inline Review Cards
+            renderInlineCards(data);
+
+            // Real-Time Plan/Walkthrough Toast Notifications
+            checkBrainNotifications(data);
+
+            // Task Queue
+            if (data.tasks_queue) {
+                renderTaskQueue(data.tasks_queue);
+            }
+
+            // Quick Projects
             if (data.target && data.target.projects) {
                 renderQuickProjects(data.target.projects, data.target.workspace_path);
-                document.getElementById('current-ws-label').textContent = data.target.workspace_path || '';
+            }
+        }
+
+        function renderTaskQueue(tasks) {
+            const list = document.getElementById('dash-tasks-list');
+            const count = document.getElementById('tasks-count');
+            count.textContent = `${tasks.length} tasks`;
+            
+            if (tasks.length === 0) {
+                list.innerHTML = '<div style="font-size: 0.78rem; color: var(--text-muted);">No scheduled tasks</div>';
+                return;
+            }
+            
+            list.innerHTML = '';
+            // Display in reverse order (newest first)
+            for (let i = tasks.length - 1; i >= 0; i--) {
+                const t = tasks[i];
+                const div = document.createElement('div');
+                div.style.padding = '8px';
+                div.style.borderRadius = '6px';
+                div.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
+                div.style.border = '1px solid rgba(255, 255, 255, 0.05)';
+                div.style.display = 'flex';
+                div.style.justifyContent = 'space-between';
+                div.style.alignItems = 'center';
+                
+                const txt = document.createElement('div');
+                txt.style.fontSize = '0.8rem';
+                txt.style.color = 'var(--text-bright)';
+                txt.style.overflow = 'hidden';
+                txt.style.textOverflow = 'ellipsis';
+                txt.style.whiteSpace = 'nowrap';
+                txt.style.maxWidth = '75%';
+                txt.textContent = t.description || 'Task';
+                
+                const status = document.createElement('div');
+                status.style.fontSize = '0.7rem';
+                status.style.fontWeight = '500';
+                if (t.status === 'working' || t.status === 'executing' || t.status === 'pending') {
+                    status.innerHTML = '<span class="working-spinner" style="width:10px;height:10px;border-width:2px;"></span> Run';
+                    status.style.color = '#38bdf8';
+                } else if (t.status === 'completed' || t.status === 'success') {
+                    status.textContent = 'Done';
+                    status.style.color = 'var(--accent-emerald)';
+                } else {
+                    status.textContent = t.status;
+                    status.style.color = 'var(--text-muted)';
+                }
+                
+                div.appendChild(txt);
+                div.appendChild(status);
+                list.appendChild(div);
+            }
+        }
+
+        function updateLiveWorkingBubble(taskDescription, logDetail) {
+            const container = document.getElementById('chat-messages');
+            if (!container) return;
+
+            let bubbleNode = document.getElementById('live-working-bubble');
+            const taskText = taskDescription || 'Agent is executing task...';
+            const logText = logDetail || 'Processing step...';
+
+            if (!bubbleNode) {
+                bubbleNode = document.createElement('div');
+                bubbleNode.id = 'live-working-bubble';
+                bubbleNode.className = 'chat-group agent';
+                container.appendChild(bubbleNode);
             }
 
-            // Approval Request Overlay Modal
-            if (data.agent_info && data.agent_info.remote_approval && data.agent_info.remote_approval.status === 'pending') {
-                document.getElementById('approval-target-box').textContent = data.agent_info.remote_approval.target;
-                document.getElementById('approval-overlay').style.display = 'flex';
-            } else {
-                document.getElementById('approval-overlay').style.display = 'none';
-            }
+            bubbleNode.innerHTML = `<span class="chat-sender">Antigravity AI (Working)</span><div class="chat-bubble agent working-bubble"><div class="working-header"><span class="working-spinner"></span><span>${escapeHtml(taskText)}</span></div>${logText ? `<div class="working-detail">${escapeHtml(logText)}</div>` : ''}</div>`;
+            container.scrollTop = container.scrollHeight;
+        }
 
-            // Sync Chat turns into Chat view if available
-            const chatTurns = data.chat_info && data.chat_info.chat;
-            if (chatTurns && chatTurns.length > 0) {
-                renderChatTurns(chatTurns);
+        function removeLiveWorkingBubble() {
+            const bubbleNode = document.getElementById('live-working-bubble');
+            if (bubbleNode) {
+                bubbleNode.remove();
             }
-
-            // Render Inline Review Cards in Chat view
-            renderInlineCards(data);
         }
 
         function updateCircle(circleId, textId, val) {
             const circle = document.getElementById(circleId);
             const text = document.getElementById(textId);
             if (circle && text) {
-                const max = 188;
+                const max = 163;
                 const offset = max - (val / 100) * max;
                 circle.style.strokeDashoffset = offset;
                 text.textContent = `${Math.round(val)}%`;
             }
         }
 
-        // Render Chat Messages
-        function renderChatTurns(turns) {
+        // System Automation Filter (Hides background messages from chat view)
+        function isSystemText(text) {
+            if (!text) return true;
+            const t = text.toLowerCase();
+            if (t.includes('start the daemon server')) return true;
+            if (t.includes('directory has been switched successfully')) return true;
+            if (t.includes('switched workspace')) return true;
+            if (t.includes('[critical: you must perform this task')) return true;
+            if (t.includes('daemon started in new workspace')) return true;
+            return false;
+        }
+
+        // Refactored Chat Renderer with Clean Bubble Structure
+        let lastChatHtml = '';
+        function renderChatTurns(turns, pendingApproval) {
             const container = document.getElementById('chat-messages');
             if (!container) return;
-            container.innerHTML = turns.map(t => {
-                const isUser = t.sender === 'user';
-                const label = isUser ? 'You' : 'Antigravity AI';
-                return `
-                    <div class="chat-turn-group ${t.sender}">
-                        <div class="chat-sender-label">${label}</div>
-                        <div class="chat-bubble ${t.sender}">
-                            ${escapeHtml(t.text)}
+
+            const filtered = (turns || []).filter(t => !isSystemText(t.text));
+
+            let newHtml = '';
+            if (filtered.length === 0) {
+                newHtml = `<div class="chat-group agent"><span class="chat-sender">Antigravity AI</span><div class="chat-bubble agent">Hello! Ask me anything or instruct me to build code.</div></div>`;
+            } else {
+                newHtml = filtered.map(t => {
+                    const isUser = t.sender === 'user';
+                    return `<div class="chat-group ${t.sender}"><span class="chat-sender">${isUser ? 'You' : 'Antigravity AI'}</span><div class="chat-bubble ${t.sender}">${renderSimpleMarkdown((t.text || '').trim())}</div></div>`;
+                }).join('');
+            }
+            
+            if (pendingApproval && pendingApproval.status === 'pending') {
+                newHtml += `
+                <div class="chat-group agent">
+                    <span class="chat-sender">Antigravity AI</span>
+                    <div class="chat-bubble agent" style="border: 1px solid var(--accent-amber);">
+                        <div style="font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; color: var(--accent-amber);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-alert"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2-1 4-2 7-2 2.76 0 5.5 1 7 2a1 1 0 0 1 1 1v7z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg> Action Approval
+                        </div>
+                        <p style="font-size: 0.85rem; margin-bottom: 10px;">The AI agent requests permission to execute:</p>
+                        <div style="background: var(--bg-editor); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; margin-bottom: 14px; word-break: break-all; color: var(--text-main);">
+                            ${escapeHtml(pendingApproval.target)}
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="window.sendApproval(true)" class="btn-action" style="flex: 1; background: var(--accent-emerald);">Approve</button>
+                            <button onclick="window.sendApproval(false)" class="btn-action" style="flex: 1; background: var(--accent-rose);">Reject</button>
                         </div>
                     </div>
-                `;
-            }).join('');
-            container.scrollTop = container.scrollHeight;
+                </div>`;
+            }
+            
+            if (lastChatHtml !== newHtml) {
+                lastChatHtml = newHtml;
+                container.innerHTML = newHtml;
+                container.scrollTop = container.scrollHeight;
+            }
         }
 
-        function escapeHtml(str) {
-            return (str || '')
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;");
-        }
-
-        // Send Prompt
         async function sendPrompt(promptText) {
             if (!promptText.trim()) return;
             try {
                 const res = await fetchWithAuth('/api/agent/prompt', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ prompt: promptText })
                 });
                 if (res.ok) {
                     const container = document.getElementById('chat-messages');
-                    container.innerHTML += `
-                        <div class="chat-turn-group user">
-                            <div class="chat-sender-label">You</div>
-                            <div class="chat-bubble user">${escapeHtml(promptText)}</div>
-                        </div>
-                    `;
+                    container.innerHTML += `<div class="chat-group user"><span class="chat-sender">You</span><div class="chat-bubble user">${escapeHtml(promptText.trim())}</div></div>`;
                     container.scrollTop = container.scrollHeight;
                 }
             } catch (e) {
@@ -1437,7 +1969,6 @@
             sendPrompt(input.value);
             input.value = '';
         });
-
         document.getElementById('chat-prompt-input').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 sendPrompt(e.target.value);
@@ -1445,115 +1976,109 @@
             }
         });
 
-        // History Sessions Fetching & Continue Conversation
-        async function fetchHistorySessions() {
-            const container = document.getElementById('history-sessions-list');
+        // Quick Terminal Scheduler (Dashboard)
+        document.getElementById('dash-cmd-btn')?.addEventListener('click', async () => {
+            const input = document.getElementById('dash-cmd-input');
+            if (!input || !input.value.trim()) return;
             try {
-                const res = await fetchWithAuth('/api/history/sessions', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (!data.sessions || data.sessions.length === 0) {
-                        container.innerHTML = '<div class="empty-state">No conversation history found</div>';
-                        return;
-                    }
-
-                    container.innerHTML = data.sessions.map(s => `
-                        <div class="history-item">
-                            <div class="history-header">
-                                <div class="history-title">${escapeHtml(s.title)}</div>
-                            </div>
-                            ${s.workspace_path ? `
-                            <div style="margin-top: 4px; display: flex; align-items: center; gap: 4px; overflow: hidden;">
-                                <i data-lucide="folder" style="width: 12px; height: 12px; color: var(--text-secondary); flex-shrink: 0;"></i>
-                                <span class="workspace-path-tag" title="${escapeHtml(s.workspace_path)}">${escapeHtml(s.workspace_path)}</span>
-                            </div>
-                            ` : ''}
-                            <div class="history-meta" style="margin-top: 8px;">
-                                <span>${s.turn_count} turns • ${s.age}</span>
-                                <button class="continue-btn" onclick="continueSession('${s.session_id}')">
-                                    <i data-lucide="play-circle" style="width: 12px; height: 12px;"></i> Continue
-                                </button>
-                            </div>
-                        </div>
-                    `).join('');
-                    lucide.createIcons();
-                }
-            } catch (e) {
-                container.innerHTML = '<div class="empty-state">Failed to load history</div>';
-            }
-        }
-
-        async function continueSession(sessionId) {
-            try {
-                const res = await fetchWithAuth(`/api/history/session/${sessionId}/continue`, {
+                await fetchWithAuth('/api/schedule', {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: input.value.trim() })
                 });
-                if (res.ok) {
-                    const data = await res.json();
-                    alert(`Workspace switched to:\n${data.workspace_path}\n\nConversation loaded (${data.turns_loaded} turns).`);
-                    // Switch to chat tab to show the loaded conversation
-                    document.querySelector('[data-tab="tab-chat"]').click();
-                    // Also trigger a directory browser refresh
-                    browseDirectory(null);
-                } else {
-                    const errData = await res.json().catch(() => ({}));
-                    alert(`Could not switch workspace.\n${errData.detail || 'Unknown error'}`);
-                }
+                input.value = '';
+                alert('Task scheduled!');
             } catch (e) {
-                alert('Connection error switching session workspace.');
+                alert('Failed to schedule task');
+            }
+        });
+
+        // Toast Notification System (Popups for Plan/Walkthrough Creation)
+        let _toastTimeout = null;
+        function showToastBanner(title, subtitle, onClickHandler) {
+            const container = document.getElementById('toast-banner');
+            const titleEl = document.getElementById('toast-title');
+            const subEl = document.getElementById('toast-sub');
+            const cardEl = document.getElementById('toast-card-btn');
+            if (!container || !titleEl || !subEl) return;
+
+            titleEl.textContent = title;
+            subEl.textContent = subtitle;
+            
+            if (onClickHandler) {
+                cardEl.onclick = () => {
+                    hideToastBanner();
+                    onClickHandler();
+                };
+            }
+
+            container.classList.add('active');
+            if (_toastTimeout) clearTimeout(_toastTimeout);
+            _toastTimeout = setTimeout(() => {
+                hideToastBanner();
+            }, 7000);
+        }
+
+        function hideToastBanner() {
+            const container = document.getElementById('toast-banner');
+            if (container) container.classList.remove('active');
+        }
+
+        let _lastPlanSessionId = null;
+        let _lastWalkthroughSessionId = null;
+
+        function checkBrainNotifications(data) {
+            if (data.brain_plan && data.brain_plan.has_content) {
+                const planId = data.brain_plan.session_id;
+                if (_lastPlanSessionId !== null && _lastPlanSessionId !== planId) {
+                    showToastBanner(
+                        "📋 Implementation Plan Created",
+                        "Tap to review, edit, or proceed with the plan.",
+                        () => openPlanOverlay(planId)
+                    );
+                }
+                _lastPlanSessionId = planId;
+            }
+
+            if (data.brain_walkthrough && data.brain_walkthrough.has_content) {
+                const wtId = data.brain_walkthrough.session_id;
+                if (_lastWalkthroughSessionId !== null && _lastWalkthroughSessionId !== wtId) {
+                    showToastBanner(
+                        "📝 Walkthrough Available",
+                        "See what Antigravity AI built in this task walkthrough.",
+                        () => openWalkthroughOverlay(wtId)
+                    );
+                }
+                _lastWalkthroughSessionId = wtId;
             }
         }
 
-        // Render Inline Review Chips in Chat view
+        // Render Inline Review Chips (Plan, Walkthrough, Diffs) - Always Permanent
         function renderInlineCards(data) {
             const container = document.getElementById('inline-review-cards');
             if (!container) return;
-            
-            let chipsHtml = '';
-            
-            // 1. Implementation Plan Chip
-            if (data.brain_plan && data.brain_plan.has_content) {
-                chipsHtml += `
-                    <div class="review-chip chip-plan" onclick="openPlanOverlay('${escapeHtml(data.brain_plan.session_id)}')">
-                        <span>📋 Plan</span>
-                        <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i>
-                    </div>
-                `;
-            }
-            
-            // 2. Walkthrough Chip
-            if (data.brain_walkthrough && data.brain_walkthrough.has_content) {
-                chipsHtml += `
-                    <div class="review-chip chip-walkthrough" onclick="openWalkthroughOverlay('${escapeHtml(data.brain_walkthrough.session_id)}')">
-                        <span>📝 Walkthrough</span>
-                        <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i>
-                    </div>
-                `;
-            }
-            
-            // 3. Code Review / Diffs Chip
-            if (data.diffs_summary && data.diffs_summary.modified_files && data.diffs_summary.modified_files.length > 0) {
-                const count = data.diffs_summary.modified_files.length;
-                chipsHtml += `
-                    <div class="review-chip chip-diff" onclick="openCodeReviewOverlay()">
-                        <span>🔍 Code Diffs (${count})</span>
-                        <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i>
-                    </div>
-                `;
-            }
-            
-            container.innerHTML = chipsHtml;
-            if (chipsHtml) lucide.createIcons();
+
+            const planSessionId = (data && data.brain_plan && data.brain_plan.session_id) ? data.brain_plan.session_id : '';
+            const wtSessionId = (data && data.brain_walkthrough && data.brain_walkthrough.session_id) ? data.brain_walkthrough.session_id : '';
+            const diffCount = (data && data.diffs_summary && data.diffs_summary.modified_files) ? data.diffs_summary.modified_files.length : 0;
+
+            container.innerHTML = `
+                <div class="review-chip" onclick="openPlanOverlay('${escapeHtml(planSessionId)}')"><i data-lucide="file-text" style="width:13px; height:13px; color:var(--accent-amber);"></i> Plan</div>
+                <div class="review-chip" onclick="openWalkthroughOverlay('${escapeHtml(wtSessionId)}')"><i data-lucide="book-open" style="width:13px; height:13px; color:var(--accent-emerald);"></i> Walkthrough</div>
+                <div class="review-chip" onclick="openCodeReviewOverlay()"><i data-lucide="git-compare" style="width:13px; height:13px; color:var(--accent-cyan);"></i> Diffs (${diffCount})</div>
+            `;
+            lucide.createIcons();
         }
 
-        // Overlay Navigation & Handlers
+        // Full Review Overlays
         function closeReviewOverlay() {
             document.getElementById('review-overlay').style.display = 'none';
         }
         document.getElementById('review-overlay-close-btn').addEventListener('click', closeReviewOverlay);
+
+        let _currentPlanContent = "";
+        let _isEditingPlan = false;
+        let _activePlanSessionId = "";
 
         async function openPlanOverlay(sessionId) {
             const overlay = document.getElementById('review-overlay');
@@ -1561,38 +2086,101 @@
             const actions = document.getElementById('review-overlay-actions');
             const body = document.getElementById('review-overlay-body');
 
+            _isEditingPlan = false;
+            _activePlanSessionId = sessionId || "";
             title.textContent = "Implementation Plan";
-            actions.innerHTML = `<button class="submit-btn" style="height: 32px; padding: 0 12px; font-size: 0.75rem; background: var(--status-idle);" onclick="proceedPlanAction()">Proceed</button>`;
-            body.innerHTML = `<div class="empty-state">Loading plan...</div>`;
+            actions.innerHTML = `
+                <button class="btn-action" style="height:28px; background:var(--accent-blue); font-size:0.75rem;" id="edit-plan-btn" onclick="togglePlanEditMode()"><i data-lucide="edit-3" style="width:12px; height:12px;"></i> Edit Plan</button>
+                <button class="btn-action" style="height:28px; background:var(--accent-emerald); font-size:0.75rem;" onclick="proceedPlanAction()"><i data-lucide="check" style="width:12px; height:12px;"></i> Proceed</button>
+            `;
+            body.innerHTML = '<div style="font-size:0.8rem; color:var(--text-muted);">Loading plan...</div>';
             overlay.style.display = 'flex';
 
             try {
-                const res = await fetchWithAuth(`/api/brain/plan/${sessionId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const url = sessionId ? `/api/brain/plan/${sessionId}` : '/api/brain/plan';
+                const res = await fetchWithAuth(url);
                 if (res.ok) {
                     const data = await res.json();
-                    body.innerHTML = `
-                        <div class="panel md-rendered">
-                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 12px; display: flex; justify-content: space-between;">
-                                <span>Session: ${data.session_id}</span>
-                                <span>${data.age}</span>
-                            </div>
-                            ${renderMarkdown(data.content)}
-                            <div style="margin-top: 16px; border-top: 1px solid var(--panel-border); padding-top: 12px;">
-                                <h4 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Add Review / Comment to IDE Plan</h4>
-                                <div class="input-group">
-                                    <input type="text" id="plan-comment-input" class="command-input" placeholder="Type feedback or suggestion for IDE...">
-                                    <button class="submit-btn" onclick="submitPlanComment('${data.session_id}')">Send</button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                    if (data.content) {
+                        _currentPlanContent = data.content;
+                        renderPlanBody();
+                    } else {
+                        body.innerHTML = '<div class="glass-card" style="font-size:0.8rem; color:var(--text-muted);">No active implementation plan available right now.</div>';
+                    }
                 } else {
-                    body.innerHTML = `<div class="empty-state">Failed to load implementation plan.</div>`;
+                    body.innerHTML = '<div class="glass-card" style="font-size:0.8rem; color:var(--text-muted);">No active implementation plan available right now.</div>';
                 }
             } catch (e) {
-                body.innerHTML = `<div class="empty-state">Connection error loading plan.</div>`;
+                body.innerHTML = '<div style="color:var(--accent-rose);">Error loading plan</div>';
+            }
+            lucide.createIcons();
+        }
+
+        function renderPlanBody() {
+            const body = document.getElementById('review-overlay-body');
+            const editBtn = document.getElementById('edit-plan-btn');
+
+            if (_isEditingPlan) {
+                if (editBtn) editBtn.innerHTML = `<i data-lucide="eye" style="width:12px; height:12px;"></i> Preview`;
+                body.style.overflow = 'hidden';
+                body.style.display = 'flex';
+                body.style.flexDirection = 'column';
+                body.innerHTML = `
+                    <div style="display:flex; flex-direction:column; flex:1; min-height:0; gap:8px; height:100%;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+                            <span style="font-size:0.75rem; color:var(--accent-cyan); font-weight:600;">Edit Plan Markdown:</span>
+                            <span style="font-size:0.7rem; color:var(--text-muted);">Full-Screen Editor</span>
+                        </div>
+                        <textarea id="plan-edit-textarea" class="ide-input" style="flex:1; min-height:350px; width:100%; height:100%; font-family:'JetBrains Mono', monospace; font-size:0.82rem; line-height:1.5; resize:none; padding:12px; border:1px solid var(--accent-blue); background:#090a0d; color:#f3f4f6; border-radius:8px;">${escapeHtml(_currentPlanContent)}</textarea>
+                        <div style="display:flex; justify-content:flex-end; gap:8px; flex-shrink:0; padding-top:2px;">
+                            <button class="btn-action" style="height:34px; background:var(--bg-panel-hover); border:1px solid var(--border-color); padding:0 14px;" onclick="cancelPlanEdit()">Cancel</button>
+                            <button class="btn-action" style="height:34px; background:linear-gradient(135deg, var(--accent-blue), #2563eb); padding:0 16px;" onclick="savePlanEdits()"><i data-lucide="save" style="width:14px; height:14px;"></i> Save Changes</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                if (editBtn) editBtn.innerHTML = `<i data-lucide="edit-3" style="width:12px; height:12px;"></i> Edit Plan`;
+                body.style.overflowY = 'auto';
+                body.innerHTML = `
+                    <div class="glass-card" style="font-size:0.82rem; line-height:1.5;">
+                        ${renderSimpleMarkdown(_currentPlanContent)}
+                    </div>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        function togglePlanEditMode() {
+            _isEditingPlan = !_isEditingPlan;
+            renderPlanBody();
+        }
+
+        function cancelPlanEdit() {
+            _isEditingPlan = false;
+            renderPlanBody();
+        }
+
+        async function savePlanEdits() {
+            const textarea = document.getElementById('plan-edit-textarea');
+            if (!textarea) return;
+            const newContent = textarea.value;
+
+            try {
+                const res = await fetchWithAuth('/api/brain/plan/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: _activePlanSessionId, content: newContent })
+                });
+                if (res.ok) {
+                    _currentPlanContent = newContent;
+                    _isEditingPlan = false;
+                    renderPlanBody();
+                    alert('Implementation plan saved successfully!');
+                } else {
+                    alert('Failed to save plan edits.');
+                }
+            } catch (e) {
+                alert('Error saving plan edits.');
             }
         }
 
@@ -1604,26 +2192,56 @@
 
             title.textContent = "Walkthrough";
             actions.innerHTML = '';
-            body.innerHTML = `<div class="empty-state">Loading walkthrough...</div>`;
+            body.innerHTML = '<div style="font-size:0.8rem; color:var(--text-muted);">Loading walkthrough...</div>';
             overlay.style.display = 'flex';
 
             try {
-                const res = await fetchWithAuth(`/api/brain/walkthrough/${sessionId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const url = sessionId ? `/api/brain/walkthrough/${sessionId}` : '/api/brain/walkthrough';
+                const res = await fetchWithAuth(url);
                 if (res.ok) {
                     const data = await res.json();
-                    body.innerHTML = `
-                        <div class="panel md-rendered">
-                            ${renderMarkdown(data.content)}
-                        </div>
-                    `;
+                    if (data.content) {
+                        body.innerHTML = `<div class="glass-card">${renderSimpleMarkdown(data.content)}</div>`;
+                    } else {
+                        body.innerHTML = '<div class="glass-card" style="font-size:0.8rem; color:var(--text-muted);">No walkthrough available right now.</div>';
+                    }
                 } else {
-                    body.innerHTML = `<div class="empty-state">Failed to load walkthrough.</div>`;
+                    body.innerHTML = '<div class="glass-card" style="font-size:0.8rem; color:var(--text-muted);">No walkthrough available right now.</div>';
                 }
             } catch (e) {
-                body.innerHTML = `<div class="empty-state">Connection error loading walkthrough.</div>`;
+                body.innerHTML = '<div style="color:var(--accent-rose);">Error loading walkthrough</div>';
             }
+        }
+
+        function renderFormattedDiff(diffText) {
+            if (!diffText || diffText.includes("No text changes detected.")) {
+                return `<div style="font-size:0.78rem; color:var(--text-muted); padding:8px; font-style:italic;">No text changes detected.</div>`;
+            }
+            if (diffText.startsWith("Error loading diff")) {
+                return `<div style="font-size:0.78rem; color:var(--accent-rose); padding:8px;">${escapeHtml(diffText)}</div>`;
+            }
+
+            const lines = diffText.split('\n');
+            let html = '<div class="diff-block">';
+
+            for (let line of lines) {
+                if (line.startsWith('diff --git') || line.startsWith('index ') || line.startsWith('--- ') || line.startsWith('+++ ')) {
+                    continue; // Skip git CLI metadata lines
+                }
+                const escaped = escapeHtml(line);
+                if (line.startsWith('+')) {
+                    html += `<div class="diff-line diff-add"><span class="diff-prefix">+</span><span class="diff-text">${escaped.slice(1)}</span></div>`;
+                } else if (line.startsWith('-')) {
+                    html += `<div class="diff-line diff-del"><span class="diff-prefix">-</span><span class="diff-text">${escaped.slice(1)}</span></div>`;
+                } else if (line.startsWith('@@')) {
+                    html += `<div class="diff-line diff-hunk"><span class="diff-prefix">@@</span><span class="diff-text">${escaped}</span></div>`;
+                } else {
+                    html += `<div class="diff-line"><span class="diff-prefix">&nbsp;</span><span class="diff-text">${escaped}</span></div>`;
+                }
+            }
+
+            html += '</div>';
+            return html;
         }
 
         async function openCodeReviewOverlay() {
@@ -1632,230 +2250,199 @@
             const actions = document.getElementById('review-overlay-actions');
             const body = document.getElementById('review-overlay-body');
 
-            title.textContent = "Code Review (Git Diffs)";
+            title.textContent = "Git Code Diffs";
             actions.innerHTML = '';
-            body.innerHTML = `<div class="empty-state">Loading git diffs...</div>`;
+            body.innerHTML = '<div style="font-size:0.8rem; color:var(--text-muted);">Loading code diffs...</div>';
             overlay.style.display = 'flex';
+            body.style.overflowY = 'auto';
 
             try {
-                const res = await fetchWithAuth(`/api/project/diffs/detailed`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const res = await fetchWithAuth('/api/project/diffs/detailed');
                 if (res.ok) {
                     const data = await res.json();
-                    if (!data.files || data.files.length === 0) {
-                        body.innerHTML = `<div class="empty-state">No changed files detected in workspace.</div>`;
-                        return;
-                    }
-
-                    let html = `<div style="display: flex; flex-direction: column; gap: 12px;">`;
-                    for (const f of data.files) {
-                        html += `
-                            <div class="panel" style="padding: 12px;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); word-break: break-all;">
-                                        ${escapeHtml(f.file)}
-                                    </span>
-                                    <span class="state-badge state-${f.state}">${f.state_label || f.state}</span>
+                    if (data.files && data.files.length > 0) {
+                        body.innerHTML = data.files.map(f => {
+                            const badgeColor = f.state === 'A' ? '#10b981' : (f.state === 'D' ? '#f43f5e' : (f.state === 'U' ? '#3b82f6' : '#f59e0b'));
+                            const badgeBg = f.state === 'A' ? 'rgba(16, 185, 129, 0.15)' : (f.state === 'D' ? 'rgba(244, 63, 94, 0.15)' : (f.state === 'U' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(245, 158, 11, 0.15)'));
+                            return `
+                                <div class="glass-card" style="display:flex; flex-direction:column; gap:8px;">
+                                    <div style="display:flex; align-items:center; justify-content:space-between;">
+                                        <div style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; font-weight:600; color:#ffffff; word-break:break-all; display:flex; align-items:center; gap:6px;">
+                                            <i data-lucide="file-code" style="width:14px; height:14px; color:var(--accent-blue);"></i> ${escapeHtml(f.file)}
+                                        </div>
+                                        <span style="font-size:0.68rem; font-weight:600; padding:2px 8px; border-radius:12px; background:${badgeBg}; color:${badgeColor}; border:1px solid ${badgeColor}40;">${escapeHtml(f.state_label || 'Modified')}</span>
+                                    </div>
+                                    ${renderFormattedDiff(f.diff)}
                                 </div>
-                                <div class="diff-container">
-                                    ${renderDiffHtml(f.diff)}
-                                </div>
-                            </div>
-                        `;
+                            `;
+                        }).join('');
+                        lucide.createIcons();
+                    } else {
+                        body.innerHTML = '<div class="glass-card" style="font-size:0.8rem; color:var(--text-muted); text-align:center; padding:20px;">No code changes detected in this workspace.</div>';
                     }
-                    html += `</div>`;
-                    body.innerHTML = html;
                 } else {
-                    body.innerHTML = `<div class="empty-state">Failed to load code diffs.</div>`;
+                    body.innerHTML = '<div class="glass-card" style="font-size:0.8rem; color:var(--accent-rose);">Failed to fetch git diffs.</div>';
                 }
             } catch (e) {
-                body.innerHTML = `<div class="empty-state">Connection error loading code review.</div>`;
-            }
-        }
-
-        async function submitPlanComment(sessionId) {
-            const input = document.getElementById('plan-comment-input');
-            if (!input || !input.value.trim()) return;
-            const comment = input.value.trim();
-            try {
-                const res = await fetchWithAuth('/api/brain/plan/comment', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        session_id: sessionId,
-                        section_text: "General Feedback",
-                        comment: comment
-                    })
-                });
-                if (res.ok) {
-                    alert("Feedback sent to IDE!");
-                    input.value = '';
-                }
-            } catch (e) {
-                alert("Error sending comment.");
+                body.innerHTML = '<div style="color:var(--accent-rose); font-size:0.8rem;">Error loading git diffs</div>';
             }
         }
 
         async function proceedPlanAction() {
             try {
-                const res = await fetchWithAuth('/api/brain/plan/proceed', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                await fetchWithAuth('/api/brain/plan/proceed', { method: 'POST' });
+                alert('Plan approved!');
+                closeReviewOverlay();
+            } catch (e) { alert('Failed to approve plan'); }
+        }
+
+        function renderSimpleMarkdown(md) {
+            if (!md) return '';
+            let html = escapeHtml(md);
+            html = html.replace(/```([\s\S]*?)```/g, '<pre style="background:#090a0d; padding:8px; border-radius:6px; overflow-x:auto; margin:6px 0; border:1px solid var(--border-color);"><code>$1</code></pre>');
+            html = html.replace(/^### (.*$)/gim, '<h3 style="font-size:0.9rem; font-weight:600; margin:8px 0 4px; color:var(--text-main);">$1</h3>');
+            html = html.replace(/^## (.*$)/gim, '<h2 style="font-size:1rem; font-weight:700; margin:10px 0 6px; color:var(--text-main);">$1</h2>');
+            html = html.replace(/^# (.*$)/gim, '<h1 style="font-size:1.1rem; font-weight:700; margin:12px 0 8px; color:var(--text-main);">$1</h1>');
+            
+            html = html.replace(/!\[([^\]]*)\]\((.*?)\)/g, (match, alt, src) => {
+                let url = src;
+                if (url.startsWith('file:///') || url.match(/^[a-zA-Z]:[\\/]/) || url.startsWith('/')) {
+                    if (url.startsWith('file:///')) url = url.substring(8);
+                    url = `/api/media?path=${encodeURIComponent(url)}&token=${token}`;
+                }
+                return `<img src="${url}" alt="${alt}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; cursor:pointer; display:inline-block; margin:4px; border:1px solid var(--border-color); vertical-align:middle;" onclick="openLightbox('${url}')">`;
+            });
+            
+            html = html.replace(/\n\n/g, '<br><br>');
+            return html;
+        }
+
+        function openLightbox(src) {
+            const lightbox = document.getElementById('image-lightbox');
+            const img = document.getElementById('lightbox-img');
+            const link = document.getElementById('lightbox-link');
+            img.src = src;
+            link.href = src;
+            lightbox.style.display = 'flex';
+        }
+        
+        function closeLightbox() {
+            document.getElementById('image-lightbox').style.display = 'none';
+        }
+
+        // History Session Management
+        async function fetchHistorySessions() {
+            const container = document.getElementById('history-sessions-list');
+            try {
+                const res = await fetchWithAuth('/api/history/sessions');
                 if (res.ok) {
-                    alert("Plan approved! Agent notified to proceed.");
-                    closeReviewOverlay();
+                    const data = await res.json();
+                    if (!data.sessions || data.sessions.length === 0) {
+                        container.innerHTML = '<div style="font-size:0.78rem; color:var(--text-muted);">No history sessions</div>';
+                        return;
+                    }
+                    container.innerHTML = data.sessions.map(s => `
+                        <div class="glass-card" style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <div style="font-size:0.85rem; font-weight:600;">${escapeHtml(s.title)}</div>
+                                <div style="font-size:0.72rem; color:var(--text-muted);">${s.turn_count} turns • ${s.age}</div>
+                            </div>
+                            <button class="btn-action" style="height:26px; font-size:0.72rem;" onclick="continueSession('${s.session_id}')">Continue</button>
+                        </div>
+                    `).join('');
                 }
             } catch (e) {
-                alert("Error approving plan.");
+                container.innerHTML = '<div style="font-size:0.78rem; color:var(--text-muted);">Error loading history</div>';
             }
         }
 
-        function renderDiffHtml(diffText) {
-            if (!diffText) return '<div class="diff-line diff-line-context">No diff content</div>';
-            const lines = diffText.split('\n');
-            return lines.map(line => {
-                let cls = 'diff-line-context';
-                if (line.startsWith('+') && !line.startsWith('+++')) cls = 'diff-line-added';
-                else if (line.startsWith('-') && !line.startsWith('---')) cls = 'diff-line-removed';
-                else if (line.startsWith('@@') || line.startsWith('diff ') || line.startsWith('index ')) cls = 'diff-line-header';
-                return `<div class="diff-line ${cls}">${escapeHtml(line)}</div>`;
-            }).join('');
+        async function continueSession(sessionId) {
+            try {
+                const res = await fetchWithAuth(`/api/history/session/${sessionId}/continue`, { method: 'POST' });
+                if (res.ok) {
+                    alert('Session loaded!');
+                    document.querySelector('[data-tab="tab-chat"]').click();
+                }
+            } catch (e) { alert('Failed to continue session'); }
         }
 
-        function renderMarkdown(mdText) {
-            if (!mdText) return '';
-            let html = escapeHtml(mdText);
-            // Code blocks
-            html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
-            // Headings
-            html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-            html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-            html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-            // Bold
-            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            // Blockquotes / Alerts
-            html = html.replace(/^&gt; (.*$)/gim, '<blockquote>$1</blockquote>');
-            // Paragraphs
-            html = html.replace(/\n\n/g, '</p><p>');
-            return `<div class="md-rendered"><p>${html}</p></div>`;
-        }
-
-        // Render Quick Projects List in Control Tab (Git Repositories Only — compact)
+        // Control / Settings & Interactive Workspace Switcher
+        let lastProjectsHtml = '';
         function renderQuickProjects(projects, currentPath) {
             const container = document.getElementById('quick-projects-list');
-            if (!container) return;
-            if (!projects || projects.length === 0) {
-                container.innerHTML = '';
-                return;
-            }
-            container.innerHTML = projects.map(p => {
+            if (!container || !projects) return;
+            const newHtml = projects.map(p => {
                 const isCurrent = p.path.toLowerCase() === (currentPath || '').toLowerCase();
                 return `
-                    <div class="dir-entry ${isCurrent ? 'active-ws' : ''}" onclick="${isCurrent ? '' : `switchWorkspace('${escapeHtml(p.path)}')`}" style="${isCurrent ? 'cursor: default;' : ''}">
-                        <div class="dir-entry-left">
-                            <div class="dir-entry-icon git">
-                                <i data-lucide="git-branch" style="width: 16px; height: 16px;"></i>
-                            </div>
-                            <div class="dir-entry-info">
-                                <div class="dir-entry-name">${escapeHtml(p.name)}</div>
-                                <div class="dir-entry-meta">
-                                    <span class="dir-badge badge-git">git</span>
-                                    <span>${escapeHtml(p.branch || 'main')}</span>
-                                    ${isCurrent ? '<span class="dir-badge badge-active">active</span>' : ''}
-                                </div>
-                            </div>
+                    <div class="glass-card" style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px;">
+                        <div style="display:flex; flex-direction:column; overflow:hidden;">
+                            <span style="font-size:0.85rem; font-weight:600;">${escapeHtml(p.name)}</span>
+                            <span style="font-size:0.7rem; color:var(--text-muted);">git (${escapeHtml(p.branch)})</span>
                         </div>
-                        ${!isCurrent ? `<button class="select-ws-btn" onclick="event.stopPropagation(); switchWorkspace('${escapeHtml(p.path)}')">Switch</button>` : ''}
+                        ${!isCurrent ? `<button class="btn-action" style="height:26px; font-size:0.72rem;" onclick="switchWorkspace('${escapeHtml(p.path)}')">Switch</button>` : '<span style="font-size:0.72rem; color:var(--accent-emerald); font-weight:700;">Active</span>'}
                     </div>
                 `;
             }).join('');
-            lucide.createIcons();
+            
+            if (lastProjectsHtml !== newHtml) {
+                lastProjectsHtml = newHtml;
+                container.innerHTML = newHtml;
+            }
         }
-
-        // Full Directory Browser
-        let currentBrowsePath = null;
 
         async function browseDirectory(path) {
             const breadcrumbEl = document.getElementById('browse-breadcrumb');
             const entriesEl = document.getElementById('browse-entries');
-            if (!breadcrumbEl || !entriesEl) return;
+            if (!entriesEl) return;
 
-            entriesEl.innerHTML = '<div class="empty-state">Loading...</div>';
+            entriesEl.innerHTML = '<div style="font-size:0.78rem; color:var(--text-muted); padding:6px;">Loading directories...</div>';
 
             try {
                 let url = '/api/browse';
                 if (path) url += `?path=${encodeURIComponent(path)}`;
-                const res = await fetchWithAuth(url, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!res.ok) {
-                    entriesEl.innerHTML = '<div class="empty-state">Failed to browse directory</div>';
-                    return;
-                }
-                const data = await res.json();
-                currentBrowsePath = data.path;
+                const res = await fetchWithAuth(url);
+                if (res.ok) {
+                    const data = await res.json();
 
-                // Render breadcrumb
-                renderBrowseBreadcrumb(data.path, breadcrumbEl);
+                    // Render Breadcrumb Trail
+                    renderBrowseBreadcrumb(data.path, breadcrumbEl);
 
-                // Render entries
-                let html = '';
-
-                // Go Up button
-                if (data.parent) {
-                    html += `
-                        <div class="go-up-btn" onclick="browseDirectory('${escapeHtml(data.parent)}')">
-                            <i data-lucide="corner-left-up" style="width: 14px; height: 14px;"></i>
-                            Go up to parent
-                        </div>
-                    `;
-                }
-
-                if (data.error) {
-                    html += `<div class="empty-state">${escapeHtml(data.error)}</div>`;
-                }
-
-                if (data.entries && data.entries.length > 0) {
-                    for (const entry of data.entries) {
-                        const iconClass = entry.has_git ? 'git' : (entry.has_agents ? 'agents' : '');
-                        const iconName = entry.has_git ? 'git-branch' : (entry.has_agents ? 'bot' : 'folder');
+                    let html = '';
+                    if (data.parent) {
                         html += `
-                            <div class="dir-entry" onclick="browseDirectory('${escapeHtml(entry.path)}')">
-                                <div class="dir-entry-left">
-                                    <div class="dir-entry-icon ${iconClass}">
-                                        <i data-lucide="${iconName}" style="width: 16px; height: 16px;"></i>
-                                    </div>
-                                    <div class="dir-entry-info">
-                                        <div class="dir-entry-name">${escapeHtml(entry.name)}</div>
-                                        <div class="dir-entry-meta">
-                                            ${entry.has_git ? `<span class="dir-badge badge-git">git</span><span>${escapeHtml(entry.branch || '')}</span>` : ''}
-                                            ${entry.has_agents ? '<span class="dir-badge badge-agents">remote</span>' : ''}
-                                        </div>
-                                    </div>
-                                </div>
-                                <button class="select-ws-btn" onclick="event.stopPropagation(); switchWorkspace('${escapeHtml(entry.path)}')">Open</button>
+                            <div class="glass-card" style="display:flex; align-items:center; gap:8px; padding:6px 12px; cursor:pointer; background:var(--bg-editor);" onclick="browseDirectory('${escapeHtml(data.parent)}')">
+                                <i data-lucide="corner-left-up" style="width:14px; height:14px; color:var(--accent-blue);"></i>
+                                <span style="font-size:0.78rem; color:var(--text-muted);">Go up to parent folder</span>
                             </div>
                         `;
                     }
-                } else if (!data.error) {
-                    html += '<div class="empty-state">No subdirectories found</div>';
-                }
 
-                entriesEl.innerHTML = html;
-                lucide.createIcons();
+                    if (data.entries && data.entries.length > 0) {
+                        html += data.entries.map(e => `
+                            <div class="glass-card" style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; cursor:pointer;" onclick="browseDirectory('${escapeHtml(e.path)}')">
+                                <div style="display:flex; align-items:center; gap:8px; overflow:hidden; flex:1;">
+                                    <i data-lucide="${e.has_git ? 'git-branch' : 'folder'}" style="width:16px; height:16px; color:${e.has_git ? 'var(--accent-amber)' : 'var(--accent-blue)'}; flex-shrink:0;"></i>
+                                    <div style="display:flex; flex-direction:column; overflow:hidden;">
+                                        <span style="font-size:0.82rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(e.name)}</span>
+                                        ${e.has_git ? `<span style="font-size:0.68rem; color:var(--text-muted);">git (${escapeHtml(e.branch || 'main')})</span>` : ''}
+                                    </div>
+                                </div>
+                                <button class="btn-action" style="height:26px; padding:0 10px; font-size:0.7rem; flex-shrink:0;" onclick="event.stopPropagation(); switchWorkspace('${escapeHtml(e.path)}')">Switch Workspace</button>
+                            </div>
+                        `).join('');
+                    } else {
+                        html += '<div style="font-size:0.78rem; color:var(--text-muted); padding:6px;">No subdirectories found</div>';
+                    }
+                    entriesEl.innerHTML = html;
+                    lucide.createIcons();
+                }
             } catch (e) {
-                entriesEl.innerHTML = '<div class="empty-state">Connection error</div>';
+                entriesEl.innerHTML = '<div style="font-size:0.78rem; color:var(--accent-rose); padding:6px;">Connection error</div>';
             }
         }
 
         function renderBrowseBreadcrumb(fullPath, container) {
-            if (!fullPath) { container.innerHTML = ''; return; }
-            // Split path into segments: C:/tempo/project -> ["C:", "tempo", "project"]
+            if (!container || !fullPath) { if (container) container.innerHTML = ''; return; }
             const parts = fullPath.replace(/\\/g, '/').split('/').filter(Boolean);
             let html = '';
             let accumulated = '';
@@ -1864,95 +2451,82 @@
                 const pathSoFar = accumulated;
                 const isLast = i === parts.length - 1;
                 if (isLast) {
-                    html += `<span>${escapeHtml(parts[i])}</span>`;
+                    html += `<span style="color:var(--text-main); font-weight:600;">${escapeHtml(parts[i])}</span>`;
                 } else {
-                    html += `<span onclick="browseDirectory('${escapeHtml(pathSoFar)}')">${escapeHtml(parts[i])}</span><span class="sep">/</span>`;
+                    html += `<span style="color:var(--accent-blue); cursor:pointer;" onclick="browseDirectory('${escapeHtml(pathSoFar)}')">${escapeHtml(parts[i])}</span> <span style="color:var(--text-dim);">/</span> `;
                 }
             }
             container.innerHTML = html;
         }
 
         async function switchWorkspace(path) {
-            if (!confirm(`Switch workspace to:\n${path}\n\nThis will reload the IDE and create a new chat.`)) return;
+            if (!confirm(`Switch workspace to:\n${path}\n\nThis will load the workspace in the IDE.`)) return;
             try {
                 const res = await fetchWithAuth('/api/agent/targets', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ workspace_path: path })
                 });
                 if (res.ok) {
-                    alert(`Workspace switched to:\n${path}\n\nRemote config files copied. IDE will reload.`);
-                    // Refresh the browser to reflect the new workspace
-                    browseDirectory(null);
-                    // Switch to chat tab to start fresh conversation
-                    document.querySelector('[data-tab="tab-chat"]').click();
+                    alert('Workspace switched successfully!');
+                    const name = path.split('/').pop() || path;
+                    document.getElementById('st-ws-name').textContent = name;
+                    document.getElementById('current-ws-label').textContent = path;
+                    loadWorkspaceTree();
+                    browseDirectory(path);
+                    document.querySelector('[data-tab="tab-explorer"]').click();
                 }
-            } catch (e) {
-                console.error(e);
-                alert('Failed to switch workspace.');
-            }
+            } catch (e) { alert('Failed to switch workspace.'); }
         }
 
-        // Initialize directory browser when Control tab is opened
-        function initBrowserOnControlTab() {
-            if (!currentBrowsePath) {
-                browseDirectory(null);
-            }
-        }
-
-        // Model Switch Handler
-        document.getElementById('control-model-select').addEventListener('change', async (e) => {
+        // Model Switcher Event Listener
+        document.getElementById('control-model-select')?.addEventListener('change', async (e) => {
             try {
                 await fetchWithAuth('/api/agent/model', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ model: e.target.value })
                 });
-            } catch (err) {
-                console.error(err);
-            }
+            } catch (err) { console.error(err); }
         });
 
         // Approvals
-        document.getElementById('approve-yes-btn').addEventListener('click', () => sendApproval(true));
-        document.getElementById('approve-no-btn').addEventListener('click', () => sendApproval(false));
+        document.getElementById('approve-yes-btn')?.addEventListener('click', () => sendApproval(true));
+        document.getElementById('approve-no-btn')?.addEventListener('click', () => sendApproval(false));
 
         async function sendApproval(approved) {
             try {
                 await fetchWithAuth('/api/agent/approve/response', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ approved })
                 });
                 document.getElementById('approval-overlay').style.display = 'none';
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
+        window.sendApproval = sendApproval;
 
-        // Shutdown Tunnel
-        document.getElementById('shutdown-btn').addEventListener('click', async () => {
-            if (confirm("Shutdown localtunnel connection?")) {
-                await fetchWithAuth('/api/shutdown', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                alert("Localtunnel connection shutting down.");
+        // Shutdown
+        document.getElementById('shutdown-btn')?.addEventListener('click', async () => {
+            if (confirm("Shutdown tunnel connection?")) {
+                await fetchWithAuth('/api/shutdown', { method: 'POST' });
+                alert("Localtunnel shutting down.");
             }
         });
 
-        // Init Lucide & Validate Token
+        // Utility: Escape HTML
+        function escapeHtml(str) {
+            return (str || '')
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        // Initialize Lucide Icons & Validate Auth Token
         lucide.createIcons();
         validateToken();
     </script>
 </body>
+
 </html>

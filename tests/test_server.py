@@ -484,7 +484,8 @@ def test_workspace_switching_and_file_diff():
     # Verify directory switched
     assert os.path.realpath(os.getcwd()) == os.path.realpath(new_dir)
     
-    # Restore original directory
+    # Restore original directory and target
+    client.post("/api/agent/targets", json={"workspace_path": original_dir}, headers=headers)
     os.chdir(original_dir)
 
     # 3. Test git diff endpoint
@@ -501,13 +502,13 @@ def test_remote_prompt_lifecycle():
     # 1. Post remote prompt
     res = client.post("/api/agent/prompt", json={"prompt": "delete startup.md"}, headers=headers)
     assert res.status_code == 200
-    assert res.json()["prompt"] == "delete startup.md"
+    assert "delete startup.md" in res.json()["prompt"]
     assert res.json()["status"] == "pending"
 
     # 2. Check remote prompt
     res = client.get("/api/agent/prompt/check", headers=headers)
     assert res.status_code == 200
-    assert res.json()["prompt"] == "delete startup.md"
+    assert "delete startup.md" in res.json()["prompt"]
     assert res.json()["status"] == "executing"
 
     # 3. Post agent response

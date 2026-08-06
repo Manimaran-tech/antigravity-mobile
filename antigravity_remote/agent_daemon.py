@@ -54,10 +54,23 @@ def poll_prompts(base_url: str, token: str, exit_on_prompt: bool = False):
     print(f"Agent Daemon: Polling loop started in {mode_label} mode. Listening for remote commands...")
     
     while True:
+        # ── PHASE 0: Check remote_mode.json ──
+        current_workspace = get_workspace_root()
+        mode_file = os.path.join(current_workspace, ".agents", "config", "remote_mode.json")
+        try:
+            if os.path.exists(mode_file):
+                with open(mode_file, "r", encoding="utf-8") as f:
+                    mode_data = json.load(f)
+                    if not mode_data.get("enabled", False):
+                        print("Agent Daemon: remote_mode is disabled in this workspace. Shutting down automatically.")
+                        sys.exit(0)
+        except Exception:
+            pass
+
         # ── PHASE 1: Poll for a new prompt ──
         try:
             req = urllib.request.Request(check_url, headers=headers)
-            with urllib.request.urlopen(req, timeout=5) as response:
+            with urllib.request.urlopen(req, timeout=30) as response:
                 data = json.loads(response.read().decode("utf-8"))
                 
                 if data.get("status") in ("pending", "executing") and "prompt" in data:
@@ -81,7 +94,7 @@ def poll_prompts(base_url: str, token: str, exit_on_prompt: bool = False):
                             # We deliberately do not exit here so the current daemon can pass the prefix to the current IDE agent
                     
                     # Write prompt info to local workspace file for the agent to read
-                    prompt_file = os.path.join(current_workspace, "remote_prompt.json")
+                    prompt_file = os.path.join(current_workspace, ".agents", "state", "remote_prompt.json")
                     prompt_info = {
                         "id": prompt_id,
                         "prompt": prompt,
@@ -145,7 +158,7 @@ def poll_prompts(base_url: str, token: str, exit_on_prompt: bool = False):
                     
                     # Determine where we expect the agent to write the response
                     expected_workspace = target_workspace if (target_workspace and target_norm != current_norm) else current_workspace
-                    response_file = os.path.join(expected_workspace, "agent_response.json")
+                    response_file = os.path.join(expected_workspace, ".agents", "state", "agent_response.json")
                     
                     response_timeout = 900  # 15 minutes max for agent to complete task
                     response_start = time.time()
@@ -201,7 +214,7 @@ def poll_prompts(base_url: str, token: str, exit_on_prompt: bool = False):
             if e.code == 401:
                 print("Unauthorized. Token may have expired. Re-authenticating...")
                 # Try to re-authenticate
-                config_path = os.path.join(get_workspace_root(), "config.json")
+                config_path = os.path.join(get_workspace_root(), ".agents", "config", "config.json")
                 try:
                     with open(config_path, "r") as f:
                         config = json.load(f)
@@ -228,7 +241,7 @@ def poll_prompts(base_url: str, token: str, exit_on_prompt: bool = False):
 
 def start_daemon(url: str = "http://127.0.0.1:8000", exit_on_prompt: bool = False):
     # Check if remote mode is enabled
-    mode_path = os.path.join(get_workspace_root(), "remote_mode.json")
+    mode_path = os.path.join(get_workspace_root(), ".agents", "config", "remote_mode.json")
     while True:
         if os.path.exists(mode_path):
             try:
@@ -241,7 +254,7 @@ def start_daemon(url: str = "http://127.0.0.1:8000", exit_on_prompt: bool = Fals
         break
 
     # Read config.json to get PIN
-    config_path = os.path.join(get_workspace_root(), "config.json")
+    config_path = os.path.join(get_workspace_root(), ".agents", "config", "config.json")
     if not os.path.exists(config_path):
         print(f"Error: {config_path} not found.")
         sys.exit(1)
