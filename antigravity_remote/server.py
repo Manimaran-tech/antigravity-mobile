@@ -124,6 +124,46 @@ def get_brain_sessions() -> List[Dict[str, Any]]:
     sessions.sort(key=lambda s: s["mtime"], reverse=True)
     return sessions
 
+_LATEST_THOUGHT_CACHE = {"time": 0, "data": ""}
+
+def get_latest_agent_thought() -> str:
+    global _LATEST_THOUGHT_CACHE
+    import time, json, os
+    if time.time() - _LATEST_THOUGHT_CACHE["time"] < 2:
+        return _LATEST_THOUGHT_CACHE["data"]
+
+    thought = ""
+    try:
+        sessions = get_conversation_sessions()
+        if sessions:
+            latest_session = sessions[0]
+            transcript_path = os.path.join(BRAIN_DIR, latest_session["id"], ".system_generated", "logs", "transcript.jsonl")
+            if os.path.exists(transcript_path):
+                with open(transcript_path, "r", encoding="utf-8", errors="ignore") as f:
+                    f.seek(0, os.SEEK_END)
+                    end_pos = f.tell()
+                    chunk_size = 65536
+                    start_pos = max(0, end_pos - chunk_size)
+                    f.seek(start_pos)
+                    lines = f.readlines()
+                    
+                    for line in reversed(lines):
+                        try:
+                            data = json.loads(line)
+                            if data.get("type") == "PLANNER_RESPONSE" and data.get("source") == "MODEL":
+                                thinking = data.get("thinking", "")
+                                if thinking:
+                                    thought = thinking.strip()
+                                    break
+                        except Exception:
+                            continue
+    except Exception:
+        pass
+        
+    _LATEST_THOUGHT_CACHE["time"] = time.time()
+    _LATEST_THOUGHT_CACHE["data"] = thought
+    return thought
+
 _LATEST_PLAN_CACHE = {"time": 0, "data": None}
 
 def get_latest_brain_plan() -> Dict[str, Any]:
@@ -474,6 +514,7 @@ def find_session_workspace(session_id: str) -> Optional[str]:
     return None
 
 app = FastAPI(title="Antigravity Remote Monitor")
+
 security = HTTPBearer()
 logger = logging.getLogger("antigravity_remote.server")
 
@@ -800,6 +841,15 @@ def get_all_chat_turns() -> List[Dict[str, Any]]:
             continue
         clean = clean_prompt_text(item["text"])
         if clean:
+            if turns and turns[-1]["sender"] == item["sender"]:
+                if turns[-1]["text"] == clean:
+                    continue
+                if item["sender"] == "agent":
+                    # Always keep the latest agent message to avoid duplicates for the same task
+                    turns[-1]["text"] = clean
+                    # Update ID so frontend registers it as a changed message if needed
+                    turns[-1]["id"] = f"remote_agent_{hash(clean)}"
+                    continue
             turns.append({
                 "id": f"remote_{item['sender']}_{hash(item['text'])}",
                 "sender": item["sender"],
@@ -997,6 +1047,9 @@ def get_system_status():
                     agent_logs = non_empty[-1]
         except Exception:
             pass
+
+    # Read the latest LLM thought
+    agent_logs = get_latest_agent_thought() or agent_logs
 
     return {
         "cpu": cpu,
@@ -2395,7 +2448,15 @@ def continue_history_session(session_id: str, token: str = Depends(verify_token)
 def get_dashboard():
     dashboard_path = os.path.join(TEMPLATES_DIR, "index.html")
     if os.path.exists(dashboard_path):
-        return HTMLResponse(content=open(dashboard_path, "r", encoding="utf-8").read())
+        content = open(dashboard_path, "r", encoding="utf-8").read()
+        return HTMLResponse(
+            content=content,
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            }
+        )
     return HTMLResponse(content="<h1>Dashboard index.html not found.</h1>")
 
 @app.get("/favicon.ico")

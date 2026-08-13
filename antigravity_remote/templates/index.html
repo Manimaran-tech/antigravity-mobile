@@ -18,6 +18,35 @@
     <!-- Anime.js v3 Animation Engine -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 
+    <!-- Tailwind CSS for injected components -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        corePlugins: { preflight: false },
+        theme: {
+          extend: {
+            colors: {
+              ink: 'var(--text-main)',
+              'ink-2': 'var(--text-muted)',
+              'ink-3': 'var(--text-dim)',
+              accent: 'var(--accent-blue)',
+              orange: 'var(--accent-amber)',
+              green: 'var(--accent-emerald)',
+              red: 'var(--accent-rose)',
+              line: 'var(--border-color)',
+              'line-strong': 'rgba(255,255,255,0.14)',
+              inset: 'var(--bg-editor)',
+              hover: 'var(--bg-panel-hover)',
+              'hover-2': 'rgba(255,255,255,0.06)'
+            },
+            borderRadius: {
+              'control': '6px'
+            }
+          }
+        }
+      }
+    </script>
+
     <style>
         :root {
             /* IDE Dark Theme Palette (BkLit & Motion.dev inspired) */
@@ -70,6 +99,13 @@
 
         html,
         body {
+            background-color: var(--ag-canvas);
+            color: var(--ag-ink);
+            display: flex;
+            flex-direction: column;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            font-family: 'Inter', -apple-system, sans-serif;
             height: 100%;
             height: 100dvh;
             width: 100vw;
@@ -89,25 +125,34 @@
         }
 
         body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
+            background-color: var(--ag-canvas);
+            color: var(--ag-ink);
             display: flex;
             flex-direction: column;
             padding-top: env(safe-area-inset-top, 0px);
             padding-bottom: env(safe-area-inset-bottom, 0px);
+            font-family: 'Inter', -apple-system, sans-serif;
+            height: 100%;
+            height: 100dvh;
+            width: 100vw;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
         }
 
         /* Top IDE Header */
         header.ide-header {
             height: 48px;
-            background: var(--bg-panel);
-            border-bottom: 1px solid var(--border-color);
+            background: var(--ag-surface);
+            border-bottom: 1px solid var(--ag-line);
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 12px;
             z-index: 100;
             flex-shrink: 0;
+            color: var(--ag-ink);
+            font-family: 'Inter', -apple-system, sans-serif;
         }
 
         .header-brand {
@@ -335,6 +380,7 @@
             padding: 10px;
             overflow-y: auto;
             gap: 10px;
+            background: transparent;
         }
 
         .view-panel.active {
@@ -343,13 +389,14 @@
 
         /* Cards / Panels (BkLit style) */
         .glass-card {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
+            background: var(--ag-surface);
+            border: 1px solid var(--ag-line);
             border-radius: 12px;
             padding: 14px;
-            box-shadow: var(--shadow-md);
-            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px -2px rgba(0,0,0,0.5);
+            backdrop-filter: blur(12px);
             transition: border-color 0.2s ease, transform 0.2s ease;
+            color: var(--ag-ink);
         }
 
         .glass-card:hover {
@@ -905,8 +952,8 @@
         /* Bottom Activity Navigation Bar */
         nav.bottom-activity-bar {
             height: 56px;
-            background: var(--bg-panel);
-            border-top: 1px solid var(--border-color);
+            background: var(--ag-surface);
+            border-top: 1px solid var(--ag-line);
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             z-index: 400;
@@ -916,7 +963,7 @@
         .tab-btn {
             background: none;
             border: none;
-            color: var(--text-muted);
+            color: var(--ag-ink-3);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -924,13 +971,24 @@
             gap: 3px;
             cursor: pointer;
             font-size: 0.65rem;
-            font-weight: 500;
-            transition: color 0.15s ease;
+            font-weight: 600;
+            transition: color 0.2s ease;
             position: relative;
         }
 
         .tab-btn.active {
-            color: var(--accent-blue);
+            color: var(--ag-accent);
+        }
+        .tab-btn.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 32px;
+            height: 3px;
+            border-radius: 0 0 4px 4px;
+            background: var(--ag-accent);
         }
 
         .tab-btn.active::after {
@@ -1011,6 +1069,922 @@
             display: none;
             flex-direction: column;
         }
+
+        /* ═══════════════════════════════════════════════════
+           PREMIUM AGENT UI COMPONENTS — Design Tokens
+           ═══════════════════════════════════════════════════ */
+        :root {
+            --ag-ink: #f3f4f6;
+            --ag-ink-2: #8b949e;
+            --ag-ink-3: #545d68;
+            --ag-surface: #121418;
+            --ag-canvas: #07080a;
+            --ag-field: #0d0f12;
+            --ag-inset: #0a0c0f;
+            --ag-hover: #1a1d24;
+            --ag-hover-2: rgba(255,255,255,0.06);
+            --ag-line: rgba(255,255,255,0.08);
+            --ag-line-strong: rgba(255,255,255,0.14);
+            --ag-accent: #3b82f6;
+            --ag-accent-ink: #60a5fa;
+            --ag-accent-tint: rgba(59,130,246,0.12);
+            --ag-green: #10b981;
+            --ag-green-tint: rgba(16,185,129,0.12);
+            --ag-red: #f43f5e;
+            --ag-red-tint: rgba(244,63,94,0.12);
+            --ag-orange: #f59e0b;
+            --ag-orange-tint: rgba(245,158,11,0.12);
+        }
+
+        /* ═══════════════════════════════════════════════════
+           KEYFRAME ANIMATIONS
+           ═══════════════════════════════════════════════════ */
+        @keyframes ag-pixel-on {
+            0%, 100% { opacity: 0.15; }
+            50% { opacity: 0.9; }
+        }
+        @keyframes ag-shimmer-text {
+            from { background-position: 200% 0; }
+            to { background-position: -200% 0; }
+        }
+        @keyframes ag-fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes ag-fade-up {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes ag-pop-in {
+            from { opacity: 0; transform: scale(0.88); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes ag-stream-in {
+            from { opacity: 0; filter: blur(4px); }
+            to { opacity: 1; filter: blur(0); }
+        }
+        @keyframes ag-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes ag-eq-bounce {
+            0%, 100% { height: 30%; }
+            50% { height: 100%; }
+        }
+
+        /* ═══════════════════════════════════════════════════
+           COMPONENT 1: LOADING STATE
+           ═══════════════════════════════════════════════════ */
+        .ag-loading { display: flex; align-items: center; gap: 10px; width: fit-content; }
+        .ag-loading-grid {
+            display: grid; grid-template-columns: repeat(3,4px); gap: 1.5px;
+        }
+        .ag-loading-cell {
+            width: 4px; height: 4px; background: var(--ag-ink); border-radius: 1px;
+        }
+        .ag-loading-cell.round { border-radius: 50%; }
+        .ag-loading-label {
+            font-size: 13px; font-weight: 500;
+            background: linear-gradient(90deg, var(--ag-ink-3) 35%, var(--ag-ink) 50%, var(--ag-ink-3) 65%);
+            background-size: 200% 100%;
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: ag-shimmer-text 1.4s linear infinite;
+        }
+        .ag-loading-timer {
+            font-family: 'JetBrains Mono', monospace; font-size: 12px;
+            color: var(--ag-ink-3); font-variant-numeric: tabular-nums;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           COMPONENT 2: THINKING STATE
+           ═══════════════════════════════════════════════════ */
+        .ag-thinking { display: flex; flex-direction: column; width: 100%; max-width: 380px; }
+        .ag-thinking-header {
+            display: flex; align-items: center; gap: 8px;
+            padding: 4px 6px; border-radius: 6px; cursor: pointer;
+            transition: background 0.1s ease; width: fit-content;
+        }
+        .ag-thinking-header:hover { background: var(--ag-hover-2); }
+        .ag-thinking-shimmer {
+            font-size: 13px; font-weight: 500; white-space: nowrap;
+            background: linear-gradient(90deg, var(--ag-ink-3) 35%, var(--ag-ink) 50%, var(--ag-ink-3) 65%);
+            background-size: 200% 100%;
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: ag-shimmer-text 1.4s linear infinite;
+        }
+        .ag-thinking-done {
+            font-size: 13px; font-weight: 500; color: var(--ag-ink-2);
+            animation: ag-fade-in 350ms ease-out both;
+        }
+        .ag-thinking-chevron {
+            transition: transform 0.3s ease; color: var(--ag-ink-3);
+        }
+        .ag-thinking-chevron.open { transform: rotate(180deg); }
+        .ag-thinking-trace {
+            display: grid; transition: grid-template-rows 0.4s cubic-bezier(0.23,1,0.32,1), opacity 0.4s cubic-bezier(0.23,1,0.32,1);
+        }
+        .ag-thinking-trace.expanded { grid-template-rows: 1fr; opacity: 1; }
+        .ag-thinking-trace.collapsed { grid-template-rows: 0fr; opacity: 0; }
+        .ag-thinking-trace > div { overflow: hidden; }
+        .ag-trace-inner { position: relative; margin-top: 4px; margin-left: 5px; padding-left: 16px; }
+        .ag-trace-line {
+            position: absolute; left: 3px; width: 1px; background: var(--ag-line);
+            transition: height 0.5s cubic-bezier(0.23,1,0.32,1);
+        }
+        .ag-trace-rows { display: flex; flex-direction: column; gap: 4px; padding: 4px 0; }
+        .ag-trace-row {
+            display: flex; min-height: 28px; align-items: center; gap: 8px;
+            border-radius: 6px; padding: 2px 6px; text-align: left;
+            animation: ag-fade-up 320ms cubic-bezier(0.23,1,0.32,1) both;
+        }
+        .ag-trace-row.clickable { cursor: pointer; transition: background 0.15s ease; }
+        .ag-trace-row.clickable:hover { background: var(--ag-hover); }
+        .ag-trace-row.selected { background: var(--ag-inset); }
+        .ag-trace-check { color: var(--ag-ink-3); flex-shrink: 0; }
+        .ag-trace-spinner {
+            width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+            border: 1.5px solid var(--ag-line-strong);
+            border-top-color: var(--ag-ink-2);
+            animation: ag-spin 700ms linear infinite;
+        }
+        .ag-trace-primary { font-size: 12.5px; font-weight: 500; color: var(--ag-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+        .ag-trace-primary.reasoning { white-space: normal; line-height: 1.6; color: var(--ag-ink-2); font-weight: 400; }
+        .ag-trace-secondary { font-size: 11.5px; color: var(--ag-ink-3); flex-shrink: 0; }
+        .ag-trace-secondary.mono { font-family: 'JetBrains Mono', monospace; }
+        .ag-trace-diff { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+        .ag-trace-diff-add { color: var(--ag-green); }
+        .ag-trace-diff-del { color: var(--ag-red); }
+        .ag-trace-dot {
+            width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; color: #fff;
+        }
+        .ag-trace-query { display: flex; height: 24px; align-items: center; gap: 8px; padding: 0 6px; }
+        .ag-trace-query svg { color: var(--ag-ink-3); flex-shrink: 0; }
+        .ag-trace-query span { font-size: 12.5px; color: var(--ag-ink-2); }
+
+        /* ═══════════════════════════════════════════════════
+           COMPONENT 3: STREAMING TEXT
+           ═══════════════════════════════════════════════════ */
+        .ag-streaming { width: 100%; max-width: 380px; }
+        .ag-streaming-text { font-size: 13px; line-height: 1.6; color: var(--ag-ink); }
+        .ag-streaming-word {
+            display: inline; animation: ag-stream-in 420ms cubic-bezier(0.22,0.61,0.25,1) both;
+        }
+        .ag-streaming-cursor {
+            display: inline-block; width: 2px; height: 13px; border-radius: 2px;
+            background: var(--ag-ink); margin-left: 2px; vertical-align: middle;
+            animation: ag-fade-in 150ms ease-out both;
+        }
+        .ag-source-chip {
+            display: inline-flex; align-items: center; gap: 4px; height: 18px;
+            padding: 0 3px; border-radius: 5px; background: var(--ag-inset);
+            font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+            color: var(--ag-ink-2); vertical-align: middle; margin: 0 4px;
+            box-shadow: 0 0 0 1px var(--ag-line); cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease;
+            text-decoration: none; animation: ag-pop-in 250ms cubic-bezier(0.23,1,0.32,1) both;
+        }
+        .ag-source-chip:hover { background: var(--ag-hover); color: var(--ag-ink); }
+        .ag-source-chip img { width: 12px; height: 12px; border-radius: 3px; }
+        .ag-actions-row {
+            display: flex; align-items: center; gap: 2px; margin-top: 8px;
+            transition: opacity 0.4s ease;
+        }
+        .ag-action-btn {
+            width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+            border-radius: 6px; border: none; background: none; color: var(--ag-ink-3);
+            cursor: pointer; transition: background 0.1s ease, color 0.1s ease;
+        }
+        .ag-action-btn:hover { background: var(--ag-hover-2); color: var(--ag-ink-2); }
+        .ag-sources-btn {
+            display: flex; align-items: center; gap: 6px; padding: 2px 4px;
+            border-radius: 6px; border: none; background: none; cursor: pointer;
+            margin-left: 6px; transition: background 0.15s ease;
+        }
+        .ag-sources-btn:hover { background: var(--ag-hover); }
+        .ag-sources-avatars { display: flex; }
+        .ag-sources-avatars img {
+            width: 14px; height: 14px; border-radius: 50%; background: var(--ag-surface);
+            box-shadow: 0 0 0 1.5px var(--ag-canvas); margin-left: -4px;
+        }
+        .ag-sources-avatars img:first-child { margin-left: 0; }
+        .ag-sources-count { font-size: 12px; color: var(--ag-ink-2); }
+        .ag-sources-panel {
+            display: grid; transition: grid-template-rows 0.3s cubic-bezier(0.23,1,0.32,1), opacity 0.3s cubic-bezier(0.23,1,0.32,1);
+        }
+        .ag-sources-panel.open { grid-template-rows: 1fr; opacity: 1; }
+        .ag-sources-panel.closed { grid-template-rows: 0fr; opacity: 0; }
+        .ag-sources-panel > div { overflow: hidden; }
+        .ag-sources-list {
+            margin-top: 6px; display: flex; flex-direction: column;
+            border-radius: 10px; background: var(--ag-inset); padding: 4px;
+            box-shadow: 0 0 0 1px var(--ag-line);
+        }
+        .ag-source-row {
+            display: flex; align-items: center; gap: 8px; padding: 4px 6px;
+            border-radius: 6px; font-size: 12px; color: var(--ag-ink-2);
+            text-decoration: none; transition: background 0.15s ease, color 0.15s ease;
+        }
+        .ag-source-row:hover { background: var(--ag-hover); color: var(--ag-ink); }
+        .ag-source-row img { width: 16px; height: 16px; border-radius: 4px; }
+        .ag-source-row .name { flex: 1; }
+        .ag-source-row .domain { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--ag-ink-3); }
+        .ag-followups { margin-top: 10px; transition: opacity 0.4s ease; }
+        .ag-followups-title { font-size: 12px; font-weight: 500; color: var(--ag-ink-2); }
+        .ag-followup-btn {
+            display: flex; align-items: center; gap: 8px; width: 100%;
+            padding: 6px; margin: 0 -6px; border-radius: 7px;
+            border: none; border-bottom: 1px solid var(--ag-line);
+            background: none; color: var(--ag-ink); font-size: 12.5px;
+            text-align: left; cursor: pointer; transition: background 0.1s ease;
+        }
+        .ag-followup-btn:hover { background: var(--ag-hover-2); }
+        .ag-followup-btn svg { flex-shrink: 0; color: var(--ag-ink-3); }
+
+        /* ═══════════════════════════════════════════════════
+           COMPONENT 4: APPROVAL CARD
+           ═══════════════════════════════════════════════════ */
+        .ag-approval { width: 100%; max-width: 320px; }
+        .ag-approval-card {
+            width: 100%; overflow: hidden; border-radius: 12px;
+            background: var(--ag-surface); box-shadow: 0 4px 20px -2px rgba(0,0,0,0.5);
+        }
+        .ag-approval-body { padding: 14px; }
+        .ag-approval-q { font-size: 13px; font-weight: 500; color: var(--ag-ink); }
+        .ag-approval-dismiss {
+            width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+            border-radius: 6px; border: none; background: none; color: var(--ag-ink-3);
+            cursor: pointer; flex-shrink: 0; transition: background 0.1s, color 0.1s;
+        }
+        .ag-approval-dismiss:hover { background: var(--ag-hover); color: var(--ag-ink); }
+        .ag-approval-options { margin-top: 8px; display: flex; flex-direction: column; gap: 2px; }
+        .ag-approval-opt {
+            display: flex; align-items: center; gap: 8px; padding: 4px 6px; margin: 0 -6px;
+            border-radius: 6px; border: none; background: none;
+            text-align: left; cursor: pointer; transition: background 0.1s ease;
+        }
+        .ag-approval-opt:hover { background: var(--ag-hover); }
+        .ag-approval-indicator {
+            width: 16px; height: 16px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+        .ag-approval-indicator.radio { border-radius: 50%; }
+        .ag-approval-indicator.check { border-radius: 5px; }
+        .ag-approval-indicator.off { box-shadow: inset 0 0 0 1.5px var(--ag-line-strong); color: transparent; }
+        .ag-approval-indicator.on { background: var(--ag-ink); color: var(--ag-canvas); }
+        .ag-approval-indicator .dot {
+            width: 6px; height: 6px; border-radius: 50%; background: var(--ag-canvas);
+            transition: transform 0.2s ease;
+        }
+        .ag-approval-indicator.off .dot { transform: scale(0); }
+        .ag-approval-indicator.on .dot { transform: scale(1); }
+        .ag-approval-opt-text { font-size: 13px; transition: color 0.2s ease; }
+        .ag-approval-opt-text.on { color: var(--ag-ink); }
+        .ag-approval-opt-text.off { color: var(--ag-ink-2); }
+        .ag-approval-custom {
+            display: flex; align-items: center; gap: 8px; padding: 4px 6px; margin: 0 -6px;
+            border-radius: 6px; transition: background 0.1s ease;
+        }
+        .ag-approval-custom:focus-within { background: var(--ag-hover); }
+        .ag-approval-custom:hover { background: var(--ag-hover); }
+        .ag-approval-custom input {
+            flex: 1; min-width: 0; background: transparent; border: none; outline: none;
+            font-size: 13px; color: var(--ag-ink); font-family: inherit;
+        }
+        .ag-approval-custom input::placeholder { color: var(--ag-ink-3); }
+        .ag-approval-footer {
+            padding: 8px 14px; display: flex; align-items: center; justify-content: space-between;
+            border-top: 1px solid var(--ag-line); background: var(--ag-inset);
+        }
+        .ag-approval-nav { display: flex; align-items: center; gap: 8px; }
+        .ag-approval-nav-btn {
+            width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+            border-radius: 5px; border: none; background: none; color: var(--ag-ink-3);
+            cursor: pointer; transition: background 0.1s, color 0.1s;
+        }
+        .ag-approval-nav-btn:hover:not(:disabled) { background: var(--ag-hover); color: var(--ag-ink-2); }
+        .ag-approval-nav-btn:disabled { opacity: 0.35; cursor: default; }
+        .ag-approval-dots { display: flex; align-items: center; gap: 4px; }
+        .ag-approval-dot { border-radius: 50%; transition: all 0.3s ease; cursor: pointer; border: none; background: none; padding: 0; }
+        .ag-approval-send {
+            width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+            border-radius: 8px; border: none; cursor: pointer;
+            transition: background 0.2s, color 0.2s, transform 0.2s;
+        }
+        .ag-approval-send:active { transform: scale(0.96); }
+        .ag-approval-sent {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 8px; height: 148px;
+        }
+        .ag-approval-sent-check {
+            width: 24px; height: 24px; border-radius: 50%; background: var(--ag-green);
+            display: flex; align-items: center; justify-content: center; color: #fff;
+            animation: ag-pop-in 300ms cubic-bezier(0.23,1,0.32,1) both;
+        }
+        .ag-approval-sent-text { font-size: 13px; font-weight: 500; color: var(--ag-ink); animation: ag-fade-up 350ms cubic-bezier(0.23,1,0.32,1) 100ms both; }
+        .ag-approval-restart {
+            font-size: 12px; font-weight: 500; color: var(--ag-accent-ink);
+            background: none; border: none; cursor: pointer;
+        }
+        .ag-approval-restart:hover { text-decoration: underline; }
+
+        /* ═══════════════════════════════════════════════════
+           COMPONENT 5: TOOL CHIPS
+           ═══════════════════════════════════════════════════ */
+        .ag-tool-chips { width: 100%; max-width: 320px; padding-bottom: 4px; }
+        .ag-tc-header {
+            display: flex; align-items: center; gap: 6px; padding: 4px 6px; margin: 0 -6px;
+            border-radius: 6px; border: none; background: none;
+            font-size: 12.5px; color: var(--ag-ink-2); cursor: pointer;
+            transition: background 0.1s ease; font-variant-numeric: tabular-nums; font-family: inherit;
+        }
+        .ag-tc-header:hover { background: var(--ag-hover-2); }
+        .ag-tc-header svg { transition: transform 0.2s ease; }
+        .ag-tc-body {
+            display: grid; transition: grid-template-rows 0.3s ease, opacity 0.3s ease;
+        }
+        .ag-tc-body.open { grid-template-rows: 1fr; opacity: 1; }
+        .ag-tc-body.closed { grid-template-rows: 0fr; opacity: 0; }
+        .ag-tc-body > div { overflow: hidden; }
+        .ag-tc-rows { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+        .ag-tc-row-btn {
+            display: flex; height: 28px; width: 100%; align-items: center; gap: 8px;
+            padding: 0 3px; margin: 0 -3px; border-radius: 6px; border: none;
+            background: none; text-align: left; cursor: pointer;
+            transition: background 0.1s ease; font-family: inherit;
+        }
+        .ag-tc-row-btn:hover { background: var(--ag-hover-2); }
+        .ag-tc-row-icon {
+            width: 16px; height: 16px; flex-shrink: 0; display: flex;
+            align-items: center; justify-content: center; color: var(--ag-ink-3);
+            position: relative;
+        }
+        .ag-tc-row-icon .default-icon { transition: opacity 0.1s ease; }
+        .ag-tc-row-icon .chevron-icon {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+        .ag-tc-row-btn:hover .ag-tc-row-icon .default-icon,
+        .ag-tc-row-btn.expanded .ag-tc-row-icon .default-icon { opacity: 0; }
+        .ag-tc-row-btn:hover .ag-tc-row-icon .chevron-icon,
+        .ag-tc-row-btn.expanded .ag-tc-row-icon .chevron-icon { opacity: 1; }
+        .ag-tc-row-btn.expanded .ag-tc-row-icon .chevron-icon { transform: rotate(0deg); }
+        .ag-tc-row-btn:not(.expanded) .ag-tc-row-icon .chevron-icon { transform: rotate(-90deg); }
+        .ag-tc-row-label { font-size: 12.5px; font-weight: 500; color: var(--ag-ink); flex-shrink: 0; }
+        .ag-tc-row-chip {
+            display: inline-flex; height: 22px; align-items: center; padding: 0 6px;
+            border-radius: 6px; background: var(--ag-hover-2);
+            font-size: 11.5px; color: var(--ag-ink-2); flex: 1; min-width: 0;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            box-shadow: 0 0 0 1px var(--ag-line);
+            transition: background 0.1s ease; cursor: pointer;
+        }
+        .ag-tc-row-chip.mono { font-family: 'JetBrains Mono', monospace; }
+        .ag-tc-row-chip:hover { background: var(--ag-line-strong); }
+        .ag-tc-detail {
+            display: grid; transition: grid-template-rows 0.3s cubic-bezier(0.23,1,0.32,1), opacity 0.3s cubic-bezier(0.23,1,0.32,1);
+        }
+        .ag-tc-detail.open { grid-template-rows: 1fr; opacity: 1; }
+        .ag-tc-detail.closed { grid-template-rows: 0fr; opacity: 0; }
+        .ag-tc-detail > div { overflow: hidden; }
+        .ag-tc-detail-inner {
+            margin: 2px 0 4px 8px; padding: 4px 0 4px 14px;
+            border-left: 1px solid var(--ag-line);
+            display: flex; flex-direction: column; gap: 2px;
+        }
+        .ag-tc-detail-line {
+            font-size: 11.5px; line-height: 1.6; overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap;
+        }
+        .ag-tc-detail-line.mono { font-family: 'JetBrains Mono', monospace; }
+        .ag-tc-detail-line.add { color: var(--ag-green); }
+        .ag-tc-detail-line.normal { color: var(--ag-ink-2); }
+        .ag-tc-diffs {
+            margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--ag-line);
+            display: flex; flex-wrap: wrap; gap: 6px;
+        }
+        .ag-tc-diff-chip {
+            display: inline-flex; height: 28px; align-items: center; gap: 6px;
+            padding: 0 8px; border-radius: 6px; background: var(--ag-surface);
+            font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--ag-ink);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 0 0 1px var(--ag-line);
+            cursor: pointer; transition: background 0.1s ease;
+            animation: ag-pop-in 250ms cubic-bezier(0.23,1,0.32,1) both;
+        }
+        .ag-tc-diff-chip:hover { background: var(--ag-hover); }
+        .ag-tc-diff-chip .file { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+        .ag-tc-diff-chip .add { color: var(--ag-green); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+        .ag-tc-diff-chip .del { color: var(--ag-red); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+        .ag-tc-more {
+            display: inline-flex; height: 28px; align-items: center; padding: 0 6px;
+            font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--ag-ink-3);
+            text-decoration: underline; text-underline-offset: 2px;
+            background: none; border: none; cursor: pointer; transition: color 0.1s;
+        }
+        .ag-tc-more:hover { color: var(--ag-ink-2); }
+
+        /* ═══════════════════════════════════════════════════
+           COMPONENT 6: TASK ROWS
+           ═══════════════════════════════════════════════════ */
+        .ag-task-rows { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 8px; }
+        .ag-task-rows.list-variant {
+            gap: 0; overflow: hidden; border-radius: 12px;
+            background: var(--ag-surface); box-shadow: 0 4px 20px -2px rgba(0,0,0,0.5);
+        }
+        .ag-task-row {
+            overflow: hidden; background: var(--ag-surface);
+            box-shadow: 0 4px 20px -2px rgba(0,0,0,0.5);
+            transition: border-radius 0.3s ease;
+            animation: ag-fade-up 450ms cubic-bezier(0.23,1,0.32,1) both;
+        }
+        .ag-task-rows.list-variant .ag-task-row {
+            box-shadow: none; border-radius: 0 !important;
+            border-bottom: 1px solid var(--ag-line);
+        }
+        .ag-task-rows.list-variant .ag-task-row:last-child { border-bottom: none; }
+        .ag-task-row-btn {
+            display: flex; height: 44px; width: 100%; align-items: center; gap: 10px;
+            padding: 0 10px; border: none; background: none; text-align: left;
+            cursor: pointer; transition: background 0.1s ease; font-family: inherit;
+        }
+        .ag-task-row-btn:hover { background: var(--ag-inset); }
+        .ag-task-badge { width: 24px; height: 24px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .ag-task-badge-ring {
+            position: relative; display: inline-flex; align-items: center; justify-content: center;
+        }
+        .ag-task-badge-ring svg { position: absolute; inset: 0; }
+        .ag-task-badge-ring .number {
+            position: relative; font-size: 10.5px; font-weight: 600;
+            font-variant-numeric: tabular-nums; color: var(--ag-ink);
+        }
+        .ag-task-badge-done {
+            width: 22px; height: 22px; border-radius: 50%; background: var(--ag-green);
+            display: flex; align-items: center; justify-content: center; color: #fff;
+            animation: ag-pop-in 300ms cubic-bezier(0.23,1,0.32,1) both;
+        }
+        .ag-task-badge-failed {
+            width: 22px; height: 22px; border-radius: 50%; background: var(--ag-red);
+            display: flex; align-items: center; justify-content: center; color: #fff;
+            animation: ag-pop-in 300ms cubic-bezier(0.23,1,0.32,1) both;
+        }
+        .ag-task-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; color: var(--ag-ink); }
+        .ag-task-amount { font-size: 12.5px; color: var(--ag-ink-2); font-variant-numeric: tabular-nums; }
+        .ag-task-pill {
+            display: inline-flex; height: 22px; align-items: center; gap: 6px;
+            padding: 0 8px; border-radius: 50px; font-size: 11.5px; font-weight: 500;
+        }
+        .ag-task-pill.completed { background: var(--ag-green-tint); color: var(--ag-green); }
+        .ag-task-pill.failed { background: var(--ag-red-tint); color: var(--ag-red); animation: ag-fade-in 200ms ease-out both; }
+        .ag-task-pill .retry-spin { animation: ag-spin 1.2s linear infinite; display: flex; }
+        .ag-task-detail {
+            display: grid; transition: grid-template-rows 0.3s cubic-bezier(0.23,1,0.32,1), opacity 0.3s cubic-bezier(0.23,1,0.32,1);
+        }
+        .ag-task-detail.open { grid-template-rows: 1fr; opacity: 1; }
+        .ag-task-detail.closed { grid-template-rows: 0fr; opacity: 0; }
+        .ag-task-detail > div { overflow: hidden; }
+        .ag-task-detail-inner {
+            padding: 4px 10px 10px 44px; display: flex; flex-direction: column; gap: 4px;
+        }
+        .ag-task-detail-item {
+            display: flex; justify-content: space-between; font-size: 12px;
+        }
+        .ag-task-detail-item .label { color: var(--ag-ink-2); }
+        .ag-task-detail-item .meta { color: var(--ag-ink-3); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+        /* ═══════════════════════════════════════════════════
+           COMPONENT 7: CHAT PANEL
+           ═══════════════════════════════════════════════════ */
+        .ag-chat-tabs { display: flex; align-items: center; gap: 2px; }
+        .ag-chat-tab {
+            padding: 3px 8px; border-radius: 6px; border: none; background: none;
+            font-size: 13px; color: var(--ag-ink); cursor: pointer;
+            transition: background 0.1s ease, opacity 0.1s ease; font-family: inherit;
+        }
+        .ag-chat-tab.active { background: var(--ag-field); }
+        .ag-chat-tab:not(.active) { opacity: 0.5; }
+        .ag-chat-tab:not(.active):hover { opacity: 0.75; }
+        .ag-chat-actions { display: flex; align-items: center; gap: 4px; }
+        .ag-chat-action-btn {
+            width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+            border-radius: 6px; border: none; background: none; color: var(--ag-ink-3);
+            cursor: pointer; transition: background 0.1s, color 0.1s;
+        }
+        .ag-chat-action-btn:hover { background: var(--ag-hover); color: var(--ag-ink-2); }
+        .ag-chat-user-bubble {
+            padding: 8px 14px; border-radius: 16px 16px 4px 16px; 
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            font-size: 13.5px; line-height: 1.45; color: #e0f2fe;
+            align-self: flex-end; max-width: 85%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: opacity 0.3s cubic-bezier(0.23,1,0.32,1), transform 0.3s cubic-bezier(0.23,1,0.32,1);
+        }
+        .ag-chat-section {
+            display: flex; flex-direction: column; gap: 6px; width: 100%;
+            transition: opacity 0.4s cubic-bezier(0.23,1,0.32,1), filter 0.4s cubic-bezier(0.23,1,0.32,1), transform 0.4s cubic-bezier(0.23,1,0.32,1);
+            animation: ag-fade-up 400ms cubic-bezier(0.23,1,0.32,1) both;
+        }
+        .ag-chat-section.resolving { opacity: 0.55; filter: blur(0.5px); transform: scale(0.985); transform-origin: top left; }
+        .ag-chat-section-meta { display: flex; align-items: center; gap: 4px; font-size: 12px; line-height: 1.3; }
+        .ag-chat-section-meta .label { font-weight: 500; color: var(--ag-ink); }
+        .ag-chat-section-meta .sub { color: var(--ag-ink-2); }
+        .ag-chat-section-meta .time { color: var(--ag-ink); }
+        .ag-chat-section-body { font-size: 13px; line-height: 1.4; color: var(--ag-ink); }
+
+        /* ═══════════════════════════════════════════════════
+           COMPONENT 8: PROMPT BAR
+           ═══════════════════════════════════════════════════ */
+        .ag-prompt-bar {
+            display: flex; flex-direction: column; gap: 6px;
+            border: 1px solid var(--ag-line); border-radius: 14px;
+            background: var(--ag-surface); padding: 6px;
+            box-shadow: 0 4px 20px -2px rgba(0,0,0,0.5);
+            transition: border-color 0.15s ease;
+        }
+        .ag-prompt-bar:focus-within { border-color: var(--ag-line-strong); }
+        .ag-prompt-bar.pill { border-radius: 50px; }
+        .ag-prompt-bar.pill.has-attachments, .ag-prompt-bar.pill.expanded { border-radius: 24px; }
+        .ag-prompt-attachments { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 4px 0; }
+        .ag-prompt-attach-chip {
+            display: flex; height: 26px; align-items: center; gap: 6px;
+            padding: 0 4px 0 6px; border-radius: 6px; background: var(--ag-field);
+            font-size: 11.5px; color: var(--ag-ink-2); box-shadow: 0 0 0 1px var(--ag-line);
+            animation: ag-pop-in 200ms cubic-bezier(0.23,1,0.32,1) both;
+        }
+        .ag-prompt-bar.pill .ag-prompt-attach-chip { border-radius: 50px; }
+        .ag-prompt-attach-chip .name { max-width: 144px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ag-prompt-attach-remove {
+            width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;
+            border-radius: 4px; border: none; background: none; color: var(--ag-ink-3);
+            cursor: pointer; transition: background 0.1s, color 0.1s;
+        }
+        .ag-prompt-attach-remove:hover { background: rgba(255,255,255,0.08); color: var(--ag-ink); }
+        .ag-prompt-controls {
+            display: flex; align-items: flex-end; gap: 4px;
+        }
+        .ag-prompt-controls.expanded { flex-wrap: wrap; }
+        .ag-prompt-textarea {
+            flex: 1; min-width: 0; min-height: 28px; max-height: 100px;
+            resize: none; border: none; outline: none; background: transparent;
+            padding: 5px 4px; font-size: 13px; line-height: 18px; color: var(--ag-ink);
+            font-family: inherit; overflow-wrap: anywhere;
+        }
+        .ag-prompt-textarea::placeholder { color: var(--ag-ink-3); }
+        .ag-prompt-btn {
+            width: 28px; height: 28px; flex-shrink: 0; display: flex;
+            align-items: center; justify-content: center; border-radius: 8px;
+            border: none; cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+        }
+        .ag-prompt-bar.pill .ag-prompt-btn { border-radius: 50%; }
+        .ag-prompt-btn:active { transform: scale(0.94); }
+        .ag-prompt-btn.plus { background: none; color: var(--ag-ink-3); }
+        .ag-prompt-btn.plus:hover { background: var(--ag-hover); color: var(--ag-ink); }
+        .ag-prompt-btn.plus.active { background: var(--ag-hover); color: var(--ag-ink); }
+        .ag-prompt-btn.model {
+            width: auto; height: 28px; padding: 0 6px; gap: 4px;
+            background: none; color: var(--ag-ink-2); font-size: 12px; font-weight: 500;
+            font-family: inherit;
+        }
+        .ag-prompt-btn.model:hover { background: var(--ag-hover); color: var(--ag-ink); }
+        .ag-prompt-btn.mic { background: none; color: var(--ag-ink-3); }
+        .ag-prompt-btn.mic:hover { background: var(--ag-hover); color: var(--ag-ink); }
+        .ag-prompt-btn.mic.active { background: var(--ag-accent-tint); color: var(--ag-accent-ink); }
+        .ag-prompt-btn.send-btn { transition: background 0.2s, color 0.2s; }
+        .ag-prompt-btn.send-btn:disabled { cursor: default; }
+        .ag-prompt-eq {
+            display: flex; height: 14px; align-items: center; gap: 2.5px;
+        }
+        .ag-prompt-eq span {
+            width: 2.5px; border-radius: 50px; background: currentColor;
+        }
+
+        /* Prompt menu dropdown */
+        .ag-prompt-menu {
+            position: absolute; left: 0; right: 0; bottom: 100%; z-index: 10;
+            margin-bottom: 8px; border-radius: 10px; background: var(--ag-surface);
+            padding: 4px; box-shadow: 0 10px 30px -5px rgba(0,0,0,0.7);
+            animation: ag-pop-in 180ms cubic-bezier(0.23,1,0.32,1) both;
+            transform-origin: bottom center;
+        }
+        .ag-prompt-menu.model-menu {
+            left: auto; right: 0; width: 176px;
+            transform-origin: bottom right;
+        }
+        .ag-prompt-menu-highlight {
+            position: absolute; left: 4px; right: 4px; border-radius: 6px;
+            background: var(--ag-hover); pointer-events: none;
+            transition: top 220ms cubic-bezier(0.23,1,0.32,1), height 220ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease;
+        }
+        .ag-prompt-menu-row {
+            position: relative; z-index: 1; display: flex; height: 36px;
+            align-items: center; gap: 10px; padding: 0 8px;
+            border-radius: 6px; border: none; background: none;
+            text-align: left; cursor: pointer; width: 100%; font-family: inherit;
+        }
+        .ag-prompt-menu-row .icon { width: 22px; height: 22px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: var(--ag-ink-2); }
+        .ag-prompt-menu-row .name { font-size: 12.5px; font-weight: 500; color: var(--ag-ink); flex-shrink: 0; }
+        .ag-prompt-menu-row .desc { font-size: 12px; color: var(--ag-ink-3); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ag-prompt-menu-row .connect-lbl { font-size: 12px; font-weight: 500; flex-shrink: 0; transition: color 0.1s; }
+        .ag-prompt-menu-footer { margin-top: 4px; padding: 6px 8px 4px; border-top: 1px solid var(--ag-line); font-size: 11px; color: var(--ag-ink-3); }
+        .ag-prompt-menu-row.model-row { height: 30px; gap: 8px; }
+        .ag-prompt-menu-row.model-row .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+        .ag-prompt-menu-row.model-row .tag { font-size: 11px; color: var(--ag-ink-3); flex-shrink: 0; }
+        .ag-prompt-menu-row.model-row .check-icon { flex-shrink: 0; color: var(--ag-ink); }
+        .ag-prompt-menu-empty { padding: 8px; font-size: 12px; color: var(--ag-ink-3); }
+
+        /* ═══════════════════════════════════════════════════
+           COMPONENT 9: RECOMMENDATION CARD
+           ═══════════════════════════════════════════════════ */
+        .ag-recommendation {
+            width: 100%; max-width: 380px; overflow: hidden;
+            border-radius: 12px; background: var(--ag-surface);
+            box-shadow: 0 4px 20px -2px rgba(0,0,0,0.5);
+        }
+        .ag-rec-body { padding: 14px; }
+        .ag-rec-title { font-size: 13px; font-weight: 600; color: var(--ag-ink); }
+        .ag-rec-text { margin-top: 6px; font-size: 13px; line-height: 1.6; color: var(--ag-ink-2); min-height: 48px; animation: ag-fade-in 180ms ease-out both; }
+        .ag-rec-text code {
+            padding: 2px 6px; border-radius: 6px; font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+        }
+        .ag-rec-text code.accent { background: var(--ag-accent-tint); color: var(--ag-accent-ink); }
+        .ag-rec-text code.orange { background: var(--ag-orange-tint); color: var(--ag-orange); }
+        .ag-rec-drawer {
+            display: grid; transition: grid-template-rows 0.3s cubic-bezier(0.16,1,0.3,1), opacity 0.3s cubic-bezier(0.16,1,0.3,1);
+        }
+        .ag-rec-drawer.open { grid-template-rows: 1fr; opacity: 1; }
+        .ag-rec-drawer.closed { grid-template-rows: 0fr; opacity: 0; }
+        .ag-rec-drawer > div { overflow: hidden; }
+        .ag-rec-drawer-inner {
+            border-top: 1px solid var(--ag-line); background: var(--ag-inset); padding: 8px;
+        }
+        .ag-rec-drawer-label { padding: 0 6px 4px; font-size: 11px; font-weight: 500; color: var(--ag-ink-3); }
+        .ag-rec-alt-btn {
+            display: flex; width: 100%; align-items: center; gap: 10px; padding: 6px;
+            border-radius: 6px; border: none; background: none; text-align: left;
+            cursor: pointer; transition: background 0.1s ease; font-family: inherit;
+        }
+        .ag-rec-alt-btn:hover { background: var(--ag-hover); }
+        .ag-rec-alt-btn .short { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; color: var(--ag-ink); }
+        .ag-rec-alt-btn .label { flex-shrink: 0; font-size: 11px; color: var(--ag-ink-3); }
+        .ag-rec-meter { display: flex; align-items: flex-end; gap: 2px; }
+        .ag-rec-meter-bar { width: 4px; height: 10px; border-radius: 50px; transition: background 0.3s ease; }
+        .ag-rec-footer {
+            padding: 8px 14px; display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; border-top: 1px solid var(--ag-line); background: var(--ag-inset);
+        }
+        .ag-rec-footer-left { display: flex; align-items: center; gap: 8px; }
+        .ag-rec-footer-label { font-size: 12.5px; font-weight: 500; color: var(--ag-ink-2); }
+        .ag-rec-footer-right { display: flex; align-items: center; gap: 8px; }
+        .ag-rec-alt-toggle {
+            height: 28px; padding: 0 10px; border-radius: 6px; border: none;
+            font-size: 12.5px; font-weight: 500; cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 0 0 1px var(--ag-line);
+            transition: background 0.1s, transform 0.1s; font-family: inherit;
+        }
+        .ag-rec-alt-toggle:active { transform: scale(0.96); }
+        .ag-rec-alt-toggle.open { background: var(--ag-hover); color: var(--ag-ink); }
+        .ag-rec-alt-toggle:not(.open) { background: var(--ag-surface); color: var(--ag-ink); }
+        .ag-rec-alt-toggle:not(.open):hover { background: var(--ag-hover); }
+        .ag-rec-accept {
+            height: 28px; padding: 0 12px; border-radius: 6px; border: none;
+            font-size: 12.5px; font-weight: 500; cursor: pointer;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 0 0 1px rgba(16,24,40,0.12), 0 1px 2px rgba(16,24,40,0.1);
+            transition: background 0.15s, transform 0.15s; font-family: inherit;
+        }
+        .ag-rec-accept:active { transform: scale(0.96); }
+
+        /* ═══════════════════════════════════════════════════
+           COMPONENT 10: CONTEXT CARDS
+           ═══════════════════════════════════════════════════ */
+        .ag-context-cards { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 8px; }
+        .ag-context-header {
+            display: flex; align-items: center; gap: 8px; padding: 0 2px;
+            animation: ag-fade-in 400ms ease-out both;
+        }
+        .ag-context-title { font-size: 13px; font-weight: 600; color: var(--ag-ink); }
+        .ag-context-count {
+            display: inline-flex; height: 20px; align-items: center; padding: 0 6px;
+            border-radius: 6px; background: var(--ag-inset); font-size: 11.5px;
+            font-weight: 500; color: var(--ag-ink-2); box-shadow: 0 0 0 1px var(--ag-line);
+            font-variant-numeric: tabular-nums;
+        }
+        .ag-context-card {
+            overflow: hidden; border-radius: 12px; background: var(--ag-surface);
+            box-shadow: 0 4px 20px -2px rgba(0,0,0,0.5);
+            animation: ag-fade-up 400ms cubic-bezier(0.23,1,0.32,1) both;
+        }
+        .ag-context-card-bar {
+            display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+            border-bottom: 1px solid var(--ag-line);
+        }
+        .ag-context-card-title {
+            display: flex; align-items: center; gap: 6px; font-size: 13px;
+            font-weight: 500; color: var(--ag-ink); min-width: 0;
+        }
+        .ag-context-card-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ag-context-card-chars { margin-left: auto; font-size: 12px; color: var(--ag-ink-3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+        .ag-context-card-body { padding: 8px 12px 4px; font-size: 12.5px; line-height: 1.6; color: var(--ag-ink-2); }
+        .ag-context-source-chip {
+            display: inline-flex; height: 24px; align-items: center; gap: 6px;
+            padding: 0 8px; border-radius: 50px; background: var(--ag-inset);
+            font-size: 12px; font-weight: 500; color: var(--ag-ink-2);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 0 0 1px var(--ag-line);
+            margin: 4px 12px 12px; cursor: pointer;
+            transition: opacity 0.3s cubic-bezier(0.23,1,0.32,1), transform 0.3s cubic-bezier(0.23,1,0.32,1), background 0.15s ease;
+        }
+        .ag-context-source-chip:hover { background: var(--ag-hover); }
+        .ag-context-badge {
+            width: 14px; height: 14px; border-radius: 4px; display: flex;
+            align-items: center; justify-content: center; font-size: 7px;
+            font-weight: 700; color: #fff;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           COMPONENT 11: SIDEBAR NAV (enhancements)
+           ═══════════════════════════════════════════════════ */
+        .ag-sidebar-nav { padding: 8px; }
+        .ag-sidebar-ws {
+            display: flex; align-items: center; gap: 10px; padding: 6px;
+            border-radius: 8px; margin-bottom: 8px; cursor: pointer;
+            transition: background 0.1s; border: none; background: none;
+            width: 100%; text-align: left; font-family: inherit;
+        }
+        .ag-sidebar-ws:hover { background: var(--ag-hover); }
+        .ag-sidebar-ws:active { transform: scale(0.96); }
+        .ag-sidebar-ws-avatar {
+            width: 32px; height: 32px; border-radius: 8px; background: var(--ag-ink);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 600; color: var(--ag-surface); flex-shrink: 0;
+        }
+        .ag-sidebar-ws-name { font-size: 13px; font-weight: 500; color: var(--ag-ink); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ag-sidebar-ws-sub { font-size: 11px; color: var(--ag-ink-3); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ag-sidebar-search {
+            display: flex; height: 32px; align-items: center; gap: 8px;
+            padding: 0 10px; border-radius: 6px; background: var(--ag-inset);
+            margin-bottom: 4px; box-shadow: 0 0 0 1px var(--ag-line);
+        }
+        .ag-sidebar-search input {
+            flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+            font-size: 12.5px; color: var(--ag-ink); font-family: inherit;
+        }
+        .ag-sidebar-search input::placeholder { color: var(--ag-ink-3); }
+        .ag-sidebar-search kbd {
+            width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
+            border-radius: 5px; background: var(--ag-surface); font-size: 10px; color: var(--ag-ink-3);
+            box-shadow: 0 0 0 1px var(--ag-line);
+        }
+        .ag-sidebar-new-task {
+            display: flex; width: 100%; align-items: center; gap: 8px;
+            padding: 6px 8px; border-radius: 6px; border: none; background: none;
+            font-size: 13px; font-weight: 500; color: var(--ag-accent-ink);
+            cursor: pointer; transition: background 0.1s; margin-bottom: 8px;
+            font-family: inherit; text-align: left;
+        }
+        .ag-sidebar-new-task:hover { background: var(--ag-accent-tint); }
+        .ag-sidebar-new-task:active { transform: scale(0.96); }
+        .ag-sidebar-new-task .plus-circle {
+            width: 16px; height: 16px; border-radius: 50%; background: var(--ag-accent);
+            display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0;
+        }
+        .ag-sidebar-section-label {
+            padding: 4px 8px; font-size: 10.5px; font-weight: 500;
+            text-transform: uppercase; letter-spacing: 0.08em; color: var(--ag-ink-3);
+        }
+        .ag-sidebar-items { display: flex; flex-direction: column; gap: 1px; position: relative; }
+        .ag-sidebar-highlight {
+            position: absolute; left: 0; right: 0; border-radius: 7px;
+            background: var(--ag-hover); pointer-events: none;
+            transition: top 220ms cubic-bezier(0.23,1,0.32,1), height 220ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease;
+        }
+        .ag-sidebar-item {
+            position: relative; z-index: 1; display: flex; align-items: center;
+            gap: 8px; padding: 6px 8px; border-radius: 7px; border: none;
+            background: none; text-align: left; cursor: pointer;
+            width: 100%; font-family: inherit;
+            transition: color 0.15s ease, transform 0.15s ease;
+        }
+        .ag-sidebar-item:active { transform: scale(0.96); }
+        .ag-sidebar-item .icon-wrap { color: var(--ag-ink-3); transition: color 0.15s; }
+        .ag-sidebar-item.active .icon-wrap { color: var(--ag-ink); }
+        .ag-sidebar-item .item-label {
+            flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+            white-space: nowrap; font-size: 13px; color: var(--ag-ink-2);
+            transition: color 0.15s;
+        }
+        .ag-sidebar-item.active .item-label { font-weight: 500; color: var(--ag-ink); }
+        .ag-sidebar-item .item-badge {
+            display: flex; height: 18px; min-width: 18px; align-items: center;
+            justify-content: center; padding: 0 4px; border-radius: 50%;
+            font-size: 10.5px; font-weight: 600; font-variant-numeric: tabular-nums;
+            animation: ag-pop-in 250ms cubic-bezier(0.23,1,0.32,1) both;
+        }
+        .ag-sidebar-item.active .item-badge { background: var(--ag-surface); color: var(--ag-ink-2); box-shadow: 0 0 0 1px var(--ag-line); }
+        .ag-sidebar-item:not(.active) .item-badge { background: var(--ag-accent-tint); color: var(--ag-accent-ink); }
+
+        /* ═══════════════════════════════════════════════════
+           COMPONENT 12: SEARCH
+           ═══════════════════════════════════════════════════ */
+        .ag-search {
+            width: 100%; max-width: 288px; overflow: hidden;
+            border-radius: 12px; background: var(--ag-surface);
+            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.7);
+        }
+        .ag-search-input-row {
+            display: flex; height: 40px; align-items: center; gap: 8px;
+            padding: 0 12px; border-bottom: 1px solid var(--ag-line);
+            transition: background 0.1s ease;
+        }
+        .ag-search-input-row:hover { background: var(--ag-hover); }
+        .ag-search-input-row svg { flex-shrink: 0; color: var(--ag-ink-3); }
+        .ag-search-input-row input {
+            flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+            font-size: 13px; color: var(--ag-ink); font-family: inherit;
+        }
+        .ag-search-input-row input::placeholder { color: var(--ag-ink-3); }
+        .ag-search-clear {
+            width: 22px; height: 22px; border-radius: 50%; border: none; background: none;
+            color: var(--ag-ink-3); cursor: pointer; display: flex; align-items: center;
+            justify-content: center; transition: background 0.1s, color 0.1s;
+            animation: ag-fade-in 150ms ease-out both;
+        }
+        .ag-search-clear:hover { background: rgba(255,255,255,0.08); color: var(--ag-ink); }
+        .ag-search-results { padding: 4px; }
+        .ag-search-result {
+            display: flex; height: 32px; align-items: center; padding: 0 8px;
+            border-radius: 6px; border: none; background: none; width: 100%;
+            font-size: 13px; color: var(--ag-ink); text-align: left;
+            cursor: pointer; transition: background 0.1s; font-family: inherit;
+            animation: ag-fade-in 200ms ease-out both;
+        }
+        .ag-search-result:hover { background: var(--ag-hover); }
+        .ag-search-empty {
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            padding: 32px 16px; animation: ag-fade-in 250ms ease-out both;
+        }
+        .ag-search-empty-icon {
+            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+            border-radius: 6px; background: var(--ag-inset); color: var(--ag-ink-3);
+            box-shadow: 0 0 0 1px var(--ag-line); margin-bottom: 6px;
+        }
+        .ag-search-empty-title { font-size: 13px; font-weight: 500; color: var(--ag-ink); }
+        .ag-search-empty-sub { font-size: 12px; color: var(--ag-ink-3); }
+
+        /* ═══════════════════════════════════════════════════
+           COMPONENT 13: CODE BLOCK
+           ═══════════════════════════════════════════════════ */
+        .ag-code-block {
+            width: 100%; max-width: 380px; overflow: hidden;
+            border-radius: 12px; background: var(--ag-surface);
+            box-shadow: 0 4px 20px -2px rgba(0,0,0,0.5);
+        }
+        .ag-code-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 6px 10px; border-bottom: 1px solid var(--ag-line);
+        }
+        .ag-code-header-left { display: flex; align-items: baseline; gap: 8px; }
+        .ag-code-filename {
+            font-family: 'JetBrains Mono', monospace; font-size: 12px;
+            font-weight: 500; color: var(--ag-ink);
+        }
+        .ag-code-lang { font-size: 11.5px; color: var(--ag-ink-3); }
+        .ag-code-copy {
+            display: flex; height: 24px; align-items: center; gap: 4px;
+            padding: 0 6px; border-radius: 6px; border: none; background: none;
+            font-size: 11.5px; font-weight: 500; color: var(--ag-ink-3);
+            cursor: pointer; transition: background 0.1s, color 0.1s; font-family: inherit;
+        }
+        .ag-code-copy:hover { background: var(--ag-hover); color: var(--ag-ink); }
+        .ag-code-copy.copied { color: var(--ag-green); }
+        .ag-code-pre {
+            min-height: 137px; padding: 10px 12px;
+            background: var(--ag-inset);
+            font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.7;
+            margin: 0; overflow-x: auto;
+        }
+        .ag-code-line {
+            display: flex; animation: ag-fade-up 250ms cubic-bezier(0.23,1,0.32,1) both;
+        }
+        .ag-code-linenum {
+            width: 20px; flex-shrink: 0; text-align: right; font-size: 10.5px;
+            line-height: 1.86; color: rgba(84,93,104,0.6); user-select: none;
+        }
+        .ag-code-content { padding-left: 10px; white-space: pre; }
+        .ag-code-cursor {
+            display: inline-block; width: 3px; height: 13px; border-radius: 2px;
+            background: var(--ag-accent); margin-left: 2px; vertical-align: middle;
+        }
+        .ag-code-tok-kw { color: var(--ag-accent-ink); }
+        .ag-code-tok-str { color: var(--ag-green); }
+        .ag-code-tok-num { color: var(--ag-orange); }
+        .ag-code-tok-fn { color: var(--ag-ink); }
+        .ag-code-tok-dim { color: var(--ag-ink-3); }
+        .ag-code-tok-default { color: var(--ag-ink-2); }
+
     </style>
 </head>
 
@@ -1036,7 +2010,8 @@
 
     <!-- Header -->
     <header class="ide-header">
-        <div class="header-brand" id="toggle-explorer-btn">
+        <div class="header-brand" id="toggle-explorer-btn" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="menu" style="width: 18px; height: 18px; color: var(--text-muted);"></i>
             <span class="brand-title">Antigravity IDE</span>
             <div id="hdr-branch-tag" class="branch-badge">
                 <i data-lucide="git-branch" style="width: 12px; height: 12px;"></i>
@@ -1064,12 +2039,14 @@
         <aside id="ide-sidebar" class="ide-sidebar">
             <div class="sidebar-header">
                 <span class="sidebar-title">
-                    <i data-lucide="files" style="width: 14px; height: 14px; color: var(--accent-blue);"></i> Explorer
+                    <i data-lucide="menu" style="width: 14px; height: 14px; color: var(--accent-blue);"></i> Menu
                 </span>
                 <button id="close-sidebar-btn" class="btn-icon" style="width: 24px; height: 24px;">
                     <i data-lucide="x" style="width: 14px; height: 14px;"></i>
                 </button>
             </div>
+            <div id="sidebar-nav-container" style="flex-shrink: 0; margin-bottom: 10px;"></div>
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 0 12px 10px;" />
             <div id="file-tree-root" class="file-tree-container">
                 <div style="padding: 12px; font-size: 0.78rem; color: var(--text-muted);">Loading workspace files...
                 </div>
@@ -1118,10 +2095,7 @@
 
                     <!-- Chat Feed -->
                     <div id="chat-messages" class="chat-feed">
-                        <div class="chat-group agent">
-                            <span class="chat-sender">Antigravity AI</span>
-                            <div class="chat-bubble agent">Hello! Ask me anything or instruct me to build code.</div>
-                        </div>
+                        
                     </div>
 
                     <!-- Live Logs Bar -->
@@ -1134,26 +2108,23 @@
                     </div>
 
                     <!-- Prompt Input -->
-                    <div class="input-bar">
-                        <input type="text" id="chat-prompt-input" class="ide-input"
-                            placeholder="Ask Antigravity to build or edit code...">
-                        <button id="chat-send-btn" class="btn-action"><i data-lucide="send"
-                                style="width: 15px; height: 15px;"></i></button>
-                    </div>
+                    <div id="prompt-bar-container" style="padding-top: 8px;"></div>
                 </div>
             </div>
 
             <!-- TAB 3: DASHBOARD VIEW -->
             <div id="tab-dashboard" class="view-panel">
                 <!-- Agent Status Card -->
-                <div class="glass-card status-hero">
-                    <div class="avatar-glow">AG</div>
-                    <div class="status-meta">
-                        <div class="status-sub">Agent Status</div>
-                        <div id="agent-state-label" class="status-main">Connecting...</div>
-                        <div id="agent-task-text" class="status-task">Initializing</div>
+                <div id="dash-agent-status-container">
+                    <div class="glass-card status-hero">
+                        <div class="avatar-glow">AG</div>
+                        <div class="status-meta">
+                            <div class="status-sub">Agent Status</div>
+                            <div id="agent-state-label" class="status-main">Connecting...</div>
+                            <div id="agent-task-text" class="status-task">Initializing</div>
+                        </div>
+                        <span id="agent-badge" class="badge-pill badge-idle">Idle</span>
                     </div>
-                    <span id="agent-badge" class="badge-pill badge-idle">Idle</span>
                 </div>
 
                 <!-- System Metrics Row -->
@@ -1220,6 +2191,12 @@
                         <i data-lucide="history" style="width: 16px; height: 16px; color: var(--accent-amber);"></i>
                         Past Conversations
                     </h3>
+                    <div id="history-search-container" style="margin-bottom: 12px;">
+                        <div class="search-bar" style="position:relative; width: 100%;">
+                            <i data-lucide="search" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--ag-ink-2);"></i>
+                            <input type="text" id="history-search-input" placeholder="Search conversations..." style="width:100%; padding: 8px 10px 8px 32px; border-radius: 8px; border: 1px solid var(--ag-line); background: var(--ag-field); color: var(--ag-ink); font-size: 13px;" onkeyup="filterHistory()">
+                        </div>
+                    </div>
                     <div id="history-sessions-list" style="display: flex; flex-direction: column; gap: 8px;">
                         <div style="font-size: 0.78rem; color: var(--text-muted);">Loading history...</div>
                     </div>
@@ -1276,31 +2253,9 @@
         </main>
     </div>
 
-    <!-- Bottom Activity Navigation Bar -->
-    <nav class="bottom-activity-bar">
-        <button class="tab-btn active" data-tab="tab-explorer">
-            <i data-lucide="files" style="width: 18px; height: 18px;"></i>
-            <span>Explorer</span>
-        </button>
-        <button class="tab-btn" data-tab="tab-chat">
-            <i data-lucide="message-square" style="width: 18px; height: 18px;"></i>
-            <span>Chat</span>
-        </button>
-        <button class="tab-btn" data-tab="tab-dashboard">
-            <i data-lucide="layout-dashboard" style="width: 18px; height: 18px;"></i>
-            <span>Dashboard</span>
-        </button>
-        <button class="tab-btn" data-tab="tab-history">
-            <i data-lucide="history" style="width: 18px; height: 18px;"></i>
-            <span>History</span>
-        </button>
-        <button class="tab-btn" data-tab="tab-control">
-            <i data-lucide="sliders" style="width: 18px; height: 18px;"></i>
-            <span>Control</span>
-        </button>
-    </nav>
 
-    <!-- IDE Bottom Status Bar -->
+
+<!-- IDE Bottom Status Bar -->
     <div class="bottom-status-bar">
         <span style="display: flex; align-items: center; gap: 6px;">
             <i data-lucide="radio" style="width: 11px; height: 11px; color: var(--accent-emerald);"></i>
@@ -1324,7 +2279,7 @@
             </div>
         </div>
         <div class="viewer-body">
-            <table class="code-table" id="code-table-body"></table>
+            <div id="code-table-body" style="display: flex; flex-direction: column; width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; line-height: 1.5; color: var(--ag-ink); overflow-x: auto; padding-bottom: 24px;"></div>
         </div>
     </div>
 
@@ -1411,34 +2366,1162 @@
         }
 
         // Tab Navigation with Anime.js Spring Animations
-        const tabBtns = document.querySelectorAll('.tab-btn');
+        /* ═══════════════════════════════════════════════════════
+         * PREMIUM AGENT UI COMPONENTS — Rendering Engine
+         * Vanilla JS renderers for all 13 components
+         * ═══════════════════════════════════════════════════════ */
+
+        // ── Component State Management ─────────────────────
+        const _agState = {
+            loadingStartTime: null,
+            loadingTimerInterval: null,
+            thinkingExpanded: {},
+            thinkingStartTimes: {},
+            toolChipExpanded: {},
+            toolChipBodyOpen: {},
+            taskRowExpanded: {},
+            approvalState: {},
+            streamingProgress: {},
+            sourcesOpen: {},
+            codeBlockProgress: {},
+            promptMenuOpen: null,
+            promptModelOpen: false,
+            promptAttachments: [],
+            searchQuery: '',
+            recDrawerOpen: {},
+            recAccepted: {},
+            recSelected: {},
+        };
+
+        // ── SVG Icon Helpers ───────────────────────────────
+        function _agIcon(paths, size = 14, strokeWidth = 2) {
+            return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+        }
+        const _agIcons = {
+            sparkle: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>`,
+            chevronDown: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`,
+            check: `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`,
+            copy: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+            retry: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.5 9A9 9 0 0 0 5.6 5.6L1 10m22 4l-4.6 4.4A9 9 0 0 1 3.5 15"/></svg>`,
+            thumbUp: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12M15 5.88L14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.7a2 2 0 0 0 1.66-.9L12 2a3.1 3.1 0 0 1 3 3.88z"/></svg>`,
+            thumbDown: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 14V2M9 18.12L10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.7a2 2 0 0 0-1.66.9L12 22a3.1 3.1 0 0 1-3-3.88z"/></svg>`,
+            reply: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17l-5-5 5-5"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>`,
+            plus: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>`,
+            arrowUp: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>`,
+            search: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>`,
+            close: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>`,
+            file: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>`,
+            externalLink: `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>`,
+            bars: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>`,
+            x: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>`,
+            pencil: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>`,
+            terminal: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-5-6-5M12 19h8"/></svg>`,
+            eye: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
+            star: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>`,
+            mic: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg>`,
+        };
+
+        // ── Utility: Format elapsed time ───────────────────
+        function _agFormatElapsed(ms) {
+            const s = Math.floor(ms / 1000);
+            const m = Math.floor(s / 60);
+            const secs = s % 60;
+            if (m > 0) return `${m}:${String(secs).padStart(2, '0')}`;
+            return `${s}.${Math.floor((ms % 1000) / 100)}s`;
+        }
+
+        // ══════════════════════════════════════════════════
+        // COMPONENT 1: LOADING STATE (Vanilla JS Port)
+        // ══════════════════════════════════════════════════
+        class LoadingStateUI {
+            constructor(container, label = "Churning", variant = "Drive") {
+                this.container = container;
+                this.label = label;
+                this.variant = variant;
+                this.ds = 0;
+                this.timer = null;
+                
+                this.chevron = Array.from({ length: 9 }, (_, i) => {
+                    const r = Math.floor(i / 3), c = i % 3;
+                    return (c + Math.abs(r - 1)) * 90;
+                });
+                
+                this.ORBIT_ORDER = [0, 1, 2, 5, 8, 7, 6, 3];
+                this.orbit = Array.from({ length: 9 }, (_, i) => {
+                    const k = this.ORBIT_ORDER.indexOf(i);
+                    return k === -1 ? null : k * 110;
+                });
+                
+                this.PATTERNS = {
+                    Drive: { delays: this.chevron, dur: 650, round: false },
+                    Dots: { delays: this.chevron, dur: 650, round: true },
+                    Orbit: { delays: this.orbit, dur: 950, round: false },
+                };
+                
+                this.pattern = this.PATTERNS[this.variant] || this.PATTERNS.Drive;
+                this.render();
+                this.startTimer();
+            }
+            
+            startTimer() {
+                this.timer = setInterval(() => {
+                    this.ds++;
+                    const total = this.ds / 10;
+                    let elapsedStr = "";
+                    if (total < 60) elapsedStr = `${total.toFixed(1)}s`;
+                    else elapsedStr = `${Math.floor(total / 60)}m ${(total % 60).toFixed(1)}s`;
+                    
+                    const el = this.container.querySelector('.loading-elapsed');
+                    if (el) el.textContent = elapsedStr;
+                }, 100);
+            }
+            
+            destroy() {
+                if (this.timer) clearInterval(this.timer);
+            }
+            
+            render() {
+                const delays = this.pattern.delays;
+                const dur = this.pattern.dur;
+                const round = this.pattern.round;
+                
+                let cellsHtml = '';
+                delays.forEach((d) => {
+                    const opacity = d === null ? 0.07 : 0.15;
+                    const anim = d === null ? "none" : `ag-pixel-on ${dur}ms ease-in-out ${d}ms infinite`;
+                    const rounded = round ? "rounded-full" : "rounded-[1px]";
+                    cellsHtml += `<span class="size-[4px] bg-ink ${rounded}" style="opacity: ${opacity}; animation: ${anim};"></span>`;
+                });
+                
+                this.container.innerHTML = `
+                    <div class="flex w-fit items-center gap-2.5 bg-white px-3 py-1.5 rounded-[8px]" style="box-shadow: 0 2px 10px rgba(255,255,255,0.1);">
+                        <span aria-hidden="true" class="grid grid-cols-[repeat(3,4px)] gap-[1.5px]">
+                            ${cellsHtml.replace(/bg-ink/g, 'bg-black')}
+                        </span>
+                        <span class="text-[13px] font-semibold text-black">
+                            ${escapeHtml(this.label)}
+                        </span>
+                        <span class="loading-elapsed font-mono text-[12px] text-gray-600 tabular-nums">0.0s</span>
+                    </div>
+                `;
+            }
+        }
+        
+        function renderAgentLoadingState(label, variant = 'Drive') {
+            return `<div class="ag-loading-placeholder" data-label="${escapeHtml(label)}" data-variant="${escapeHtml(variant)}"></div>`;
+        }
+
+        // ══════════════════════════════════════════════════
+        // COMPONENT 2: THINKING STATE (Vanilla JS Port)
+        // ══════════════════════════════════════════════════
+        class ThinkingStateUI {
+            constructor(container, variant = "Steps", initialLogs = "") {
+                this.container = container;
+                this.variant = variant;
+                this.initialLogs = initialLogs || "";
+                
+                this.STAGES = [800, 600, 1800, 2600, 1600];
+                this.TONES = ["bg-accent", "bg-orange", "bg-green"];
+                this.VARIANTS = {
+                    Steps: {
+                        active: "Thinking",
+                        done: "Thought for 4 seconds",
+                        rows: [
+                            { primary: "Reading flavor briefs" },
+                            { primary: "Scanning supplier lists" },
+                            { primary: "Comparing tasting notes", secondary: "6 flavors" },
+                            { primary: "Writing the scoop report" },
+                        ],
+                    },
+                    Reasoning: {
+                        active: "Thinking",
+                        done: "Thought for 4 seconds",
+                        rows: [
+                            { primary: "Summer demand spikes for stone-fruit flavors — peach and apricot lead." },
+                            { primary: "I should check cone inventory before promoting a waffle-bowl special." },
+                        ],
+                    },
+                    Search: {
+                        active: "Searching the web",
+                        done: "Searched the web",
+                        query: "best waffle cone supplier",
+                        rows: [
+                            { primary: "Joy Cone", secondary: "joycone.com", href: "https://joycone.com/fs_products/waffle-cones/" },
+                            { primary: "WebstaurantStore", secondary: "webstaurantstore.com", href: "https://www.webstaurantstore.com/ice-cream-shop-supplies.html" },
+                            { primary: "The Konery", secondary: "thekonery.com", href: "https://www.thekonery.com/" },
+                        ],
+                    },
+                    Coding: {
+                        active: "Running tools",
+                        done: "Ran tools",
+                        rows: [
+                            { primary: "Read", secondary: "flavors.ts", mono: true },
+                            { primary: "Edit", secondary: "ChurnSchedule.tsx", mono: true, add: 74, del: 41 },
+                            { primary: "Run", secondary: "npm run freeze", mono: true },
+                        ],
+                    },
+                };
+                
+                this.v = this.VARIANTS[this.variant] || this.VARIANTS.Steps;
+                
+                this.isRealLogs = false;
+                // If we have actual logs from the IDE, we can dynamically build the rows
+                if (this.initialLogs) {
+                    const lines = this.initialLogs.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                    if (lines.length > 0) {
+                        this.isRealLogs = true;
+                        this.v.rows = lines.map(line => {
+                            // Strip timestamps like [13:03:00]
+                            let cleanLine = line.replace(/^\[\d{2}:\d{2}:\d{2}\]\s*/, '');
+                            return { primary: cleanLine };
+                        });
+                    }
+                }
+                
+                this.stage = 0;
+                this.manualExpanded = null;
+                this.selectedTool = null;
+                this.timers = [];
+                
+                this.render();
+                this.runSequence();
+            }
+            
+            runSequence() {
+                if (this.isRealLogs) {
+                    this.stage = 2; // Keep at working stage
+                    this.render();
+                    return;
+                }
+                const advance = () => {
+                    if (this.stage >= this.STAGES.length - 1) return;
+                    this.stage++;
+                    this.render();
+                    const t = setTimeout(advance, this.STAGES[this.stage]);
+                    this.timers.push(t);
+                };
+                const t0 = setTimeout(advance, this.STAGES[this.stage]);
+                this.timers.push(t0);
+            }
+            
+            update(logs) {
+                if (this.initialLogs === logs) return;
+                this.initialLogs = logs || "";
+                const lines = this.initialLogs.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                if (lines.length > 0) {
+                    this.isRealLogs = true;
+                    this.v.rows = lines.map(line => {
+                        let cleanLine = line.replace(/^\[\d{2}:\d{2}:\d{2}\]\s*/, '');
+                        return { primary: cleanLine };
+                    });
+                }
+                this.render();
+            }
+            
+            destroy() {
+                this.timers.forEach(t => clearTimeout(t));
+            }
+            
+            toggleExpanded() {
+                const autoExpanded = this.stage >= 1 && this.stage < 4;
+                this.manualExpanded = !(this.manualExpanded ?? autoExpanded);
+                this.render();
+            }
+            
+            toggleTool(toolName) {
+                this.selectedTool = this.selectedTool === toolName ? null : toolName;
+                this.render();
+            }
+            
+            render() {
+                const autoExpanded = this.stage >= 1 && this.stage < 4;
+                const expanded = this.manualExpanded ?? autoExpanded;
+                const working = this.stage < 3;
+                const visible = this.stage < 2 ? 0 : this.stage === 2 ? Math.min(2, this.v.rows.length) : this.v.rows.length;
+                
+                let headerHtml = '';
+                if (working) {
+                    headerHtml = `
+                        <span class="bg-clip-text text-[13px] font-medium whitespace-nowrap text-transparent"
+                              style="background-image: linear-gradient(90deg, var(--ink-3) 35%, var(--ink) 50%, var(--ink-3) 65%); background-size: 200% 100%; animation: ag-shimmer-text 1.4s linear infinite;">
+                            ${this.v.active}
+                        </span>
+                    `;
+                } else {
+                    headerHtml = `
+                        <span class="text-[13px] font-medium whitespace-nowrap text-ink-2"
+                              style="animation: ag-fade-in 350ms ease-out both;">
+                            ${this.v.done}
+                        </span>
+                    `;
+                }
+                
+                let rowsHtml = '';
+                if (this.v.query) {
+                    rowsHtml += `
+                        <div class="flex h-6 items-center gap-2 px-1.5" style="${expanded ? 'animation: ag-fade-up 300ms cubic-bezier(0.23,1,0.32,1) both;' : ''}">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round" class="shrink-0">
+                                <circle cx="11" cy="11" r="7"></circle>
+                                <path d="M21 21l-4.3-4.3"></path>
+                            </svg>
+                            <span class="text-[12.5px] text-ink-2">${escapeHtml(this.v.query)}</span>
+                        </div>
+                    `;
+                }
+                
+                this.v.rows.slice(0, visible).forEach((row, i) => {
+                    let iconHtml = '';
+                    if (this.variant === "Search") {
+                        const tone = this.TONES[i % 3];
+                        iconHtml = `
+                            <span class="flex size-3.5 shrink-0 items-center justify-center rounded-full text-white ${tone}">
+                                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <circle cx="12" cy="12" r="9"></circle>
+                                    <path d="M3.5 12h17M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"></path>
+                                </svg>
+                            </span>
+                        `;
+                    } else if (this.variant === "Steps") {
+                        if (i < visible - 1 || !working) {
+                            iconHtml = `
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+                                    <path d="M20 6L9 17l-5-5"></path>
+                                </svg>
+                            `;
+                        } else {
+                            iconHtml = `
+                                <span class="size-3 shrink-0 rounded-full border-[1.5px] border-line-strong border-t-ink-2" style="animation: ag-spin 700ms linear infinite;"></span>
+                            `;
+                        }
+                    }
+                    
+                    const textClass = this.variant === "Reasoning" ? "whitespace-normal leading-relaxed text-ink-2" : "font-medium text-ink";
+                    const underlineClass = this.variant === "Search" ? "underline decoration-line hover:decoration-ink-2" : "";
+                    let contentHtml = `
+                        ${iconHtml}
+                        <span class="min-w-0 truncate text-[12.5px] ${textClass} ${underlineClass}">${escapeHtml(row.primary)}</span>
+                    `;
+                    
+                    if (row.secondary) {
+                        contentHtml += `<span class="shrink-0 text-[11.5px] text-ink-3 ${row.mono ? 'font-mono' : ''}">${escapeHtml(row.secondary)}</span>`;
+                    }
+                    
+                    if (row.add !== undefined) {
+                        contentHtml += `
+                            <span class="shrink-0 font-mono text-[11px] tabular-nums">
+                                <span class="text-green">+${row.add}</span> <span class="text-red">−${row.del}</span>
+                            </span>
+                        `;
+                    }
+                    
+                    const rowClass = "flex min-h-7 w-full items-center gap-2 rounded-[6px] px-1.5 py-0.5 text-left";
+                    const animStyle = `animation: ag-fade-up 320ms cubic-bezier(0.23,1,0.32,1) ${i * 120}ms both;`;
+                    
+                    if (this.variant === "Search") {
+                        rowsHtml += `<a href="${row.href || '#'}" target="_blank" class="${rowClass} transition-colors duration-150 hover:bg-hover" style="${animStyle}">${contentHtml}</a>`;
+                    } else if (this.variant === "Coding") {
+                        const selected = this.selectedTool === row.primary;
+                        const bgClass = selected ? "bg-inset" : "hover:bg-hover";
+                        rowsHtml += `<button type="button" aria-pressed="${selected}" data-action="toggle-tool" data-tool="${escapeHtml(row.primary)}" class="${rowClass} transition-colors duration-150 ${bgClass}" style="${animStyle} background: transparent; border: none; outline: none; appearance: none; box-shadow: none;">${contentHtml}</button>`;
+                    } else {
+                        rowsHtml += `<div class="${rowClass}" style="${animStyle}">${contentHtml}</div>`;
+                    }
+                });
+                
+                if (this.variant === "Search" && this.stage >= 3) {
+                    rowsHtml += `<span class="text-[12px] text-ink-3" style="animation: ag-fade-in 300ms ease-out both;">+7 more</span>`;
+                }
+                
+                this.container.innerHTML = `
+                    <div class="flex min-h-[176px] w-full max-w-[380px] flex-col">
+                        <button type="button" aria-expanded="${expanded}" data-action="toggle-expanded" class="-mx-1.5 flex w-fit items-center gap-2 rounded-control px-1.5 py-1 transition-colors duration-100 hover:bg-hover-2" style="background: transparent; border: none; outline: none; appearance: none; box-shadow: none;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="${working ? 'var(--ink-2)' : 'var(--ink-3)'}">
+                                <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"></path>
+                            </svg>
+                            ${headerHtml}
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-300" style="transform: ${expanded ? 'rotate(180deg)' : 'rotate(0)'};">
+                                <path d="M6 9l6 6 6-6"></path>
+                            </svg>
+                        </button>
+                        
+                        <div class="grid transition-[grid-template-rows,opacity] duration-400" style="grid-template-rows: ${expanded ? '1fr' : '0fr'}; opacity: ${expanded ? '1' : '0'}; transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);">
+                            <div class="overflow-hidden">
+                                <div class="relative mt-1 ml-[5px] pl-4">
+                                    <span aria-hidden="true" class="absolute left-[3px] w-px bg-line" style="top: -8px; height: 100%; transition: height 500ms cubic-bezier(0.23,1,0.32,1);"></span>
+                                    <div class="flex flex-col gap-1 py-1">
+                                        ${rowsHtml}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Attach event listeners
+                const toggleBtn = this.container.querySelector('[data-action="toggle-expanded"]');
+                if (toggleBtn) {
+                    toggleBtn.onclick = () => this.toggleExpanded();
+                }
+                
+                const toolBtns = this.container.querySelectorAll('[data-action="toggle-tool"]');
+                toolBtns.forEach(btn => {
+                    btn.onclick = () => this.toggleTool(btn.getAttribute('data-tool'));
+                });
+            }
+        }
+
+        // ══════════════════════════════════════════════════
+        // COMPONENT 3: STREAMING TEXT
+        // ══════════════════════════════════════════════════
+        function renderStreamingText(streamId, text, opts = {}) {
+            const { sources = [], followUps = [], done = false, citations = [], animate = false } = opts;
+            const words = (text || '').split(/(\s+)/);
+            let textHtml = '';
+            words.forEach((w, i) => {
+                if (w.trim() === '') { textHtml += w; return; }
+                if (animate) {
+                    textHtml += `<span class="ag-streaming-word" style="animation-delay:${i * 30}ms">${escapeHtml(w)}</span>`;
+                } else {
+                    textHtml += escapeHtml(w);
+                }
+            });
+
+            // Inline citation chips
+            citations.forEach(c => {
+                textHtml += ` <span class="ag-source-chip" title="${escapeHtml(c.title || '')}">${escapeHtml(c.label || c.domain || '')}</span>`;
+            });
+
+            if (!done) {
+                textHtml += `<span class="ag-streaming-cursor"></span>`;
+            }
+
+            // Action buttons
+            const actionsOpacity = done ? '1' : '0';
+            const actionsHtml = `<div class="ag-actions-row" style="opacity:${actionsOpacity}">
+                <button class="ag-action-btn" title="Copy" onclick="_agCopyText('${streamId}')">${_agIcons.copy}</button>
+                <button class="ag-action-btn" title="Retry">${_agIcons.retry}</button>
+                <button class="ag-action-btn" title="Like">${_agIcons.thumbUp}</button>
+                <button class="ag-action-btn" title="Dislike">${_agIcons.thumbDown}</button>
+                ${sources.length > 0 ? `<button class="ag-sources-btn" onclick="_agToggleSources('${streamId}')">
+                    <div class="ag-sources-avatars">${sources.slice(0, 3).map((s, i) => `<img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(s.domain || 'example.com')}&sz=32" alt="" style="z-index:${3-i}">`).join('')}</div>
+                    <span class="ag-sources-count">${sources.length} sources</span>
+                </button>` : ''}
+            </div>`;
+
+            // Sources panel
+            const sourcesOpen = _agState.sourcesOpen[streamId];
+            const sourcesHtml = sources.length > 0 ? `<div class="ag-sources-panel ${sourcesOpen ? 'open' : 'closed'}">
+                <div>
+                    <div class="ag-sources-list">
+                        ${sources.map(s => `<a class="ag-source-row" href="${escapeHtml(s.url || '#')}" target="_blank" rel="noopener">
+                            <img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(s.domain || 'example.com')}&sz=32" alt="">
+                            <span class="name">${escapeHtml(s.title || s.domain || '')}</span>
+                            <span class="domain">${escapeHtml(s.domain || '')}</span>
+                        </a>`).join('')}
+                    </div>
+                </div>
+            </div>` : '';
+
+            // Follow-ups
+            const followHtml = (done && followUps.length > 0) ? `<div class="ag-followups">
+                ${followUps.map(f => `<button class="ag-followup-btn" onclick="_agInsertFollowup('${escapeHtml(f)}')">${_agIcons.reply}<span>${escapeHtml(f)}</span></button>`).join('')}
+            </div>` : '';
+
+            return `<div class="ag-streaming" id="ag-stream-${streamId}">
+                <div style="font-size: 11.5px; font-weight: 600; color: var(--accent-emerald); margin-bottom: 6px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="sparkles" style="width: 14px; height: 14px; color: var(--accent-emerald);"></i> Agent Response :
+                </div>
+                <div class="ag-streaming-text" data-ag-stream-text="${streamId}">${textHtml}</div>
+                ${actionsHtml}
+                ${sourcesHtml}
+                ${followHtml}
+            </div>`;
+        }
+
+        function _agCopyText(id) {
+            const el = document.querySelector(`[data-ag-stream-text="${id}"]`);
+            if (el) { navigator.clipboard.writeText(el.textContent).catch(() => {}); }
+        }
+        function _agToggleSources(id) {
+            _agState.sourcesOpen[id] = !_agState.sourcesOpen[id];
+            const panel = document.querySelector(`#ag-stream-${id} .ag-sources-panel`);
+            if (panel) {
+                panel.classList.toggle('open', _agState.sourcesOpen[id]);
+                panel.classList.toggle('closed', !_agState.sourcesOpen[id]);
+            }
+        }
+        function _agInsertFollowup(text) {
+            const input = document.getElementById('chat-input');
+            if (input) { input.value = text; input.focus(); }
+        }
+
+        // ══════════════════════════════════════════════════
+        // COMPONENT 4: APPROVAL CARD
+        // ══════════════════════════════════════════════════
+        function renderApprovalCard(cardId, questions) {
+            if (!questions || questions.length === 0) return '';
+            const state = _agState.approvalState[cardId] || (_agState.approvalState[cardId] = { qi: 0, answers: {}, custom: {}, sent: false, dismissed: false });
+            if (state.dismissed) {
+                return `<div class="ag-approval" id="ag-approval-${cardId}">
+                    <button class="ag-approval-restart" onclick="_agApprovalRestart('${cardId}')">Review questions</button>
+                </div>`;
+            }
+            if (state.sent) {
+                return `<div class="ag-approval" id="ag-approval-${cardId}">
+                    <div class="ag-approval-card"><div class="ag-approval-sent">
+                        <span class="ag-approval-sent-check">${_agIcons.check}</span>
+                        <span class="ag-approval-sent-text">Answers sent</span>
+                        <button class="ag-approval-restart" onclick="_agApprovalRestart('${cardId}')">Review again</button>
+                    </div></div>
+                </div>`;
+            }
+
+            const q = questions[state.qi];
+            const isRadio = q.type === 'radio';
+            const answers = state.answers[state.qi] || [];
+            const last = state.qi === questions.length - 1;
+            const hasAnswer = answers.length > 0 || (state.custom[state.qi] && state.custom[state.qi].trim());
+
+            let optsHtml = (q.options || []).map((opt, i) => {
+                const selected = answers.includes(i);
+                const indClass = isRadio ? 'radio' : 'check';
+                const onClass = selected ? 'on' : 'off';
+                return `<button class="ag-approval-opt" onclick="_agApprovalSelect('${cardId}', ${state.qi}, ${i}, ${isRadio})">
+                    <span class="ag-approval-indicator ${indClass} ${onClass}">
+                        ${isRadio ? `<span class="dot"></span>` : (selected ? _agIcons.check : '')}
+                    </span>
+                    <span class="ag-approval-opt-text ${onClass}">${escapeHtml(opt)}</span>
+                </button>`;
+            }).join('');
+
+            // Custom write-in
+            optsHtml += `<label class="ag-approval-custom">
+                <span style="width:16px;height:16px;flex-shrink:0;"></span>
+                <input placeholder="Type something…" value="${escapeHtml(state.custom[state.qi] || '')}" oninput="_agApprovalCustom('${cardId}', ${state.qi}, this.value, ${isRadio})">
+            </label>`;
+
+            // Dots
+            const dotsHtml = questions.map((_, i) => {
+                const isCurrent = i === state.qi;
+                const isDone = state.sent || i < state.qi;
+                let style = '';
+                if (isCurrent && !state.sent) style = `width:9px; height:9px; border:2.5px solid var(--ag-ink);`;
+                else if (isDone) style = `width:7px; height:7px; background:var(--ag-ink-3);`;
+                else style = `width:7px; height:7px; border:1.5px solid var(--ag-ink-3);`;
+                return `<button class="ag-approval-dot" onclick="_agApprovalGoTo('${cardId}', ${i})" style="${style}"></button>`;
+            }).join('');
+
+            const sendBg = hasAnswer ? 'var(--ag-ink)' : 'var(--ag-field)';
+            const sendColor = hasAnswer ? 'var(--ag-surface)' : 'var(--ag-ink-3)';
+
+            return `<div class="ag-approval" id="ag-approval-${cardId}">
+                <div class="ag-approval-card">
+                    <div class="ag-approval-body">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+                            <span class="ag-approval-q">${escapeHtml(q.question)}</span>
+                            <button class="ag-approval-dismiss" onclick="_agApprovalDismiss('${cardId}')">${_agIcons.close}</button>
+                        </div>
+                        <div class="ag-approval-options">${optsHtml}</div>
+                    </div>
+                    <div class="ag-approval-footer">
+                        <span class="ag-approval-nav">
+                            <button class="ag-approval-nav-btn" ${state.qi === 0 ? 'disabled' : ''} onclick="_agApprovalNav('${cardId}', -1)">
+                                ${_agIcon('<path d="M15 18l-6-6 6-6"/>', 14, 2.2)}
+                            </button>
+                            <span class="ag-approval-dots">${dotsHtml}</span>
+                            <button class="ag-approval-nav-btn" ${last ? 'disabled' : ''} onclick="_agApprovalNav('${cardId}', 1)">
+                                ${_agIcon('<path d="M9 6l6 6-6 6"/>', 14, 2.2)}
+                            </button>
+                        </span>
+                        <button class="ag-approval-send" onclick="_agApprovalSend('${cardId}', ${last})"
+                            style="background:${sendBg}; color:${sendColor}; box-shadow:${hasAnswer ? 'inset 0 1px 0 rgba(255,255,255,0.14)' : 'var(--shadow-btn, 0 1px 2px rgba(0,0,0,0.2))'}"
+                            ${!hasAnswer ? 'disabled' : ''}>
+                            ${_agIcons.arrowUp}
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function _agApprovalSelect(cardId, qi, optIdx, isRadio) {
+            const state = _agState.approvalState[cardId];
+            if (!state || state.sent) return;
+            if (isRadio) {
+                state.answers[qi] = [optIdx];
+                state.custom[qi] = '';
+            } else {
+                const cur = state.answers[qi] || [];
+                if (cur.includes(optIdx)) state.answers[qi] = cur.filter(x => x !== optIdx);
+                else state.answers[qi] = [...cur, optIdx];
+            }
+            const el = document.getElementById('ag-approval-' + cardId);
+            if (el) el.outerHTML = renderApprovalCard(cardId, el._agQuestions || []);
+        }
+        function _agApprovalCustom(cardId, qi, val, isRadio) {
+            const state = _agState.approvalState[cardId];
+            if (!state) return;
+            state.custom[qi] = val;
+            if (isRadio) state.answers[qi] = [];
+        }
+        function _agApprovalNav(cardId, dir) {
+            const state = _agState.approvalState[cardId];
+            if (!state) return;
+            state.qi = Math.max(0, state.qi + dir);
+            const el = document.getElementById('ag-approval-' + cardId);
+            if (el) el.outerHTML = renderApprovalCard(cardId, el._agQuestions || []);
+        }
+        function _agApprovalGoTo(cardId, idx) {
+            const state = _agState.approvalState[cardId];
+            if (!state || state.sent) return;
+            state.qi = idx;
+            const el = document.getElementById('ag-approval-' + cardId);
+            if (el) el.outerHTML = renderApprovalCard(cardId, el._agQuestions || []);
+        }
+        function _agApprovalSend(cardId, isLast) {
+            const state = _agState.approvalState[cardId];
+            if (!state) return;
+            if (isLast) { state.sent = true; }
+            else { state.qi = Math.min(state.qi + 1, 99); }
+            const el = document.getElementById('ag-approval-' + cardId);
+            if (el) el.outerHTML = renderApprovalCard(cardId, el._agQuestions || []);
+        }
+        function _agApprovalDismiss(cardId) {
+            const state = _agState.approvalState[cardId];
+            if (state) state.dismissed = true;
+            const el = document.getElementById('ag-approval-' + cardId);
+            if (el) el.outerHTML = renderApprovalCard(cardId, el._agQuestions || []);
+        }
+        function _agApprovalRestart(cardId) {
+            _agState.approvalState[cardId] = { qi: 0, answers: {}, custom: {}, sent: false, dismissed: false };
+            const el = document.getElementById('ag-approval-' + cardId);
+            if (el) el.outerHTML = renderApprovalCard(cardId, el._agQuestions || []);
+        }
+
+        // ══════════════════════════════════════════════════
+        // COMPONENT 5: TOOL CHIPS
+        // ══════════════════════════════════════════════════
+        function renderToolChips(chipSetId, toolCalls, fileDiffs) {
+            const bodyOpen = _agState.toolChipBodyOpen[chipSetId] !== undefined ? _agState.toolChipBodyOpen[chipSetId] : true;
+            const msgCount = toolCalls ? toolCalls.filter(t => t.type === 'message').length : 0;
+            const callCount = toolCalls ? toolCalls.length - msgCount : 0;
+            const headerText = `${callCount} tool call${callCount !== 1 ? 's' : ''}${msgCount ? `, ${msgCount} message${msgCount !== 1 ? 's' : ''}` : ''}`;
+
+            const iconMap = {
+                think: `<path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/>`,
+                write: `<path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`,
+                run: `<path d="M4 17l6-5-6-5M12 19h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`,
+                read: `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/>`,
+            };
+
+            const rowsHtml = (toolCalls || []).map((tc, i) => {
+                const expanded = _agState.toolChipExpanded[`${chipSetId}-${i}`];
+                const iconSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${iconMap[tc.icon] || iconMap.think}</svg>`;
+                const chevron = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
+
+                let detailHtml = '';
+                if (tc.detail && tc.detail.length) {
+                    detailHtml = `<div class="ag-tc-detail ${expanded ? 'open' : 'closed'}"><div><div class="ag-tc-detail-inner">
+                        ${tc.detail.map(d => `<div class="ag-tc-detail-line ${d.type === 'add' ? 'add mono' : 'normal'}">${escapeHtml(d.text)}</div>`).join('')}
+                    </div></div></div>`;
+                }
+
+                return `<div style="animation:ag-fade-up 350ms cubic-bezier(0.23,1,0.32,1) ${i * 50}ms both">
+                    <button class="ag-tc-row-btn ${expanded ? 'expanded' : ''}" onclick="_agToggleToolChip('${chipSetId}', ${i})">
+                        <span class="ag-tc-row-icon">
+                            <span class="default-icon">${iconSvg}</span>
+                            <span class="chevron-icon">${chevron}</span>
+                        </span>
+                        <span class="ag-tc-row-label">${escapeHtml(tc.label)}</span>
+                        ${tc.chip ? `<span class="ag-tc-row-chip ${tc.mono ? 'mono' : ''}">${escapeHtml(tc.chip)}</span>` : ''}
+                    </button>
+                    ${detailHtml}
+                </div>`;
+            }).join('');
+
+            const diffsHtml = (fileDiffs && fileDiffs.length) ? `<div class="ag-tc-diffs">
+                ${fileDiffs.slice(0, 3).map((d, i) => `<span class="ag-tc-diff-chip" style="animation-delay:${i * 60}ms">
+                    <span class="file">${escapeHtml(d.file)}</span>
+                    <span class="add">+${d.additions || 0}</span>
+                    <span class="del">−${d.deletions || 0}</span>
+                </span>`).join('')}
+                ${fileDiffs.length > 3 ? `<button class="ag-tc-more">+${fileDiffs.length - 3} more</button>` : ''}
+            </div>` : '';
+
+            return `<div class="ag-tool-chips" id="ag-tc-${chipSetId}">
+                <button class="ag-tc-header" onclick="_agToggleToolChipBody('${chipSetId}')">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(${bodyOpen ? '0' : '-90'}deg)"><path d="M6 9l6 6 6-6"/></svg>
+                    ${headerText}
+                </button>
+                <div class="ag-tc-body ${bodyOpen ? 'open' : 'closed'}"><div>
+                    <div class="ag-tc-rows">${rowsHtml}</div>
+                    ${diffsHtml}
+                </div></div>
+            </div>`;
+        }
+
+        function _agToggleToolChip(setId, idx) {
+            const key = `${setId}-${idx}`;
+            _agState.toolChipExpanded[key] = !_agState.toolChipExpanded[key];
+            const btn = document.querySelectorAll(`#ag-tc-${setId} .ag-tc-row-btn`)[idx];
+            if (!btn) return;
+            btn.classList.toggle('expanded', _agState.toolChipExpanded[key]);
+            const detail = btn.nextElementSibling;
+            if (detail && detail.classList.contains('ag-tc-detail')) {
+                detail.classList.toggle('open', _agState.toolChipExpanded[key]);
+                detail.classList.toggle('closed', !_agState.toolChipExpanded[key]);
+            }
+        }
+        function _agToggleToolChipBody(setId) {
+            _agState.toolChipBodyOpen[setId] = !_agState.toolChipBodyOpen[setId];
+            const container = document.getElementById('ag-tc-' + setId);
+            if (!container) return;
+            const body = container.querySelector('.ag-tc-body');
+            const chevron = container.querySelector('.ag-tc-header svg');
+            if (body) { body.classList.toggle('open', _agState.toolChipBodyOpen[setId]); body.classList.toggle('closed', !_agState.toolChipBodyOpen[setId]); }
+            if (chevron) chevron.style.transform = `rotate(${_agState.toolChipBodyOpen[setId] ? '0' : '-90'}deg)`;
+        }
+
+        // ══════════════════════════════════════════════════
+        // COMPONENT 6: TASK ROWS
+        // ══════════════════════════════════════════════════
+        function renderTaskRows(taskListId, tasks, variant = 'capsule') {
+            const isList = variant === 'list';
+            const rowsHtml = (tasks || []).map((task, i) => {
+                const expanded = _agState.taskRowExpanded[`${taskListId}-${i}`];
+                let badge = '';
+                if (task.status === 'completed') {
+                    badge = `<span class="ag-task-badge-done">${_agIcons.check}</span>`;
+                } else if (task.status === 'failed') {
+                    badge = `<span class="ag-task-badge-failed">${_agIcons.x}</span>`;
+                } else {
+                    const pct = task.progress || 0;
+                    const r = 10, c = 2 * Math.PI * r, dash = (pct / 100) * c;
+                    badge = `<span class="ag-task-badge-ring" style="width:24px; height:24px;">
+                        <svg width="24" height="24" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="${r}" fill="none" stroke="var(--ag-line)" stroke-width="2.5"/>
+                            <circle cx="12" cy="12" r="${r}" fill="none" stroke="var(--ag-accent)" stroke-width="2.5"
+                                stroke-dasharray="${dash} ${c}" stroke-linecap="round"
+                                transform="rotate(-90 12 12)" style="transition:stroke-dasharray 0.5s ease"/>
+                        </svg>
+                        <span class="number">${i + 1}</span>
+                    </span>`;
+                }
+
+                let pillHtml = '';
+                if (task.status === 'completed') pillHtml = `<span class="ag-task-pill completed">Completed</span>`;
+                else if (task.status === 'failed') pillHtml = `<span class="ag-task-pill failed"><span class="retry-spin">${_agIcons.retry}</span>Retry</span>`;
+
+                let detailHtml = '';
+                if (task.details && task.details.length) {
+                    detailHtml = `<div class="ag-task-detail ${expanded ? 'open' : 'closed'}"><div><div class="ag-task-detail-inner">
+                        ${task.details.map(d => `<div class="ag-task-detail-item"><span class="label">${escapeHtml(d.label)}</span><span class="meta">${escapeHtml(d.value)}</span></div>`).join('')}
+                    </div></div></div>`;
+                }
+
+                const radius = isList ? '' : 'border-radius:12px;';
+                return `<div class="ag-task-row" style="${radius} animation-delay:${i * 80}ms">
+                    <button class="ag-task-row-btn" onclick="_agToggleTaskRow('${taskListId}', ${i})">
+                        <span class="ag-task-badge">${badge}</span>
+                        <span class="ag-task-label">${escapeHtml(task.label)}</span>
+                        ${task.amount ? `<span class="ag-task-amount">${escapeHtml(task.amount)}</span>` : ''}
+                        ${pillHtml}
+                    </button>
+                    ${detailHtml}
+                </div>`;
+            }).join('');
+
+            return `<div class="ag-task-rows ${isList ? 'list-variant' : ''}" id="ag-tasks-${taskListId}">${rowsHtml}</div>`;
+        }
+
+        function _agToggleTaskRow(listId, idx) {
+            const key = `${listId}-${idx}`;
+            _agState.taskRowExpanded[key] = !_agState.taskRowExpanded[key];
+            const container = document.getElementById('ag-tasks-' + listId);
+            if (!container) return;
+            const detail = container.querySelectorAll('.ag-task-detail')[idx];
+            if (detail) {
+                detail.classList.toggle('open', _agState.taskRowExpanded[key]);
+                detail.classList.toggle('closed', !_agState.taskRowExpanded[key]);
+            }
+        }
+
+        // ══════════════════════════════════════════════════
+        // COMPONENT 7: CHAT SECTION (reply sections)
+        // ══════════════════════════════════════════════════
+        function renderChatSection(label, sub, time, body, resolving) {
+            return `<div class="ag-chat-section ${resolving ? 'resolving' : ''}">
+                <div class="ag-chat-section-meta">
+                    <span class="label">${escapeHtml(label)}</span>
+                    <span class="sub">${escapeHtml(sub)}</span>
+                    <span class="time">for ${escapeHtml(time)}</span>
+                </div>
+                <div class="ag-chat-section-body">${escapeHtml(body)}</div>
+            </div>`;
+        }
+
+        // ══════════════════════════════════════════════════
+        // COMPONENT 8: PROMPT BAR
+        // ══════════════════════════════════════════════════
+        function renderPromptBar(barId, opts = {}) {
+            const { variant = 'rounded', placeholder = 'Write a message…' } = opts;
+            const isPill = variant === 'pill';
+            const attachments = _agState.promptAttachments || [];
+            const hasAttach = attachments.length > 0;
+
+            let attachHtml = '';
+            if (hasAttach) {
+                attachHtml = `<div class="ag-prompt-attachments">
+                    ${attachments.map((f, i) => `<span class="ag-prompt-attach-chip">
+                        ${_agIcons.file}
+                        <span class="name">${escapeHtml(f)}</span>
+                        <button class="ag-prompt-attach-remove" onclick="_agRemoveAttach(${i})">${_agIcons.close}</button>
+                    </span>`).join('')}
+                </div>`;
+            }
+
+            return `<div class="ag-prompt-bar ${isPill ? 'pill' : ''} ${hasAttach ? 'has-attachments' : ''}" id="ag-prompt-${barId}" style="position:relative;">
+                ${attachHtml}
+                <div class="ag-prompt-controls">
+                    <button class="ag-prompt-btn plus" title="Add attachments" onclick="_agPromptPlus('${barId}')">${_agIcons.plus}</button>
+                    <textarea class="ag-prompt-textarea" rows="1" placeholder="${escapeHtml(placeholder)}" aria-label="Prompt"
+                        oninput="_agPromptResize(this)"></textarea>
+                    <button class="ag-prompt-btn send-btn" style="background:var(--ag-line-strong); color:var(--ag-ink-2);" disabled>${_agIcons.arrowUp}</button>
+                </div>
+            </div>`;
+        }
+
+        function _agPromptResize(textarea) {
+            textarea.style.height = '0px';
+            textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
+            textarea.style.overflowY = textarea.scrollHeight > 100 ? 'auto' : 'hidden';
+            // Enable/disable send
+            const bar = textarea.closest('.ag-prompt-bar');
+            if (bar) {
+                const send = bar.querySelector('.ag-prompt-btn.send-btn');
+                const hasText = textarea.value.trim().length > 0;
+                if (send) {
+                    send.disabled = !hasText;
+                    send.style.background = hasText ? 'var(--ag-ink)' : 'var(--ag-line-strong)';
+                    send.style.color = hasText ? 'var(--ag-surface)' : 'var(--ag-ink-2)';
+                }
+            }
+        }
+        function _agRemoveAttach(i) {
+            _agState.promptAttachments.splice(i, 1);
+            // Re-render would happen via the main UI loop
+        }
+        function _agPromptPlus(barId) {
+            // Toggle the attachments/sources menu — simplified for this integration
+            // In the full version, this would open the @ sources menu
+        }
+
+        // ══════════════════════════════════════════════════
+        // COMPONENT 9: RECOMMENDATION CARD
+        // ══════════════════════════════════════════════════
+        function renderRecommendationCard(recId, title, options) {
+            const selected = _agState.recSelected[recId] || 0;
+            const drawerOpen = _agState.recDrawerOpen[recId] || false;
+            const accepted = _agState.recAccepted[recId] || false;
+            const active = options[selected];
+            const others = options.map((o, i) => ({ o, i })).filter(({ i }) => i !== selected);
+
+            function meterHtml(signal, tone) {
+                return `<span class="ag-rec-meter">${[0, 1, 2].map(bar =>
+                    `<span class="ag-rec-meter-bar" style="background:${bar < signal ? tone : 'var(--ag-line-strong)'}"></span>`
+                ).join('')}</span>`;
+            }
+
+            const othersHtml = others.map(({ o, i }) =>
+                `<button class="ag-rec-alt-btn" onclick="_agRecSelect('${recId}', ${i})">
+                    ${meterHtml(o.signal, o.tone)}
+                    <span class="short">${escapeHtml(o.short)}</span>
+                    <span class="label">${escapeHtml(o.label)}</span>
+                </button>`
+            ).join('');
+
+            return `<div class="ag-recommendation" id="ag-rec-${recId}">
+                <div class="ag-rec-body">
+                    <span class="ag-rec-title">${escapeHtml(title)}</span>
+                    <div class="ag-rec-text">${active.body}</div>
+                </div>
+                <div class="ag-rec-drawer ${drawerOpen ? 'open' : 'closed'}"><div>
+                    <div class="ag-rec-drawer-inner">
+                        <p class="ag-rec-drawer-label">Other options</p>
+                        ${othersHtml}
+                    </div>
+                </div></div>
+                <div class="ag-rec-footer">
+                    <span class="ag-rec-footer-left">
+                        ${meterHtml(active.signal, active.tone)}
+                        <span class="ag-rec-footer-label">${escapeHtml(active.label)}</span>
+                    </span>
+                    <span class="ag-rec-footer-right">
+                        <button class="ag-rec-alt-toggle ${drawerOpen ? 'open' : ''}" onclick="_agRecToggleDrawer('${recId}')">Alternatives</button>
+                        <button class="ag-rec-accept" onclick="_agRecAccept('${recId}')"
+                            style="background:${accepted ? 'var(--ag-green)' : active.ctaBg || 'var(--ag-ink)'}; color:${accepted ? '#fff' : active.ctaColor || 'var(--ag-canvas)'}">
+                            ${accepted ? 'Accepted' : escapeHtml(active.cta)}
+                        </button>
+                    </span>
+                </div>
+            </div>`;
+        }
+
+        function _agRecSelect(recId, idx) {
+            _agState.recSelected[recId] = idx;
+            _agState.recAccepted[recId] = false;
+            _agState.recDrawerOpen[recId] = false;
+            // Re-render needed — caller should handle
+        }
+        function _agRecToggleDrawer(recId) {
+            _agState.recDrawerOpen[recId] = !_agState.recDrawerOpen[recId];
+            const container = document.getElementById('ag-rec-' + recId);
+            if (!container) return;
+            const drawer = container.querySelector('.ag-rec-drawer');
+            const toggle = container.querySelector('.ag-rec-alt-toggle');
+            if (drawer) { drawer.classList.toggle('open', _agState.recDrawerOpen[recId]); drawer.classList.toggle('closed', !_agState.recDrawerOpen[recId]); }
+            if (toggle) toggle.classList.toggle('open', _agState.recDrawerOpen[recId]);
+        }
+        function _agRecAccept(recId) {
+            _agState.recAccepted[recId] = true;
+            const container = document.getElementById('ag-rec-' + recId);
+            if (!container) return;
+            const btn = container.querySelector('.ag-rec-accept');
+            if (btn) { btn.textContent = 'Accepted'; btn.style.background = 'var(--ag-green)'; btn.style.color = '#fff'; }
+        }
+
+        // ══════════════════════════════════════════════════
+        // COMPONENT 10: CONTEXT CARDS
+        // ══════════════════════════════════════════════════
+        function renderContextCards(ctxId, chunks, totalCount) {
+            const cardsHtml = (chunks || []).map((chunk, i) => {
+                const badgeColors = { PDF: 'var(--ag-red)', CSV: 'var(--ag-green)', JSON: 'var(--ag-accent)', TXT: 'var(--ag-ink-3)' };
+                const badgeColor = badgeColors[chunk.badge] || 'var(--ag-ink-3)';
+                return `<div class="ag-context-card" style="animation-delay:${i * 100}ms">
+                    <div class="ag-context-card-bar">
+                        <span class="ag-context-card-title">
+                            ${_agIcons.bars}
+                            <span>${escapeHtml(chunk.title)}</span>
+                        </span>
+                        <span class="ag-context-card-chars">${escapeHtml(chunk.chars)}</span>
+                    </div>
+                    <p class="ag-context-card-body">${escapeHtml(chunk.body)}</p>
+                    <div style="padding:4px 12px 12px;">
+                        <span class="ag-context-source-chip" style="transition-delay:${i * 80}ms">
+                            <span class="ag-context-badge" style="background:${badgeColor}">${escapeHtml(chunk.badge || '')}</span>
+                            ${escapeHtml(chunk.source)}
+                            ${_agIcons.externalLink}
+                        </span>
+                    </div>
+                </div>`;
+            }).join('');
+
+            return `<div class="ag-context-cards" id="ag-ctx-${ctxId}">
+                <div class="ag-context-header">
+                    <span class="ag-context-title">All chunks</span>
+                    <span class="ag-context-count">${totalCount || chunks.length}</span>
+                </div>
+                ${cardsHtml}
+            </div>`;
+        }
+
+        // ══════════════════════════════════════════════════
+        // COMPONENT 11: SIDEBAR NAV (enhanced)
+        // ══════════════════════════════════════════════════
+        function renderSidebarNav(navId, wsName, wsSub, items, sections) {
+            const initial = (wsName || 'W')[0].toUpperCase();
+
+            const sectionHtml = (sections || []).map(section => {
+                const sectionItems = items.filter(item => item.section === section);
+                return `<div>
+                    <div class="ag-sidebar-section-label">${escapeHtml(section)}</div>
+                    <div class="ag-sidebar-items">
+                        ${sectionItems.map(item => {
+                            const isActive = item.active;
+                            return `<button class="ag-sidebar-item ${isActive ? 'active' : ''}" onclick="_agSidebarSelect('${navId}', '${item.key}')">
+                                <span class="icon-wrap">${item.icon || ''}</span>
+                                <span class="item-label">${escapeHtml(item.label)}</span>
+                                ${item.count ? `<span class="item-badge">${item.count}</span>` : ''}
+                            </button>`;
+                        }).join('')}
+                    </div>
+                </div>`;
+            }).join('');
+
+            return `<div class="ag-sidebar-nav" id="ag-nav-${navId}">
+                <button class="ag-sidebar-ws">
+                    <span class="ag-sidebar-ws-avatar">${escapeHtml(initial)}</span>
+                    <span style="min-width:0; flex:1; display:flex; flex-direction:column;">
+                        <span class="ag-sidebar-ws-name">${escapeHtml(wsName)}</span>
+                        <span class="ag-sidebar-ws-sub">${escapeHtml(wsSub || '')}</span>
+                    </span>
+                </button>
+                <label class="ag-sidebar-search">
+                    ${_agIcons.search}
+                    <input placeholder="Quick search">
+                    <kbd>/</kbd>
+                </label>
+                <button class="ag-sidebar-new-task">
+                    <span style="flex:1; text-align:left;">New task</span>
+                    <span class="plus-circle">${_agIcon('<path d="M12 5v14M5 12h14"/>', 9, 3)}</span>
+                </button>
+                ${sectionHtml}
+            </div>`;
+        }
+
+        function _agSidebarSelect(navId, key) {
+            const nav = document.getElementById('ag-nav-' + navId);
+            if (!nav) return;
+            nav.querySelectorAll('.ag-sidebar-item').forEach(el => el.classList.remove('active'));
+            // Find by key (data attribute would be better, but for simplicity)
+            nav.querySelectorAll('.ag-sidebar-item').forEach(el => {
+                if (el.getAttribute('onclick')?.includes(`'${key}'`)) el.classList.add('active');
+            });
+        }
+
+        // ══════════════════════════════════════════════════
+        // COMPONENT 12: SEARCH PANEL
+        // ══════════════════════════════════════════════════
+        function renderSearchPanel(searchId, items) {
+            const query = _agState.searchQuery || '';
+            const filtered = query
+                ? (items || []).filter(item => item.toLowerCase().includes(query.toLowerCase()))
+                : (items || []).slice(0, 5);
+            const empty = query.length > 2 && filtered.length === 0;
+
+            let resultsHtml = '';
+            if (empty) {
+                resultsHtml = `<div class="ag-search-empty">
+                    <span class="ag-search-empty-icon">${_agIcons.search}</span>
+                    <span class="ag-search-empty-title">No results found</span>
+                    <span class="ag-search-empty-sub">Adjust your search to try again</span>
+                </div>`;
+            } else {
+                resultsHtml = `<div class="ag-search-results">
+                    ${filtered.map(item => `<button class="ag-search-result" onclick="_agSearchSelect('${searchId}', '${escapeHtml(item)}')">${escapeHtml(item)}</button>`).join('')}
+                </div>`;
+            }
+
+            return `<div class="ag-search" id="ag-search-${searchId}">
+                <div class="ag-search-input-row">
+                    ${_agIcons.search}
+                    <input placeholder="Search…" value="${escapeHtml(query)}" oninput="_agSearchInput('${searchId}', this.value)">
+                    ${query ? `<button class="ag-search-clear" onclick="_agSearchClear('${searchId}')">${_agIcons.close}</button>` : ''}
+                </div>
+                ${resultsHtml}
+            </div>`;
+        }
+
+        function _agSearchInput(searchId, val) {
+            _agState.searchQuery = val;
+            // Would re-render the search panel in a full implementation
+        }
+        function _agSearchClear(searchId) {
+            _agState.searchQuery = '';
+            const input = document.querySelector(`#ag-search-${searchId} input`);
+            if (input) { input.value = ''; input.focus(); }
+        }
+        function _agSearchSelect(searchId, item) {
+            _agState.searchQuery = item;
+            const input = document.querySelector(`#ag-search-${searchId} input`);
+            if (input) input.value = item;
+        }
+
+        // ══════════════════════════════════════════════════
+        // COMPONENT 13: CODE BLOCK
+        // ══════════════════════════════════════════════════
+        function renderCodeBlock(blockId, lines, filename, language, opts = {}) {
+            const { streaming = false, visibleCount } = opts;
+            const count = visibleCount !== undefined ? visibleCount : lines.length;
+            const done = count >= lines.length;
+
+            let linesHtml = '';
+            for (let i = 0; i < Math.min(count, lines.length); i++) {
+                const line = lines[i];
+                let tokensHtml = '';
+                if (Array.isArray(line)) {
+                    tokensHtml = line.map(tok => {
+                        const cls = tok.c ? `ag-code-tok-${tok.c}` : 'ag-code-tok-default';
+                        return `<span class="${cls}">${escapeHtml(tok.t)}</span>`;
+                    }).join('');
+                } else {
+                    tokensHtml = `<span class="ag-code-tok-default">${escapeHtml(line)}</span>`;
+                }
+                const isLast = i === count - 1 && !done && streaming;
+                linesHtml += `<div class="ag-code-line" style="animation-delay:${i * 40}ms">
+                    <span class="ag-code-linenum">${i + 1}</span>
+                    <span class="ag-code-content">${tokensHtml}${isLast ? '<span class="ag-code-cursor"></span>' : ''}</span>
+                </div>`;
+            }
+
+            return `<div class="ag-code-block" id="ag-code-${blockId}">
+                <div class="ag-code-header">
+                    <div class="ag-code-header-left">
+                        <span class="ag-code-filename">${escapeHtml(filename || 'code')}</span>
+                        <span class="ag-code-lang">${escapeHtml(language || '')}</span>
+                    </div>
+                    <button class="ag-code-copy" onclick="_agCopyCode('${blockId}')">
+                        ${_agIcons.copy} Copy
+                    </button>
+                </div>
+                <pre class="ag-code-pre">${linesHtml}</pre>
+            </div>`;
+        }
+
+        function _agCopyCode(blockId) {
+            const pre = document.querySelector(`#ag-code-${blockId} .ag-code-pre`);
+            if (!pre) return;
+            navigator.clipboard.writeText(pre.textContent).then(() => {
+                const btn = document.querySelector(`#ag-code-${blockId} .ag-code-copy`);
+                if (btn) {
+                    btn.classList.add('copied');
+                    btn.innerHTML = `${_agIcons.check} Copied`;
+                    setTimeout(() => {
+                        btn.classList.remove('copied');
+                        btn.innerHTML = `${_agIcons.copy} Copy`;
+                    }, 1500);
+                }
+            }).catch(() => {});
+        }
+
+        /* ═══════════════════════════════════════════════════════
+         * END OF PREMIUM AGENT UI COMPONENTS
+         * ═══════════════════════════════════════════════════════ */
+
+
         const viewPanels = document.querySelectorAll('.view-panel');
 
+        window.switchTab = function(targetId) {
+            viewPanels.forEach(p => {
+                if (p.id === targetId) {
+                    p.classList.add('active');
+                    anime({
+                        targets: p,
+                        opacity: [0, 1],
+                        translateY: [8, 0],
+                        duration: 250,
+                        easing: 'easeOutCubic'
+                    });
+                } else {
+                    p.classList.remove('active');
+                }
+            });
+
+            if (targetId === 'tab-explorer') loadWorkspaceTree();
+            if (targetId === 'tab-history') fetchHistorySessions();
+            if (targetId === 'tab-control') browseDirectory(null);
+            
+            if (typeof renderMainNav === 'function') {
+                renderMainNav(targetId);
+            }
+        };
+
+        const tabBtns = document.querySelectorAll('.tab-btn');
         tabBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 const targetId = btn.getAttribute('data-tab');
-
                 tabBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-
-                viewPanels.forEach(p => {
-                    if (p.id === targetId) {
-                        p.classList.add('active');
-                        anime({
-                            targets: p,
-                            opacity: [0, 1],
-                            translateY: [8, 0],
-                            duration: 250,
-                            easing: 'easeOutCubic'
-                        });
-                    } else {
-                        p.classList.remove('active');
-                    }
-                });
-
-                if (targetId === 'tab-explorer') loadWorkspaceTree();
-                if (targetId === 'tab-history') fetchHistorySessions();
-                if (targetId === 'tab-control') browseDirectory(null);
+                window.switchTab(targetId);
             });
         });
 
@@ -1554,7 +3637,7 @@
             const bodyEl = document.getElementById('code-table-body');
 
             titleEl.textContent = filePath.split('/').pop();
-            bodyEl.innerHTML = '<tr><td class="line-content">Loading content...</td></tr>';
+            bodyEl.innerHTML = '<div class="ag-code-line"><span class="ag-code-content">Loading content...</span></div>';
             viewer.style.display = 'flex';
 
             anime({
@@ -1572,10 +3655,10 @@
                     activeFileContent = data.content || '';
                     renderHighlightedCode(data.content, bodyEl);
                 } else {
-                    bodyEl.innerHTML = '<tr><td class="line-content" style="color:var(--accent-rose);">Failed to view file content</td></tr>';
+                    bodyEl.innerHTML = '<div class="ag-code-line"><span class="ag-code-content" style="color:var(--ag-red);">Failed to view file content</span></div>';
                 }
             } catch (e) {
-                bodyEl.innerHTML = '<tr><td class="line-content" style="color:var(--accent-rose);">Error opening file</td></tr>';
+                bodyEl.innerHTML = '<div class="ag-code-line"><span class="ag-code-content" style="color:var(--ag-red);">Error opening file</span></div>';
             }
         }
 
@@ -1601,17 +3684,17 @@
         // Simple Syntax Highlighting Engine
         function renderHighlightedCode(rawCode, targetEl) {
             if (!rawCode) {
-                targetEl.innerHTML = '<tr><td class="line-num">1</td><td class="line-content">Empty file</td></tr>';
+                targetEl.innerHTML = '<div class="ag-code-line"><span class="ag-code-linenum">1</span><span class="ag-code-content">Empty file</span></div>';
                 return;
             }
             const lines = rawCode.split('\n');
             const html = lines.map((line, idx) => {
                 const highlighted = highlightSyntax(escapeHtml(line));
                 return `
-                    <tr>
-                        <td class="line-num">${idx + 1}</td>
-                        <td class="line-content">${highlighted || ' '}</td>
-                    </tr>
+                    <div class="ag-code-line" style="animation-delay:${idx * 15}ms">
+                        <span class="ag-code-linenum">${idx + 1}</span>
+                        <span class="ag-code-content" style="white-space: pre;">${highlighted || ' '}</span>
+                    </div>
                 `;
             }).join('');
             targetEl.innerHTML = html;
@@ -1619,10 +3702,10 @@
 
         function highlightSyntax(line) {
             return line
-                .replace(/(#.*|\/\/.*)/g, '<span class="syn-cmnt">$1</span>')
-                .replace(/\b(def|class|import|from|return|if|else|elif|for|while|async|await|try|except|const|let|var|function|export|default)\b/g, '<span class="syn-kw">$1</span>')
-                .replace(/(".*?"|'.*?'|`.*?`)/g, '<span class="syn-str">$1</span>')
-                .replace(/\b(\d+)\b/g, '<span class="syn-num">$1</span>');
+                .replace(/(".*?"|'.*?'|`.*?`)(?![^<]*>)/g, '<span class="syn-str">$1</span>')
+                .replace(/(#.*|\/\/.*)(?![^<]*>)/g, '<span class="syn-cmnt">$1</span>')
+                .replace(/\b(def|class|import|from|return|if|else|elif|for|while|async|await|try|except|const|let|var|function|export|default)\b(?![^<]*>)/g, '<span class="syn-kw">$1</span>')
+                .replace(/\b(\d+)\b(?![^<]*>)/g, '<span class="syn-num">$1</span>');
         }
 
         // Auth & WebSocket Connection
@@ -1677,8 +3760,8 @@
                     document.getElementById('auth-overlay').style.display = 'flex';
                 }
             } catch (e) {
-                document.getElementById('auth-overlay').style.display = 'none';
-                initWS();
+                // If network error (server restarting), wait and try again instead of blindly connecting WS
+                setTimeout(validateToken, 3000);
             }
         }
 
@@ -1702,7 +3785,7 @@
             ws.onclose = () => {
                 document.getElementById('ws-dot').classList.remove('active');
                 document.getElementById('ws-text').textContent = 'Disconnected';
-                setTimeout(initWS, 3000);
+                setTimeout(validateToken, 3000);
             };
         }
 
@@ -1714,23 +3797,31 @@
             updateCircle('disk-circle', 'disk-val', data.disk);
 
             // Agent Status
-            const statusLabel = document.getElementById('agent-state-label');
-            const taskText = document.getElementById('agent-task-text');
-            const badge = document.getElementById('agent-badge');
-            const stStatus = document.getElementById('st-agent-status');
-
-            const stateText = (data.agent_status || 'idle').toUpperCase();
-            statusLabel.textContent = `Antigravity (${stateText})`;
-            taskText.textContent = data.agent_task || 'No active work';
-            stStatus.textContent = `ANTIGRAVITY ${stateText}`;
-
-            if (data.agent_status === 'busy' || data.agent_status === 'working') {
-                badge.className = 'badge-pill badge-busy';
-                badge.textContent = 'Busy';
-            } else {
-                badge.className = 'badge-pill badge-idle';
-                badge.textContent = 'Idle';
+            const stateText = (data.agent_status || 'idle').toLowerCase();
+            const isWorking = (stateText === 'busy' || stateText === 'working');
+            
+            const dashStatusContainer = document.getElementById('dash-agent-status-container');
+            if (dashStatusContainer) {
+                if (isWorking) {
+                    dashStatusContainer.innerHTML = `<div id="dash-loader-container"></div>`;
+                    new LoadingStateUI(document.getElementById('dash-loader-container'), data.agent_task || 'Processing...', 'Drive');
+                } else {
+                    dashStatusContainer.innerHTML = `
+                        <div class="glass-card status-hero" style="margin-bottom: 12px;">
+                            <div class="avatar-glow">AG</div>
+                            <div class="status-meta">
+                                <div class="status-sub">Agent Status</div>
+                                <div class="status-main">Antigravity (IDLE)</div>
+                                <div class="status-task">No active work</div>
+                            </div>
+                            <span class="badge-pill badge-idle">Idle</span>
+                        </div>
+                    `;
+                }
             }
+            
+            const stStatus = document.getElementById('st-agent-status');
+            if (stStatus) stStatus.textContent = `ANTIGRAVITY ${stateText.toUpperCase()}`;
 
             // Branch & Workspace
             if (data.git_branch) {
@@ -1766,7 +3857,6 @@
             }
 
             // Intermediate Working State & Progress Indicator
-            const isWorking = (data.agent_status === 'working' || data.agent_status === 'busy');
             const chatBadge = document.getElementById('chat-status-badge');
 
             if (isWorking) {
@@ -1809,72 +3899,85 @@
                 list.innerHTML = '<div style="font-size: 0.78rem; color: var(--text-muted);">No scheduled tasks</div>';
                 return;
             }
+            const mappedTasks = tasks.map(t => {
+                let type = 'queued';
+                if (t.status === 'working' || t.status === 'executing' || t.status === 'pending') type = 'running';
+                if (t.status === 'completed' || t.status === 'success') type = 'completed';
+                if (t.status === 'failed' || t.status === 'error') type = 'failed';
+                
+                return {
+                    label: t.description || 'Task',
+                    status: type,
+                    amount: type === 'running' ? '1s' : (t.status || 'queued')
+                };
+            }).reverse();
             
-            list.innerHTML = '';
-            // Display in reverse order (newest first)
-            for (let i = tasks.length - 1; i >= 0; i--) {
-                const t = tasks[i];
-                const div = document.createElement('div');
-                div.style.padding = '8px';
-                div.style.borderRadius = '6px';
-                div.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
-                div.style.border = '1px solid rgba(255, 255, 255, 0.05)';
-                div.style.display = 'flex';
-                div.style.justifyContent = 'space-between';
-                div.style.alignItems = 'center';
-                
-                const txt = document.createElement('div');
-                txt.style.fontSize = '0.8rem';
-                txt.style.color = 'var(--text-bright)';
-                txt.style.overflow = 'hidden';
-                txt.style.textOverflow = 'ellipsis';
-                txt.style.whiteSpace = 'nowrap';
-                txt.style.maxWidth = '75%';
-                txt.textContent = t.description || 'Task';
-                
-                const status = document.createElement('div');
-                status.style.fontSize = '0.7rem';
-                status.style.fontWeight = '500';
-                if (t.status === 'working' || t.status === 'executing' || t.status === 'pending') {
-                    status.innerHTML = '<span class="working-spinner" style="width:10px;height:10px;border-width:2px;"></span> Run';
-                    status.style.color = '#38bdf8';
-                } else if (t.status === 'completed' || t.status === 'success') {
-                    status.textContent = 'Done';
-                    status.style.color = 'var(--accent-emerald)';
-                } else {
-                    status.textContent = t.status;
-                    status.style.color = 'var(--text-muted)';
-                }
-                
-                div.appendChild(txt);
-                div.appendChild(status);
-                list.appendChild(div);
-            }
+            list.innerHTML = renderTaskRows('dash-q', mappedTasks, 'list');
         }
 
+        let _currentThinkingUI = null;
+        let _currentLoadingUI = null;
         function updateLiveWorkingBubble(taskDescription, logDetail) {
             const container = document.getElementById('chat-messages');
             if (!container) return;
 
-            let bubbleNode = document.getElementById('live-working-bubble');
-            const taskText = taskDescription || 'Agent is executing task...';
-            const logText = logDetail || 'Processing step...';
-
-            if (!bubbleNode) {
-                bubbleNode = document.createElement('div');
-                bubbleNode.id = 'live-working-bubble';
-                bubbleNode.className = 'chat-group agent';
-                container.appendChild(bubbleNode);
+            let wc = document.getElementById('live-working-container');
+            if (!wc) {
+                wc = document.createElement('div');
+                wc.id = 'live-working-container';
+                wc.style.marginTop = '12px';
+                wc.style.marginBottom = '12px';
+                
+                const loadingWrapper = document.createElement('div');
+                loadingWrapper.id = 'live-loading-wrapper';
+                loadingWrapper.style.marginBottom = '8px';
+                
+                const thinkingWrapper = document.createElement('div');
+                thinkingWrapper.id = 'live-thinking-wrapper';
+                
+                wc.appendChild(loadingWrapper);
+                wc.appendChild(thinkingWrapper);
+                
+                container.appendChild(wc);
+                
+                _currentLoadingUI = new LoadingStateUI(loadingWrapper, taskDescription || 'Processing...', 'Drive');
+            } else {
+                if (_currentLoadingUI) {
+                    const lbl = document.getElementById('live-loading-wrapper').querySelector('.ag-loading-label');
+                    if (lbl) lbl.textContent = taskDescription || 'Processing...';
+                }
             }
+            
+            // Determine variant based on logs or default to Steps
+            let variant = 'Steps';
+            const dLog = logDetail ? logDetail.toLowerCase() : '';
+            if (dLog.includes('search') || dLog.includes('query')) variant = 'Search';
+            else if (dLog.includes('edit') || dLog.includes('run_command')) variant = 'Coding';
+            else if (dLog.includes('reason') || dLog.includes('analyz')) variant = 'Reasoning';
 
-            bubbleNode.innerHTML = `<span class="chat-sender">Antigravity AI (Working)</span><div class="chat-bubble agent working-bubble"><div class="working-header"><span class="working-spinner"></span><span>${escapeHtml(taskText)}</span></div>${logText ? `<div class="working-detail">${escapeHtml(logText)}</div>` : ''}</div>`;
+            let thinkingWrapper = document.getElementById('live-thinking-wrapper');
+            if (_currentThinkingUI && _currentThinkingUI.variant === variant) {
+                _currentThinkingUI.update(logDetail);
+            } else {
+                if (_currentThinkingUI) _currentThinkingUI.destroy();
+                _currentThinkingUI = new ThinkingStateUI(thinkingWrapper, variant, logDetail);
+            }
+            
             container.scrollTop = container.scrollHeight;
         }
 
         function removeLiveWorkingBubble() {
-            const bubbleNode = document.getElementById('live-working-bubble');
-            if (bubbleNode) {
-                bubbleNode.remove();
+            const wc = document.getElementById('live-working-container');
+            if (wc) {
+                if (_currentThinkingUI) {
+                    _currentThinkingUI.destroy();
+                    _currentThinkingUI = null;
+                }
+                if (_currentLoadingUI) {
+                    _currentLoadingUI.destroy();
+                    _currentLoadingUI = null;
+                }
+                wc.remove();
             }
         }
 
@@ -1901,7 +4004,7 @@
             return false;
         }
 
-        // Refactored Chat Renderer with Clean Bubble Structure
+        // Refactored Chat Renderer using Premium Components
         let lastChatHtml = '';
         function renderChatTurns(turns, pendingApproval) {
             const container = document.getElementById('chat-messages');
@@ -1911,52 +4014,89 @@
 
             let newHtml = '';
             if (filtered.length === 0) {
-                newHtml = `<div class="chat-group agent"><span class="chat-sender">Antigravity AI</span><div class="chat-bubble agent">Hello! Ask me anything or instruct me to build code.</div></div>`;
+                newHtml = renderRecommendationCard('welcome', 'Antigravity AI', 'Ready to assist. What would you like to build today?', {
+                    label: 'Initialize New Project',
+                    cta: 'Start',
+                    signal: 0.95,
+                    tone: '#38bdf8'
+                }, [
+                    { label: 'Refactor Codebase', cta: 'Run', signal: 0.7, tone: '#facc15' },
+                    { label: 'Run Tests', cta: 'Test', signal: 0.6, tone: '#a78bfa' }
+                ], false, false);
             } else {
-                newHtml = filtered.map(t => {
+                newHtml = filtered.map((t, i) => {
                     const isUser = t.sender === 'user';
-                    return `<div class="chat-group ${t.sender}"><span class="chat-sender">${isUser ? 'You' : 'Antigravity AI'}</span><div class="chat-bubble ${t.sender}">${renderSimpleMarkdown((t.text || '').trim())}</div></div>`;
-                }).join('');
+                    if (isUser) {
+                        return `<div class="ag-chat-user-bubble">${escapeHtml(t.text)}</div>`;
+                    } else {
+                        const isLatest = (i === filtered.length - 1);
+                        return renderStreamingText('turn-' + i, t.text, { done: true, animate: isLatest });
+                    }
+                }).join('<div style="height: 16px;"></div>');
             }
             
             if (pendingApproval && pendingApproval.status === 'pending') {
-                newHtml += `
-                <div class="chat-group agent">
-                    <span class="chat-sender">Antigravity AI</span>
-                    <div class="chat-bubble agent" style="border: 1px solid var(--accent-amber);">
-                        <div style="font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; color: var(--accent-amber);">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-alert"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2-1 4-2 7-2 2.76 0 5.5 1 7 2a1 1 0 0 1 1 1v7z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg> Action Approval
-                        </div>
-                        <p style="font-size: 0.85rem; margin-bottom: 10px;">The AI agent requests permission to execute:</p>
-                        <div style="background: var(--bg-editor); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; margin-bottom: 14px; word-break: break-all; color: var(--text-main);">
-                            ${escapeHtml(pendingApproval.target)}
-                        </div>
-                        <div style="display: flex; gap: 8px;">
-                            <button onclick="window.sendApproval(true)" class="btn-action" style="flex: 1; background: var(--accent-emerald);">Approve</button>
-                            <button onclick="window.sendApproval(false)" class="btn-action" style="flex: 1; background: var(--accent-rose);">Reject</button>
-                        </div>
-                    </div>
-                </div>`;
+                if (!_agState.approvalState['remote-approval']) {
+                    _agState.approvalState['remote-approval'] = { qi: 0, answers: {}, custom: {}, sent: false, dismissed: false };
+                }
+                
+                const cardHtml = renderApprovalCard('remote-approval', [{
+                    question: `The AI agent requests permission to execute: ${pendingApproval.target}`,
+                    options: ['Approve', 'Reject'],
+                    type: 'radio'
+                }]);
+                
+                newHtml += `<div style="margin-top: 16px;" id="approval-card-wrapper">${cardHtml}</div>`;
             }
             
             if (lastChatHtml !== newHtml) {
+                const hadWorking = document.getElementById('live-working-container');
                 lastChatHtml = newHtml;
                 container.innerHTML = newHtml;
+                if (hadWorking) {
+                    const wc = document.createElement('div');
+                    wc.id = 'live-working-container';
+                    wc.style.marginTop = '12px';
+                    wc.style.marginBottom = '12px';
+                    container.appendChild(wc);
+                    const taskTxt = document.getElementById('agent-task-text').textContent;
+                    const logTxt = document.getElementById('live-logs-box').textContent;
+                    updateLiveWorkingBubble(taskTxt, logTxt);
+                }
                 container.scrollTop = container.scrollHeight;
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+                
+                if (pendingApproval && pendingApproval.status === 'pending') {
+                    const wrapper = document.getElementById('approval-card-wrapper');
+                    if (wrapper) {
+                        wrapper.querySelector('.ag-approval-send').onclick = (e) => {
+                            const state = _agState.approvalState['remote-approval'];
+                            if (state && state.answers[0]) {
+                                const approved = state.answers[0].includes(0);
+                                window.sendApproval(approved);
+                            } else if (state && state.custom[0] && state.custom[0].toLowerCase() === 'approve') {
+                                window.sendApproval(true);
+                            } else {
+                                window.sendApproval(false);
+                            }
+                        };
+                    }
+                }
             }
         }
 
         async function sendPrompt(promptText) {
-            if (!promptText.trim()) return;
+            if (!promptText || !promptText.trim()) return;
             try {
                 const res = await fetchWithAuth('/api/agent/prompt', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: promptText })
+                    body: JSON.stringify({ prompt: promptText.trim() })
                 });
                 if (res.ok) {
                     const container = document.getElementById('chat-messages');
-                    container.innerHTML += `<div class="chat-group user"><span class="chat-sender">You</span><div class="chat-bubble user">${escapeHtml(promptText.trim())}</div></div>`;
                     container.scrollTop = container.scrollHeight;
                 }
             } catch (e) {
@@ -1964,17 +4104,54 @@
             }
         }
 
-        document.getElementById('chat-send-btn').addEventListener('click', () => {
-            const input = document.getElementById('chat-prompt-input');
-            sendPrompt(input.value);
-            input.value = '';
-        });
-        document.getElementById('chat-prompt-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                sendPrompt(e.target.value);
-                e.target.value = '';
+        function initPromptBar() {
+            const container = document.getElementById('prompt-bar-container');
+            if (!container) return;
+            container.innerHTML = renderPromptBar('main', { variant: 'rounded', placeholder: 'Ask Antigravity to build or edit code...' });
+            
+            const textarea = document.querySelector('#ag-prompt-main .ag-prompt-textarea');
+            const sendBtn = document.querySelector('#ag-prompt-main .send-btn');
+            
+            if (textarea && sendBtn) {
+                sendBtn.addEventListener('click', () => {
+                    sendPrompt(textarea.value);
+                    textarea.value = '';
+                    _agPromptResize(textarea);
+                });
+                textarea.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendPrompt(textarea.value);
+                        textarea.value = '';
+                        _agPromptResize(textarea);
+                    }
+                });
             }
-        });
+            
+            const searchContainer = document.getElementById('history-search-container');
+            // search container html is already injected statically
+            if (typeof renderMainNav === 'function') {
+                renderMainNav('tab-explorer');
+            }
+        }
+
+        function renderMainNav(activeTab) {
+            const sidebarNavContainer = document.getElementById('sidebar-nav-container');
+            if (sidebarNavContainer) {
+                sidebarNavContainer.innerHTML = renderSidebarNav('main', 'Antigravity IDE', 'Mobile Workspace', [
+                    { key: 'tab-explorer', label: 'Explorer', icon: _agIcons.file, section: 'Workspace', active: activeTab === 'tab-explorer' },
+                    { key: 'tab-chat', label: 'AI Agent', icon: _agIcons.sparkle, section: 'Workspace', active: activeTab === 'tab-chat' },
+                    { key: 'tab-dashboard', label: 'Dashboard', icon: _agIcons.bars, section: 'Workspace', active: activeTab === 'tab-dashboard' },
+                    { key: 'tab-history', label: 'History', icon: _agIcons.file, section: 'System', active: activeTab === 'tab-history' },
+                    { key: 'tab-control', label: 'Control Panel', icon: _agIcons.search, section: 'System', active: activeTab === 'tab-control' }
+                ], ['Workspace', 'System']);
+
+                window._agSidebarSelect = function(navId, key) {
+                    window.switchTab(key);
+                    closeSidebar();
+                };
+            }
+        }
 
         // Quick Terminal Scheduler (Dashboard)
         document.getElementById('dash-cmd-btn')?.addEventListener('click', async () => {
@@ -2230,13 +4407,13 @@
                 }
                 const escaped = escapeHtml(line);
                 if (line.startsWith('+')) {
-                    html += `<div class="diff-line diff-add"><span class="diff-prefix">+</span><span class="diff-text">${escaped.slice(1)}</span></div>`;
+                    html += `<div class="ag-code-line ag-code-add"><span class="ag-code-prefix">+</span><span class="ag-code-text">${escaped.slice(1)}</span></div>`;
                 } else if (line.startsWith('-')) {
-                    html += `<div class="diff-line diff-del"><span class="diff-prefix">-</span><span class="diff-text">${escaped.slice(1)}</span></div>`;
+                    html += `<div class="ag-code-line ag-code-del"><span class="ag-code-prefix">-</span><span class="ag-code-text">${escaped.slice(1)}</span></div>`;
                 } else if (line.startsWith('@@')) {
-                    html += `<div class="diff-line diff-hunk"><span class="diff-prefix">@@</span><span class="diff-text">${escaped}</span></div>`;
+                    html += `<div class="ag-code-line ag-code-hunk"><span class="ag-code-prefix">@@</span><span class="ag-code-text">${escaped}</span></div>`;
                 } else {
-                    html += `<div class="diff-line"><span class="diff-prefix">&nbsp;</span><span class="diff-text">${escaped}</span></div>`;
+                    html += `<div class="ag-code-line"><span class="ag-code-prefix">&nbsp;</span><span class="ag-code-text">${escaped}</span></div>`;
                 }
             }
 
@@ -2331,6 +4508,20 @@
         }
 
         // History Session Management
+        
+        function filterHistory() {
+            const query = document.getElementById('history-search-input').value.toLowerCase();
+            const items = document.querySelectorAll('#history-sessions-list > div.glass-card');
+            items.forEach(item => {
+                const text = item.innerText.toLowerCase();
+                if (text.includes(query)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
         async function fetchHistorySessions() {
             const container = document.getElementById('history-sessions-list');
             try {
@@ -2341,15 +4532,24 @@
                         container.innerHTML = '<div style="font-size:0.78rem; color:var(--text-muted);">No history sessions</div>';
                         return;
                     }
-                    container.innerHTML = data.sessions.map(s => `
-                        <div class="glass-card" style="display:flex; justify-content:space-between; align-items:center;">
-                            <div>
-                                <div style="font-size:0.85rem; font-weight:600;">${escapeHtml(s.title)}</div>
-                                <div style="font-size:0.72rem; color:var(--text-muted);">${s.turn_count} turns • ${s.age}</div>
+                    container.innerHTML = `<div style="display: flex; flex-direction: column; gap: 12px;">
+                        ${data.sessions.map(s => `
+                            <div class="ag-context-card" style="padding: 12px; border: 1px solid var(--ag-line); border-radius: 12px; background: var(--ag-surface); display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; flex-direction: column; gap: 4px; overflow: hidden; padding-right: 12px;">
+                                    <div style="font-size: 14px; font-weight: 600; color: var(--ag-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        ${escapeHtml(s.title)}
+                                    </div>
+                                    <div style="font-size: 12.5px; color: var(--ag-ink-3);">
+                                        ${s.turn_count} turns &bull; ${s.age}
+                                    </div>
+                                </div>
+                                <button class="ag-task-pill" style="background: var(--ag-accent); color: white; border: none; padding: 6px 12px; font-size: 12px; border-radius: 8px; cursor: pointer; height: auto;" onclick="continueSession('${s.session_id}')">
+                                    Continue
+                                </button>
                             </div>
-                            <button class="btn-action" style="height:26px; font-size:0.72rem;" onclick="continueSession('${s.session_id}')">Continue</button>
-                        </div>
-                    `).join('');
+                        `).join('')}
+                    </div>`;
+                    if (typeof feather !== 'undefined') feather.replace();
                 }
             } catch (e) {
                 container.innerHTML = '<div style="font-size:0.78rem; color:var(--text-muted);">Error loading history</div>';
@@ -2525,6 +4725,7 @@
 
         // Initialize Lucide Icons & Validate Auth Token
         lucide.createIcons();
+        initPromptBar();
         validateToken();
     </script>
 </body>
