@@ -2108,6 +2108,14 @@
                     </div>
 
                     <!-- Prompt Input -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                        <div id="daemon-ready-indicator" style="font-size: 0.75rem; color: var(--accent-emerald); display: none; align-items: center; gap: 4px;">
+                            <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> Daemon Ready
+                        </div>
+                        <button id="stop-execution-btn" class="btn-action" style="font-size: 0.75rem; padding: 4px 8px; color: #ef4444; border: 1px solid #ef4444; background: transparent; display: none;">
+                            <i data-lucide="stop-circle" style="width: 14px; height: 14px;"></i> Stop Execution
+                        </button>
+                    </div>
                     <div id="prompt-bar-container" style="padding-top: 8px;"></div>
                 </div>
             </div>
@@ -2213,6 +2221,9 @@
                         Selection
                     </h3>
                     <select id="control-model-select" class="ide-input" style="cursor: pointer;">
+                        <option value="gemini-3-7-flash-high">Gemini 3.7 Flash (High)</option>
+                        <option value="gemini-3-7-flash-medium">Gemini 3.7 Flash (Medium)</option>
+                        <option value="gemini-3-7-flash-low">Gemini 3.7 Flash (Low)</option>
                         <option value="gemini-3-6-flash-high">Gemini 3.6 Flash (High)</option>
                         <option value="gemini-3-6-flash-medium">Gemini 3.6 Flash (Medium)</option>
                         <option value="gemini-3-6-flash-low">Gemini 3.6 Flash (Low)</option>
@@ -3856,6 +3867,26 @@
                 renderChatTurns(data.chat_info.chat, pendingApproval);
             }
 
+            // Daemon Ready Indicator
+            const daemonReady = document.getElementById('daemon-ready-indicator');
+            if (daemonReady) {
+                if (data.agent_info && data.agent_info.remote_prompt && data.agent_info.remote_prompt.status === 'idle') {
+                    daemonReady.style.display = 'flex';
+                } else {
+                    daemonReady.style.display = 'none';
+                }
+            }
+
+            // Stop Execution Button logic
+            const stopBtn = document.getElementById('stop-execution-btn');
+            if (stopBtn) {
+                if (data.agent_info && data.agent_info.remote_prompt && data.agent_info.remote_prompt.status !== 'idle') {
+                    stopBtn.style.display = 'flex';
+                } else {
+                    stopBtn.style.display = 'none';
+                }
+            }
+
             // Intermediate Working State & Progress Indicator
             const chatBadge = document.getElementById('chat-status-badge');
 
@@ -4129,6 +4160,15 @@
             }
             
             const searchContainer = document.getElementById('history-search-container');
+            
+            const stopBtn = document.getElementById('stop-execution-btn');
+            if (stopBtn) {
+                stopBtn.addEventListener('click', async () => {
+                    try {
+                        await fetchWithAuth('/api/agent/stop', { method: 'POST' });
+                    } catch (err) { console.error(err); }
+                });
+            }
             // search container html is already injected statically
             if (typeof renderMainNav === 'function') {
                 renderMainNav('tab-explorer');
@@ -4687,6 +4727,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ model: e.target.value })
                 });
+                const selectedText = e.target.options[e.target.selectedIndex].text;
+                showToastBanner('Model Switched', `Selected ${selectedText}. You can now continue your workflow.`, null);
             } catch (err) { console.error(err); }
         });
 

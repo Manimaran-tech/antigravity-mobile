@@ -11,14 +11,14 @@ import glob
 import shutil
 import re
 from fastapi import FastAPI, HTTPException, Depends, Request, WebSocket, WebSocketDisconnect, Query, status
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import threading
 from pydantic import BaseModel
 from typing import Dict, Set, Tuple, List, Optional, Any
 
-from .task_runner import TaskRunner, Task
+from .task_runner import TaskRunner, Task, TaskQueueFullError
 from .cli import get_config
 
 def get_workspace_root() -> str:
@@ -123,46 +123,6 @@ def get_brain_sessions() -> List[Dict[str, Any]]:
         pass
     sessions.sort(key=lambda s: s["mtime"], reverse=True)
     return sessions
-
-_LATEST_THOUGHT_CACHE = {"time": 0, "data": ""}
-
-def get_latest_agent_thought() -> str:
-    global _LATEST_THOUGHT_CACHE
-    import time, json, os
-    if time.time() - _LATEST_THOUGHT_CACHE["time"] < 2:
-        return _LATEST_THOUGHT_CACHE["data"]
-
-    thought = ""
-    try:
-        sessions = get_conversation_sessions()
-        if sessions:
-            latest_session = sessions[0]
-            transcript_path = os.path.join(BRAIN_DIR, latest_session["id"], ".system_generated", "logs", "transcript.jsonl")
-            if os.path.exists(transcript_path):
-                with open(transcript_path, "r", encoding="utf-8", errors="ignore") as f:
-                    f.seek(0, os.SEEK_END)
-                    end_pos = f.tell()
-                    chunk_size = 65536
-                    start_pos = max(0, end_pos - chunk_size)
-                    f.seek(start_pos)
-                    lines = f.readlines()
-                    
-                    for line in reversed(lines):
-                        try:
-                            data = json.loads(line)
-                            if data.get("type") == "PLANNER_RESPONSE" and data.get("source") == "MODEL":
-                                thinking = data.get("thinking", "")
-                                if thinking:
-                                    thought = thinking.strip()
-                                    break
-                        except Exception:
-                            continue
-    except Exception:
-        pass
-        
-    _LATEST_THOUGHT_CACHE["time"] = time.time()
-    _LATEST_THOUGHT_CACHE["data"] = thought
-    return thought
 
 _LATEST_PLAN_CACHE = {"time": 0, "data": None}
 
@@ -514,7 +474,6 @@ def find_session_workspace(session_id: str) -> Optional[str]:
     return None
 
 app = FastAPI(title="Antigravity Remote Monitor")
-
 security = HTTPBearer()
 logger = logging.getLogger("antigravity_remote.server")
 
@@ -588,6 +547,11 @@ LOGIN_LOCKOUT_SECONDS = 900  # 15 minutes
 
 # Initialize Task Runner
 runner = TaskRunner()
+
+@app.on_event("shutdown")
+def shutdown_task_runner():
+    """Stop queue workers cleanly when the FastAPI process is stopped."""
+    runner.shutdown()
 
 # NOTE: Config (PIN, secret key) is read dynamically on each login attempt.
 # Do NOT cache at module level — it causes PIN desync when the server is
@@ -841,15 +805,6 @@ def get_all_chat_turns() -> List[Dict[str, Any]]:
             continue
         clean = clean_prompt_text(item["text"])
         if clean:
-            if turns and turns[-1]["sender"] == item["sender"]:
-                if turns[-1]["text"] == clean:
-                    continue
-                if item["sender"] == "agent":
-                    # Always keep the latest agent message to avoid duplicates for the same task
-                    turns[-1]["text"] = clean
-                    # Update ID so frontend registers it as a changed message if needed
-                    turns[-1]["id"] = f"remote_agent_{hash(clean)}"
-                    continue
             turns.append({
                 "id": f"remote_{item['sender']}_{hash(item['text'])}",
                 "sender": item["sender"],
@@ -1048,9 +1003,6 @@ def get_system_status():
         except Exception:
             pass
 
-    # Read the latest LLM thought
-    agent_logs = get_latest_agent_thought() or agent_logs
-
     return {
         "cpu": cpu,
         "memory": memory,
@@ -1140,6 +1092,17 @@ def login(req: LoginRequest, request: Request):
 async def status_endpoint(token: str = Depends(verify_token)):
     return await asyncio.to_thread(get_system_status)
 
+@app.get("/health/live")
+def liveness_endpoint():
+    return {"status": "ok"}
+
+@app.get("/health/ready")
+def readiness_endpoint():
+    capacity = runner.queue_stats()
+    return JSONResponse(status_code=200 if capacity["queued"] < capacity["max_queued"] else 503,
+                        content={"status": "ready" if capacity["queued"] < capacity["max_queued"] else "overloaded",
+                                 "task_capacity": capacity})
+
 @app.get("/api/workspace")
 def workspace_endpoint(token: str = Depends(verify_token)):
     return get_workspace_tree()
@@ -1160,10 +1123,13 @@ def schedule_endpoint(req: ScheduleRequest, token: str = Depends(verify_token)):
 
 @app.post("/api/tasks/{task_id}/confirm")
 def confirm_endpoint(task_id: str, token: str = Depends(verify_token)):
-    success = runner.confirm_and_run(task_id)
+    try:
+        success = runner.confirm_and_run(task_id)
+    except TaskQueueFullError as exc:
+        raise HTTPException(status_code=503, detail=str(exc), headers={"Retry-After": "5"})
     if not success:
         raise HTTPException(status_code=400, detail="Task not found or not in pending state")
-    return {"status": "started", "task_id": task_id}
+    return {"status": "started", "task_id": task_id, "task_capacity": runner.queue_stats()}
 
 @app.post("/api/tasks/{task_id}/cancel")
 def cancel_endpoint(task_id: str, token: str = Depends(verify_token)):
@@ -2448,15 +2414,7 @@ def continue_history_session(session_id: str, token: str = Depends(verify_token)
 def get_dashboard():
     dashboard_path = os.path.join(TEMPLATES_DIR, "index.html")
     if os.path.exists(dashboard_path):
-        content = open(dashboard_path, "r", encoding="utf-8").read()
-        return HTMLResponse(
-            content=content,
-            headers={
-                "Cache-Control": "no-cache, no-store, must-revalidate",
-                "Pragma": "no-cache",
-                "Expires": "0"
-            }
-        )
+        return HTMLResponse(content=open(dashboard_path, "r", encoding="utf-8").read())
     return HTMLResponse(content="<h1>Dashboard index.html not found.</h1>")
 
 @app.get("/favicon.ico")
