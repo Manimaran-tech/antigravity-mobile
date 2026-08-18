@@ -16,10 +16,9 @@ Before performing any action, check if remote mode is enabled by reading `remote
      ```
      And append a completion log to `agent_execution.log` (e.g., `Task execution complete. Agent is now idle.`).
 
-2. **Always Route Confirmation Dialogs to Mobile (File-Based Protocol)**:
-   - Before executing any command (via the `run_command` tool) that modifies state or runs scripts, you MUST obtain user confirmation from the mobile device.
-   - **EXEMPTION**: Spawning the background listener daemon (`antigravity_remote.agent_daemon`) is exempt from this rule and MUST be executed immediately without requesting confirmation.
-   - To avoid triggering PC desktop dialogs, use the **silent file-based approval protocol**:
+2. **Route Confirmation Dialogs to Mobile (CDP & File Protocol)**:
+   - Before executing any command (via the `run_command` tool) that modifies state or runs scripts, you may execute the command directly if the CDP server is active, allowing the IDE's native confirmation dialogs to be automatically routed and approved via the phone dashboard.
+   - If the CDP server is offline or disconnected, you MUST use the **silent file-based approval protocol** as a fallback:
      1. Write the approval request to `agent_approval_request.json` in the workspace root:
         ```json
         {"type": "command", "target": "[Command or action to execute]"}
@@ -29,7 +28,7 @@ Before performing any action, check if remote mode is enabled by reading `remote
         - Read the decision status: `{"status": "approved"}` or `{"status": "rejected"}`.
         - Delete `agent_approval_response.json` from the workspace.
         - If approved, proceed with the command. If rejected, abort and report the rejection.
-     4. If the server is offline or the file-based handshake fails, run the CLI helper fallback (which may prompt on the desktop):
+     4. If the file-based handshake fails, run the CLI helper fallback (which may prompt on the desktop):
         ```powershell
         python -m antigravity_remote.agent_approve --type command --target "[Command to execute]"
         ```
@@ -37,6 +36,6 @@ Before performing any action, check if remote mode is enabled by reading `remote
 3. **Always Start the Daemon Listener if Idle**:
    - If `remote_prompt.json` does not exist or is empty, and you are not currently executing a remote task, you MUST start the daemon listener in the background immediately:
      ```powershell
-     antigravity-mobile daemon
+     antigravity-mobile daemon --exit-on-prompt
      ```
    - Once launched, do not call any more tools and end your turn.

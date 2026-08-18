@@ -7,8 +7,18 @@ import time
 import sysconfig
 import uvicorn
 import psutil
+import ctypes
 
-CONFIG_FILE = "config.json"
+def get_workspace_root() -> str:
+    cwd = os.path.abspath(os.getcwd())
+    if os.path.exists(os.path.join(cwd, ".agents")) or os.path.exists(os.path.join(cwd, ".git")):
+        return cwd
+    parent = os.path.dirname(cwd)
+    if os.path.exists(os.path.join(parent, ".agents")) or os.path.exists(os.path.join(parent, ".git")):
+        return parent
+    return cwd
+
+CONFIG_FILE = os.path.join(get_workspace_root(), ".agents", "config", "config.json")
 
 def generate_config(force=False) -> dict:
     if os.path.exists(CONFIG_FILE) and not force:
@@ -101,7 +111,7 @@ def kill_port_process(port: int):
             import subprocess
             result = subprocess.run(
                 f'netstat -ano | findstr ":{port}" | findstr "LISTENING"',
-                shell=True, capture_output=True, text=True
+                shell=True, capture_output=True, encoding="utf-8", errors="replace"
             )
             for line in result.stdout.strip().splitlines():
                 parts = line.split()
@@ -125,6 +135,7 @@ def kill_port_process(port: int):
 
 
 def cmd_start(args):
+
     # Force a new config with a fresh PIN every time the server starts
     config = generate_config(force=True)
     
@@ -137,6 +148,16 @@ def cmd_start(args):
     print(f"Access PIN: {config.get('pin')}")
     print(f"Dashboard URL: http://{args.host if args.host != '0.0.0.0' else 'localhost'}:{args.port}/")
     
+    # Prevent Windows from going to sleep while the server is active
+    if os.name == 'nt':
+        try:
+            # ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED
+            # 0x80000000 | 0x00000001 | 0x00000040 = 0x80000041
+            ctypes.windll.kernel32.SetThreadExecutionState(0x80000041)
+            print("Sleep prevention enabled (System stays awake, screen can turn off).")
+        except Exception as e:
+            print(f"Warning: Could not set sleep prevention: {e}")
+
     # Run uvicorn server
     # We pass the module path as a string to support reloading
     uvicorn.run(
@@ -230,7 +251,7 @@ def cmd_run(args):
         time.sleep(0.5)
 
 def cmd_remote(args):
-    mode_file = "remote_mode.json"
+    mode_file = os.path.join(get_workspace_root(), ".agents", "config", "remote_mode.json")
     
     # Load current status
     enabled = True
@@ -328,6 +349,7 @@ def print_quickstart():
     {CYAN}remote --status{RESET}    {DIM}Check if remote mode is on or off{RESET}
     {CYAN}update{RESET}             {DIM}Update to the latest version from PyPI{RESET}
     {CYAN}uninstall{RESET}          {DIM}Remove all generated files & guide pip uninstall{RESET}
+    {CYAN}switch <dir>{RESET}       {DIM}Safely switch remote monitoring to a new directory{RESET}
 
     {YELLOW}━━━ Examples ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}
 
@@ -463,7 +485,7 @@ def cmd_setup(args):
     if not os.path.exists(agents_md):
         with open(agents_md, "w", encoding="utf-8") as f:
             f.write("# Antigravity Remote Monitoring and Control Rules\n\n")
-            f.write("Before performing any action, check if remote mode is enabled by reading `remote_mode.json` in the workspace root.\n")
+            f.write("Before performing any action, check if remote mode is enabled by reading `remote_mode.json` in the `.agents/config/` directory of the workspace root.\n")
             f.write('- **If `"enabled": false`**: Run normally and bypass all remote features (do NOT write status files, do NOT update log files, and do NOT use mobile confirmations).\n')
             f.write('- **If `"enabled": true`** (or if the file is missing/unreadable): Adhere to the following rules at all times:\n\n')
             f.write("1. **Always Stream Execution Logs to Mobile**:\n")
@@ -487,8 +509,9 @@ def cmd_setup(args):
             f.write("3. **Always Start the Daemon Listener if Idle**:\n")
             f.write("   - If `remote_prompt.json` does not exist or is empty, and you are not currently executing a remote task, you MUST start the daemon listener in the background immediately:\n")
             f.write("     ```powershell\n")
-            f.write("     antigravity-mobile daemon\n")
+            f.write("     python -m antigravity_remote.agent_daemon --exit-on-prompt\n")
             f.write("     ```\n")
+            f.write("   - The `--exit-on-prompt` flag makes the daemon exit after writing a prompt, which wakes up the IDE agent to process it.\n")
             f.write("   - Once launched, do not call any more tools and end your turn.\n")
         print(f"    {GREEN}✓{RESET} Created {CYAN}.agents/AGENTS.md{RESET} with remote monitoring rules")
     else:
@@ -505,7 +528,7 @@ def cmd_setup(args):
         f.write('When this skill is loaded, the agent participates in the remote command and confirmation loop with the FastAPI mobile server.\n\n')
         f.write('## Execution Sequence\n\n')
         f.write('### 0. Check Remote Mode Toggle\n')
-        f.write('Before starting, read `remote_mode.json` in the workspace root.\n')
+        f.write('Before starting, read `remote_mode.json` in the `.agents/config/` directory of the workspace root.\n')
         f.write('- **If `"enabled": false`**: Do NOT run the remote control loop. Stop here and run standard workspace actions normally.\n')
         f.write('- **If `"enabled": true`** (or if the file is missing): Proceed with the remote control sequence below.\n\n')
         f.write('### 1. Check for Active Remote Prompt\n')
@@ -559,17 +582,20 @@ def cmd_setup(args):
         f.write('- **If it does NOT exist**:\n')
         f.write('  - The agent is idle. Start the daemon listener to wait for new remote prompts.\n\n')
         f.write('### 2. Spawning the Daemon Listener\n')
-        f.write('To listen for new remote prompts while you are idle, run the daemon script in the background:\n')
+        f.write('To listen for new remote prompts while you are idle, run the daemon script in the background **with `--exit-on-prompt`**:\n')
         f.write('```powershell\n')
-        f.write('antigravity-mobile daemon\n')
+        f.write('python -m antigravity_remote.agent_daemon --exit-on-prompt\n')
         f.write('```\n')
-        f.write('*Note: If `antigravity-mobile` is not in the system/user PATH, run `python -m antigravity_remote.agent_daemon`. Make sure to launch this command in the background (using `run_command` with high async wait time). Once launched, do not call any more tools and end your turn. The IDE will automatically wake you up when the daemon detects a prompt and exits.*\n')
+        f.write('*The `--exit-on-prompt` flag is critical: the daemon will poll for a remote prompt, write `remote_prompt.json` when one arrives, and then **exit**. When the background task exits, the IDE automatically wakes you up so you can read and execute the prompt. After completing the task, re-launch the daemon with `--exit-on-prompt` again to listen for the next prompt.*\n\n')
+        f.write('*Make sure to launch this command in the background (using `run_command` with a high async wait time like `500`). Once launched, do not call any more tools and end your turn.*\n')
     print(f"    {GREEN}✓{RESET} Created {CYAN}.agents/skills/remote_control/SKILL.md{RESET} with remote control skill instructions")
     print()
 
     # Step 3: Create remote_mode.json
     print(f"    {GREEN}Step 3/4{RESET} {WHITE}Enabling remote monitoring mode...{RESET}")
-    with open("remote_mode.json", "w") as f:
+    config_dir = os.path.join(".agents", "config")
+    os.makedirs(config_dir, exist_ok=True)
+    with open(os.path.join(config_dir, "remote_mode.json"), "w") as f:
         json.dump({"enabled": True}, f)
     print(f"    {GREEN}✓{RESET} Remote mode {GREEN}ENABLED{RESET}")
     print()
@@ -616,7 +642,96 @@ def cmd_setup(args):
 def cmd_daemon(args):
     """Run the remote command listener daemon."""
     from antigravity_remote.agent_daemon import start_daemon
-    start_daemon(url=args.url)
+    start_daemon(url=args.url, exit_on_prompt=getattr(args, 'exit_on_prompt', False))
+
+
+def cmd_switch(args):
+    """Safely switch remote monitoring to a new directory."""
+    import psutil
+    import subprocess
+    
+    target_dir = os.path.abspath(args.target_dir)
+    if not os.path.exists(target_dir):
+        print(f"    {YELLOW}⚠{RESET} Directory does not exist: {target_dir}")
+        return
+        
+    print(f"    {YELLOW}━━━ Switching Workspace ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}")
+    print()
+    
+    # 1. Find and kill old daemon
+    killed_count = 0
+    for p in psutil.process_iter(['pid', 'name', 'cmdline', 'cwd']):
+        try:
+            cmdline = p.info.get('cmdline', [])
+            if cmdline and 'antigravity_remote.agent_daemon' in ' '.join(cmdline):
+                # This is the old daemon
+                old_cwd = p.info.get('cwd', '')
+                if old_cwd:
+                    # Disable remote mode in old workspace
+                    old_config_path = os.path.join(old_cwd, ".agents", "config", "remote_mode.json")
+                    if os.path.exists(old_config_path):
+                        try:
+                            with open(old_config_path, "r") as f:
+                                old_config = json.load(f)
+                            old_config["enabled"] = False
+                            with open(old_config_path, "w") as f:
+                                json.dump(old_config, f)
+                            print(f"    {GREEN}✓{RESET} Disabled remote mode in old workspace: {old_cwd}")
+                        except Exception as e:
+                            print(f"    {YELLOW}⚠{RESET} Could not disable old workspace: {e}")
+                
+                # Kill it
+                p.terminate()
+                p.wait(timeout=3)
+                print(f"    {GREEN}✓{RESET} Killed old daemon process (PID: {p.pid})")
+                killed_count += 1
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+            
+    if killed_count == 0:
+        print(f"    {DIM}No existing daemon process found.{RESET}")
+        
+    # 2. Enable remote mode in new workspace
+    new_agents_dir = os.path.join(target_dir, ".agents")
+    new_config_dir = os.path.join(new_agents_dir, "config")
+    os.makedirs(new_config_dir, exist_ok=True)
+    
+    new_config_path = os.path.join(new_config_dir, "remote_mode.json")
+    try:
+        if os.path.exists(new_config_path):
+            with open(new_config_path, "r") as f:
+                new_config = json.load(f)
+        else:
+            new_config = {}
+        new_config["enabled"] = True
+        with open(new_config_path, "w") as f:
+            json.dump(new_config, f)
+        print(f"    {GREEN}✓{RESET} Enabled remote mode in new workspace: {target_dir}")
+    except Exception as e:
+        print(f"    {YELLOW}⚠{RESET} Could not enable new workspace: {e}")
+        return
+        
+    # 3. Start daemon in new workspace
+    try:
+        # Start in background
+        kwargs = {}
+        if sys.platform == "win32":
+            kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
+            
+        subprocess.Popen(
+            [sys.executable, "-m", "antigravity_remote.agent_daemon", "--exit-on-prompt"],
+            cwd=target_dir,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            **kwargs
+        )
+        print(f"    {GREEN}✓{RESET} Started new daemon listener for {target_dir}")
+    except Exception as e:
+        print(f"    {YELLOW}⚠{RESET} Could not start new daemon: {e}")
+        
+    print()
+    print(f"    {GREEN}Successfully switched remote monitoring to: {target_dir}{RESET}")
+    print()
 
 
 def cmd_update(args):
@@ -642,10 +757,10 @@ def cmd_uninstall(args):
     import shutil
     
     FILES_TO_REMOVE = [
-        "config.json", "remote_mode.json", "agent_status.json",
+        "agent_status.json",
         "agent_execution.log", "agent_approval_request.json",
         "agent_approval_response.json", "remote_prompt.json",
-        "agent_response.json", "tasks.json", "ide_limits.json",
+        "agent_response.json", "tasks.json",
         "summary.md"
     ]
     DIRS_TO_REMOVE = ["logs"]
@@ -760,6 +875,12 @@ def main():
     # daemon command
     daemon_parser = subparsers.add_parser("daemon", help="Start the background agent prompt listener daemon")
     daemon_parser.add_argument("--url", default="http://127.0.0.1:8000", help="FastAPI Server URL")
+    daemon_parser.add_argument("--exit-on-prompt", action="store_true", default=False,
+                               help="Exit after writing the first prompt (for IDE background task mode)")
+
+    # switch command
+    switch_parser = subparsers.add_parser("switch", help="Safely switch remote monitoring to a new directory")
+    switch_parser.add_argument("target_dir", help="The path to the new directory to monitor")
 
     # uninstall command
     uninstall_parser = subparsers.add_parser("uninstall", help="Remove all generated workspace files and guide pip uninstall")
@@ -784,6 +905,8 @@ def main():
         cmd_update(args)
     elif args.command == "daemon":
         cmd_daemon(args)
+    elif args.command == "switch":
+        cmd_switch(args)
     elif args.command == "uninstall":
         cmd_uninstall(args)
     elif args.command == "help":

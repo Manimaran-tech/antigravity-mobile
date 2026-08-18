@@ -2,9 +2,15 @@ import os
 import json
 import uuid
 import datetime
+import queue
 import subprocess
 import threading
+import time
 from typing import Dict, List, Optional
+
+
+class TaskQueueFullError(RuntimeError):
+    pass
 
 class Task:
     def __init__(self, command: str, id: Optional[str] = None, status: str = "pending", 
@@ -33,17 +39,24 @@ class Task:
         }
 
 class TaskRunner:
+    """A bounded local runner: API calls enqueue; fixed workers execute."""
     def __init__(self, db_path: str = "tasks.json", logs_dir: str = "logs"):
         self.db_path = os.path.abspath(db_path)
         self.logs_dir = os.path.abspath(logs_dir)
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.running_processes: Dict[str, subprocess.Popen] = {}
+        self.max_concurrent_tasks = max(1, int(os.getenv("ANTIGRAVITY_MAX_CONCURRENT_TASKS", "1")))
+        self.max_queued_tasks = max(1, int(os.getenv("ANTIGRAVITY_MAX_QUEUED_TASKS", "20")))
+        self.max_log_read_bytes = max(1, int(os.getenv("ANTIGRAVITY_MAX_LOG_READ_BYTES", str(64 * 1024))))
+        self._queue = queue.Queue(maxsize=self.max_queued_tasks)
         
         # Ensure directories exist
         os.makedirs(self.logs_dir, exist_ok=True)
         
         # Load or initialize DB
         self._load_db()
+        for index in range(self.max_concurrent_tasks):
+            threading.Thread(target=self._worker_loop, name=f"task-runner-{index}", daemon=True).start()
 
     def _load_db(self):
         with self.lock:
@@ -96,21 +109,39 @@ class TaskRunner:
         return task
 
     def confirm_and_run(self, task_id: str) -> bool:
-        task = self.get_task(task_id)
-        if not task or task.status != "pending":
-            return False
-
-        task.status = "running"
-        task.started_at = datetime.datetime.now().isoformat()
         with self.lock:
-            self.tasks_data[task.id] = task.to_dict()
+            task_data = self.tasks_data.get(task_id)
+            if not task_data or task_data.get("status") != "pending":
+                return False
+            try:
+                self._queue.put_nowait(task_id)
+            except queue.Full:
+                raise TaskQueueFullError(f"Task queue is full (maximum {self.max_queued_tasks} queued tasks).")
+            task_data["status"] = "queued"
             self._save_db_unlocked()
-
-        # Start execution in background thread
-        thread = threading.Thread(target=self._run_process, args=(task.id, task.command))
-        thread.daemon = True
-        thread.start()
         return True
+
+    def _worker_loop(self):
+        while True:
+            task_id = self._queue.get()
+            try:
+                with self.lock:
+                    task_data = self.tasks_data.get(task_id)
+                    if not task_data or task_data.get("status") != "queued":
+                        continue
+                    task_data["status"] = "running"
+                    task_data["started_at"] = datetime.datetime.now().isoformat()
+                    self._save_db_unlocked()
+                    command = task_data["command"]
+                self._run_process(task_id, command)
+            finally:
+                self._queue.task_done()
+
+    def queue_stats(self) -> dict:
+        with self.lock:
+            running = sum(1 for task in self.tasks_data.values() if task.get("status") == "running")
+            queued = sum(1 for task in self.tasks_data.values() if task.get("status") == "queued")
+        return {"running": running, "queued": queued, "max_concurrent": self.max_concurrent_tasks, "max_queued": self.max_queued_tasks}
 
     def _run_process(self, task_id: str, command: str):
         log_file_path = os.path.join(self.logs_dir, f"{task_id}.log")
@@ -124,9 +155,10 @@ class TaskRunner:
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                text=True,
+                encoding="utf-8",
+                errors="replace",
                 bufsize=1,
-                universal_newlines=True
+                cwd=os.getcwd()
             )
             
             with self.lock:
@@ -204,8 +236,15 @@ class TaskRunner:
         log_file_path = os.path.join(self.logs_dir, f"{task_id}.log")
         if os.path.exists(log_file_path):
             try:
-                with open(log_file_path, "r", encoding="utf-8", errors="ignore") as f:
-                    return f.read()
+                with open(log_file_path, "rb") as f:
+                    f.seek(max(0, os.path.getsize(log_file_path) - self.max_log_read_bytes))
+                    return f.read(self.max_log_read_bytes).decode("utf-8", errors="replace")
             except Exception as e:
                 return f"Error reading logs: {str(e)}"
         return "No logs available or task has not started yet."
+
+    def start_task(self, command: str, created_by: str = "remote") -> Task:
+        task = self.add_task(command, created_by)
+        self.confirm_and_run(task.id)
+        return task
+
