@@ -13,6 +13,12 @@ import shutil
 import signal
 import threading
 
+GREEN = '\033[92m'
+YELLOW = '\033[93m'
+RED = '\033[91m'
+DIM = '\033[2m'
+RESET = '\033[0m'
+
 def get_workspace_root() -> str:
     cwd = os.path.abspath(os.getcwd())
     if os.path.exists(os.path.join(cwd, ".agents")) or os.path.exists(os.path.join(cwd, ".git")):
