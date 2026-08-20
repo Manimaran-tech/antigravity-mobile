@@ -79,14 +79,14 @@ antigravity-mobile start --host 0.0.0.0 --port 8000
 ```
 
 ### Step 3: Get a Public URL
-Expose your local server to the internet so your phone can reach it (requires Node.js):
+Expose your local server to the internet using the built-in Cloudflare Quick Tunnel integration (no account required):
 ```bash
-npx localtunnel --port 8000
+antigravity-mobile start --host 0.0.0.0 --port 8000 --tunnel
 ```
-This will give you a public URL like `https://xyz.loca.lt`.
+This will automatically launch the server and give you a public URL like `https://xyz.trycloudflare.com`.
 
 ### Step 4: Open on Your Phone
-1. Open the localtunnel URL on your mobile browser
+1. Open the trycloudflare.com URL on your mobile browser
 2. Enter your access PIN (shown during setup)
 3. You're in! Start monitoring and controlling your IDE agent remotely ðŸŽ‰
 
@@ -106,6 +106,7 @@ Please read the remote monitoring rules in .agents/AGENTS.md and follow them. I 
 | `antigravity-mobile setup` | Interactive first-time setup wizard |
 | `antigravity-mobile init` | Generate config & security PIN |
 | `antigravity-mobile start` | Start the FastAPI dashboard server |
+| `antigravity-mobile start --tunnel` | Start the server and create a public Cloudflare tunnel |
 | `antigravity-mobile remote --on` | Enable remote monitoring mode |
 | `antigravity-mobile remote --off` | Disable remote monitoring (saves tokens) |
 | `antigravity-mobile remote --status` | Check if remote mode is on or off |
@@ -125,14 +126,11 @@ This disables all remote logging, status updates, and mobile approval prompts â€
 antigravity-mobile remote --on
 ```
 
-### Start everything in one go
+### Start server with a public internet tunnel
 ```bash
-# Terminal 1: Start the server
-antigravity-mobile start --host 0.0.0.0 --port 8000
-
-# Terminal 2: Expose to internet
-npx localtunnel --port 8000
+antigravity-mobile start --host 0.0.0.0 --port 8000 --tunnel
 ```
+This uses Cloudflare Quick Tunnels to provide a stable, free HTTPS URL for your phone instantly.
 
 ---
 

@@ -405,9 +405,39 @@ def get_session_transcript(session_id: str) -> List[Dict[str, Any]]:
         pass
     return turns
 
+def _find_project_root(path: str) -> Optional[str]:
+    """Walk up from a path to find the nearest directory containing .git or .agents (the project root)."""
+    p = os.path.abspath(path).replace("\\", "/")
+    if not os.path.isdir(p):
+        p = os.path.dirname(p).replace("\\", "/")
+    while len(p) > 3:
+        if os.path.exists(os.path.join(p, ".git")) or os.path.exists(os.path.join(p, ".agents")):
+            return p
+        parent = os.path.dirname(p).replace("\\", "/")
+        if parent == p:
+            break
+        p = parent
+    return None
+
 def find_session_workspace(session_id: str) -> Optional[str]:
-    """Scan transcript.jsonl and brain artifacts for paths to determine workspace directory."""
-    # 1. Try to scan transcript.jsonl
+    """Scan transcript.jsonl and brain artifacts for paths to determine workspace project root.
+    
+    Collects all path candidates, normalizes each to its project root (by walking up
+    to find .git or .agents), then returns the most frequently found root.
+    This prevents returning a subfolder (e.g. frontend/src) instead of the project root.
+    """
+    candidate_roots = []
+    
+    def _add_candidate(raw_path: str):
+        """Normalize a raw path to its project root and add to candidates."""
+        p = raw_path.replace("\\", "/")
+        if not os.path.exists(p.split("?")[0].split("#")[0]):  # strip query/fragment
+            return
+        root = _find_project_root(p)
+        if root:
+            candidate_roots.append(root)
+    
+    # 1. Scan transcript.jsonl for tool call paths
     transcript_path = os.path.join(BRAIN_DIR, session_id, ".system_generated", "logs", "transcript.jsonl")
     if os.path.exists(transcript_path):
         try:
@@ -416,62 +446,58 @@ def find_session_workspace(session_id: str) -> Optional[str]:
                     if not line.strip():
                         continue
                     if '"Cwd"' in line or '"DirectoryPath"' in line or '"TargetFile"' in line or '"AbsolutePath"' in line or ':/' in line or ':\\\\' in line:
-                        obj = json.loads(line)
+                        try:
+                            obj = json.loads(line)
+                        except Exception:
+                            continue
                         # Look at tool calls
                         for call in obj.get("tool_calls", []):
                             args = call.get("arguments", {})
-                            # check Cwd of run_command
-                            if "Cwd" in args:
-                                p = args["Cwd"].replace("\\", "/")
-                                if os.path.exists(p) and os.path.isdir(p):
-                                    return p
-                            # check DirectoryPath of list_dir
-                            if "DirectoryPath" in args:
-                                p = args["DirectoryPath"].replace("\\", "/")
-                                if os.path.exists(p) and os.path.isdir(p):
-                                    return p
-                            # check TargetFile or AbsolutePath
+                            for key in ["Cwd", "DirectoryPath"]:
+                                if key in args:
+                                    _add_candidate(args[key])
                             for key in ["TargetFile", "AbsolutePath"]:
                                 if key in args:
-                                    p = os.path.dirname(args[key]).replace("\\", "/")
-                                    # walk up to find a directory with .agents or .git or workspace root
-                                    while len(p) > 3:
-                                        if os.path.exists(os.path.join(p, ".agents")) or os.path.exists(os.path.join(p, ".git")):
-                                            return p
-                                        p = os.path.dirname(p).replace("\\", "/")
+                                    _add_candidate(args[key])
                         
-                        # Look at USER_INPUT content for active workspace logs
+                        # Look at USER_INPUT content for workspace path references
                         if obj.get("type") == "USER_INPUT":
                             content = obj.get("content", "")
-                            # Look for drive paths (e.g. C:\path or c:/path)
                             matches = re.findall(r"([a-zA-Z]:[/\\][^ \n\r\t\-]+)", content)
                             for m in matches:
-                                p = m.replace("\\", "/").rstrip(":")
-                                if os.path.exists(p):
-                                    if not os.path.isdir(p):
-                                        p = os.path.dirname(p)
-                                    return p
+                                _add_candidate(m.rstrip(":"))
+                    
+                    # Stop after collecting enough candidates (performance guard)
+                    if len(candidate_roots) >= 20:
+                        break
         except Exception:
             pass
-            
-    # 2. Try implementation_plan.md, walkthrough.md, etc.
+    
+    # 2. Scan brain artifacts (implementation_plan.md, walkthrough.md, etc.) for file links
     for filename in ["implementation_plan.md", "walkthrough.md", "task.md"]:
         path = os.path.join(BRAIN_DIR, session_id, filename)
         if os.path.exists(path):
             try:
                 with open(path, "r", encoding="utf-8", errors="ignore") as f:
                     content = f.read()
-                    # Find file links like file:///c:/path
-                    matches = re.findall(r"file:///([a-zA-Z]:/[^ \n\r\t\"')#>\?]+)", content)
-                    for m in matches:
-                        p = m.rstrip("/")
-                        while len(p) > 3:
-                            if os.path.exists(os.path.join(p, ".agents")) or os.path.exists(os.path.join(p, ".git")):
-                                return p
-                            p = os.path.dirname(p).replace("\\", "/")
+                matches = re.findall(r"file:///([a-zA-Z]:/[^ \n\r\t\"')#>\?]+)", content)
+                for m in matches:
+                    _add_candidate(m.rstrip("/"))
             except Exception:
                 pass
-    return None
+    
+    if not candidate_roots:
+        return None
+    
+    # Return the most frequently occurring project root (majority vote)
+    from collections import Counter
+    root_counts = Counter(r.rstrip("/").lower() for r in candidate_roots)
+    best_root_lower = root_counts.most_common(1)[0][0]
+    # Return the original-case version
+    for r in candidate_roots:
+        if r.rstrip("/").lower() == best_root_lower:
+            return r.rstrip("/")
+    return candidate_roots[0].rstrip("/")
 
 app = FastAPI(title="Antigravity Remote Monitor")
 security = HTTPBearer()
@@ -656,18 +682,39 @@ def set_antigravity_model(model: str):
     return success
 
 # In-memory limits database (matching Antigravity IDE models)
+# ── Model registry ──────────────────────────────────────────────────
+# Each model group defines the ordered list of variants that the IDE
+# dropdown actually offers for that family.  The VBScript keyboard
+# navigator derives the correct number of DOWN presses from the
+# variant's *index* inside this list, so adding / removing variants
+# in the future "just works" without touching the VBS generation code.
+#
+# Fields per entry:
+#   name      – Human-readable label shown in the mobile UI
+#   category  – Billing / limit bucket ("gemini" | "claude")
+#   group     – Model family key (all entries sharing a submenu)
+#   variants  – Ordered list of variant suffixes for this group
+#   variant   – This entry's variant suffix (must be in `variants`)
+#   menu_pos  – 1-indexed position in the IDE's top-level dropdown
+
+_GEMINI_FLASH_VARIANTS = ["low", "medium", "high"]   # 3 sub-items
+_GEMINI_PRO_VARIANTS   = ["low", "high"]              # 2 sub-items (no medium!)
+
 MODEL_LIMITS = {
-    "gemini-3-6-flash-high": {"name": "Gemini 3.6 Flash (High)", "category": "gemini"},
-    "gemini-3-6-flash-medium": {"name": "Gemini 3.6 Flash (Medium)", "category": "gemini"},
-    "gemini-3-6-flash-low": {"name": "Gemini 3.6 Flash (Low)", "category": "gemini"},
-    "gemini-3-5-flash-medium": {"name": "Gemini 3.5 Flash (Medium)", "category": "gemini"},
-    "gemini-3-5-flash-high": {"name": "Gemini 3.5 Flash (High)", "category": "gemini"},
-    "gemini-3-5-flash-low": {"name": "Gemini 3.5 Flash (Low)", "category": "gemini"},
-    "gemini-3-1-pro-low": {"name": "Gemini 3.1 Pro (Low)", "category": "gemini"},
-    "gemini-3-1-pro-high": {"name": "Gemini 3.1 Pro (High)", "category": "gemini"},
-    "claude-sonnet-4-6": {"name": "Claude Sonnet 4.6 (Thinking)", "category": "claude"},
-    "claude-opus-4-6": {"name": "Claude Opus 4.6 (Thinking)", "category": "claude"},
-    "gpt-oss-120b": {"name": "GPT-OSS 120B (Medium)", "category": "claude"}
+    "gemini-3-7-flash-high":   {"name": "Gemini 3.7 Flash (High)",   "category": "gemini", "group": "3-7-flash", "variants": _GEMINI_FLASH_VARIANTS, "variant": "high",   "menu_pos": 1},
+    "gemini-3-7-flash-medium": {"name": "Gemini 3.7 Flash (Medium)", "category": "gemini", "group": "3-7-flash", "variants": _GEMINI_FLASH_VARIANTS, "variant": "medium", "menu_pos": 1},
+    "gemini-3-7-flash-low":    {"name": "Gemini 3.7 Flash (Low)",    "category": "gemini", "group": "3-7-flash", "variants": _GEMINI_FLASH_VARIANTS, "variant": "low",    "menu_pos": 1},
+    "gemini-3-6-flash-high":   {"name": "Gemini 3.6 Flash (High)",   "category": "gemini", "group": "3-6-flash", "variants": _GEMINI_FLASH_VARIANTS, "variant": "high",   "menu_pos": 2},
+    "gemini-3-6-flash-medium": {"name": "Gemini 3.6 Flash (Medium)", "category": "gemini", "group": "3-6-flash", "variants": _GEMINI_FLASH_VARIANTS, "variant": "medium", "menu_pos": 2},
+    "gemini-3-6-flash-low":    {"name": "Gemini 3.6 Flash (Low)",    "category": "gemini", "group": "3-6-flash", "variants": _GEMINI_FLASH_VARIANTS, "variant": "low",    "menu_pos": 2},
+    "gemini-3-5-flash-medium": {"name": "Gemini 3.5 Flash (Medium)", "category": "gemini", "group": "3-5-flash", "variants": _GEMINI_FLASH_VARIANTS, "variant": "medium", "menu_pos": 3},
+    "gemini-3-5-flash-high":   {"name": "Gemini 3.5 Flash (High)",   "category": "gemini", "group": "3-5-flash", "variants": _GEMINI_FLASH_VARIANTS, "variant": "high",   "menu_pos": 3},
+    "gemini-3-5-flash-low":    {"name": "Gemini 3.5 Flash (Low)",    "category": "gemini", "group": "3-5-flash", "variants": _GEMINI_FLASH_VARIANTS, "variant": "low",    "menu_pos": 3},
+    "gemini-3-1-pro-low":      {"name": "Gemini 3.1 Pro (Low)",      "category": "gemini", "group": "3-1-pro",   "variants": _GEMINI_PRO_VARIANTS,   "variant": "low",    "menu_pos": 4},
+    "gemini-3-1-pro-high":     {"name": "Gemini 3.1 Pro (High)",     "category": "gemini", "group": "3-1-pro",   "variants": _GEMINI_PRO_VARIANTS,   "variant": "high",   "menu_pos": 4},
+    "claude-sonnet-4-6":       {"name": "Claude Sonnet 4.6 (Thinking)", "category": "claude", "menu_pos": 5},
+    "claude-opus-4-6":         {"name": "Claude Opus 4.6 (Thinking)",   "category": "claude", "menu_pos": 6},
+    "gpt-oss-120b":            {"name": "GPT-OSS 120B (Medium)",        "category": "claude", "menu_pos": 7},
 }
 
 def get_system_limits():
@@ -919,6 +966,27 @@ def sync_plan_from_file():
         logger.error(f"Error parsing implementation_plan.md: {e}")
 
 # Server Status helper
+_DAEMON_ONLINE_CACHE = {"online": False, "time": 0}
+
+def is_daemon_online() -> bool:
+    global _DAEMON_ONLINE_CACHE
+    if time.time() - _DAEMON_ONLINE_CACHE["time"] < 3.0:
+        return _DAEMON_ONLINE_CACHE["online"]
+    
+    online = False
+    try:
+        for p in psutil.process_iter(['name', 'cmdline']):
+            cmdline = p.info.get('cmdline')
+            if cmdline and any('antigravity_remote.agent_daemon' in str(arg) for arg in cmdline):
+                online = True
+                break
+    except Exception:
+        pass
+        
+    _DAEMON_ONLINE_CACHE["online"] = online
+    _DAEMON_ONLINE_CACHE["time"] = time.time()
+    return online
+
 def get_system_status():
     global REMOTE_PROMPT, REMOTE_APPROVAL
     sync_plan_from_file()
@@ -1010,6 +1078,7 @@ def get_system_status():
         "agent_status": agent_status,
         "agent_task": agent_task,
         "agent_logs": agent_logs,
+        "daemon_online": is_daemon_online(),
         "tasks_queue": REMOTE_TASKS_QUEUE,
         "timestamp": datetime.datetime.now().isoformat()
     }
@@ -1230,30 +1299,57 @@ def switch_model_endpoint(req: ModelRequest, token: str = Depends(verify_token))
     if not success:
         raise HTTPException(status_code=500, detail="Failed to write Antigravity settings")
     
-    # Generate and execute VBScript to simulate typing '/model {model_name}'
+    # Generate and execute VBScript to simulate browsing the dropdown menu
     try:
-        model_name = MODEL_LIMITS[req.model]["name"]
-        safe_model_name = ""
-        for ch in model_name:
-            if ch in ['+', '^', '%', '~', '(', ')', '[', ']', '{', '}']:
-                safe_model_name += f"{{{ch}}}"
-            elif ch == '"':
-                safe_model_name += '""'
-            else:
-                safe_model_name += ch
+        model_id = req.model
+        model_info = MODEL_LIMITS.get(model_id, {})
+        
+        # ── Top-level dropdown position (data-driven) ──
+        downs = model_info.get("menu_pos", 1)
+        
+        script_lines = [
+            'Set WshShell = WScript.CreateObject("WScript.Shell")',
+            'Set objWMI = GetObject("winmgmts:\\\\.\\root\\cimv2")',
+            "Set col = objWMI.ExecQuery(\"Select * From Win32_Process Where Name LIKE '%Antigravity%' OR Name = 'Code.exe'\")",
+            'For Each obj In col',
+            '    WshShell.AppActivate obj.ProcessId',
+            'Next',
+            'WScript.Sleep 500',
+            'WshShell.SendKeys "^/"',
+            'WScript.Sleep 800'
+        ]
+        
+        if downs > 0:
+            for _ in range(downs):
+                script_lines.append('WshShell.SendKeys "{DOWN}"')
+                script_lines.append('WScript.Sleep 150')
                 
+        # ── Variant submenu (data-driven) ──
+        # Only Gemini models have a variant submenu.  We derive the
+        # correct number of DOWN presses from the variant's actual
+        # index in the model group's ordered variant list, so models
+        # with 2 variants (e.g. Pro: low/high) are handled correctly.
+        if 'gemini' in model_id and 'variants' in model_info:
+            script_lines.append('WshShell.SendKeys "{RIGHT}"')
+            script_lines.append('WScript.Sleep 400')
+            
+            variant_list = model_info["variants"]        # e.g. ["low", "medium", "high"] or ["low", "high"]
+            current_variant = model_info.get("variant", "low")
+            try:
+                var_downs = variant_list.index(current_variant)
+            except ValueError:
+                var_downs = 0   # safety fallback
+                
+            for _ in range(var_downs):
+                script_lines.append('WshShell.SendKeys "{DOWN}"')
+                script_lines.append('WScript.Sleep 150')
+                
+        script_lines.append('WshShell.SendKeys "{ENTER}"')
+        
+        vbs_script = "\n".join(script_lines) + "\n"
+        
         import tempfile
         import subprocess
-        vbs_script = (
-            'Set WshShell = WScript.CreateObject("WScript.Shell")\n'
-            'Set objWMI = GetObject("winmgmts:\\\\.\\root\\cimv2")\n'
-            'Set col = objWMI.ExecQuery("Select * From Win32_Process Where Name LIKE \'%Antigravity%\' OR Name = \'Code.exe\'")\n'
-            'For Each obj In col\n'
-            '    WshShell.AppActivate obj.ProcessId\n'
-            'Next\n'
-            'WScript.Sleep 500\n'
-            f'WshShell.SendKeys "/model {safe_model_name}{{ENTER}}"\n'
-        )
         with tempfile.NamedTemporaryFile(delete=False, suffix=".vbs", mode="w", encoding="utf-8") as f:
             f.write(vbs_script)
             vbs_path = f.name
@@ -1283,6 +1379,31 @@ def shutdown_endpoint(token: str = Depends(verify_token)):
     loop = asyncio.get_event_loop()
     loop.call_later(0.5, kill_tunnel)
     return {"status": "success", "message": "Tunnel shutting down..."}
+
+@app.post("/api/agent/stop")
+def stop_agent(token: str = Depends(verify_token)):
+    global REMOTE_PROMPT
+    REMOTE_PROMPT = {"id": "", "prompt": "", "status": "idle", "response": ""}
+    
+    root = get_workspace_root()
+    state_dir = os.path.join(root, ".agents", "state")
+    
+    try:
+        with open(os.path.join(state_dir, "agent_status.json"), "w", encoding="utf-8") as f:
+            json.dump({"status": "idle", "task": ""}, f)
+    except Exception:
+        pass
+        
+    try:
+        p_file = os.path.join(state_dir, "remote_prompt.json")
+        if os.path.exists(p_file):
+            with open(p_file, "w", encoding="utf-8") as f:
+                json.dump({}, f)
+    except Exception:
+        pass
+        
+    notify_state_change()
+    return {"status": "success", "message": "Execution stopped"}
 
 PROMPT_START_TIMESTAMP: float = 0.0
 
@@ -1897,14 +2018,9 @@ def do_switch_workspace(target_path: str) -> bool:
                 'On Error Resume Next\n'
                 'Set WshShell = WScript.CreateObject("WScript.Shell")\n'
                 'success = False\n'
-                'For i = 1 To 15\n'
-                '    Set objWMI = GetObject("winmgmts:\\\\.\\root\\cimv2")\n'
-                '    Set col = objWMI.ExecQuery("Select * From Win32_Process Where Name LIKE \'%Antigravity%\' OR Name = \'Code.exe\'")\n'
-                '    For Each obj In col\n'
-                '        WshShell.AppActivate obj.ProcessId\n'
+                'For i = 1 To 30\n'
+                '    If WshShell.AppActivate("Antigravity IDE") Then\n'
                 '        success = True\n'
-                '    Next\n'
-                '    If success Then\n'
                 '        Exit For\n'
                 '    End If\n'
                 '    WScript.Sleep 500\n'
@@ -2059,32 +2175,30 @@ def get_detailed_diffs(token: str = Depends(verify_token)):
     }
 
 # WebSockets
-@app.websocket("/ws/status")
-async def ws_status(websocket: WebSocket, token: str = Query(...)):
-    if not verify_ws_token(token):
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        return
-        
-    await websocket.accept()
-    try:
-        loop_count = 0
-        last_heavy_data = {}
-        last_transcript_mtime = 0
-        last_processed_change = 0
-        while True:
+
+GLOBAL_STATUS_DATA = {}
+GLOBAL_HEAVY_DATA = {}
+
+def global_state_updater_loop():
+    global GLOBAL_STATUS_DATA, GLOBAL_HEAVY_DATA, LAST_STATE_CHANGE
+    loop_count = 0
+    last_processed_change = 0
+    last_transcript_mtime = 0
+    while True:
+        try:
             # Check for transcript changes
-            try:
-                transcript_path = os.path.join(get_workspace_root(), ".agents", "system_generated", "logs", "transcript.jsonl")
-                if os.path.exists(transcript_path):
-                    mtime = os.path.getmtime(transcript_path)
-                    if mtime > last_transcript_mtime:
-                        if last_transcript_mtime != 0:
-                            notify_state_change()
-                        last_transcript_mtime = mtime
-            except Exception:
-                pass
-                
-            status_data = await asyncio.to_thread(get_system_status)
+            transcript_path = os.path.join(get_workspace_root(), ".agents", "system_generated", "logs", "transcript.jsonl")
+            if os.path.exists(transcript_path):
+                mtime = os.path.getmtime(transcript_path)
+                if mtime > last_transcript_mtime:
+                    if last_transcript_mtime != 0:
+                        notify_state_change()
+                    last_transcript_mtime = mtime
+            
+            # Status data
+            status_data = get_system_status()
+            GLOBAL_STATUS_DATA = status_data
+            
             is_busy = status_data.get("agent_status") in ("busy", "working")
             
             needs_heavy_update = False
@@ -2095,7 +2209,7 @@ async def ws_status(websocket: WebSocket, token: str = Query(...)):
             elif loop_count % 20 == 0: # Every 10s fallback
                 needs_heavy_update = True
                 
-            if needs_heavy_update or not last_heavy_data:
+            if needs_heavy_update or not GLOBAL_HEAVY_DATA:
                 heavy_data = {}
                 heavy_data["tasks"] = [t.to_dict() for t in runner.list_tasks()]
                 
@@ -2115,18 +2229,16 @@ async def ws_status(websocket: WebSocket, token: str = Query(...)):
                 heavy_data["questions"] = REMOTE_QUESTIONS
                 heavy_data["btw"] = REMOTE_BTW
                 
-                target_projects = await asyncio.to_thread(get_sibling_projects)
                 heavy_data["target"] = {
                     "workspace_path": REMOTE_TARGET.get("workspace_path"),
                     "active_file": REMOTE_TARGET.get("active_file"),
-                    "projects": target_projects
+                    "projects": get_sibling_projects()
                 }
-                diffs = await asyncio.to_thread(get_git_diffs)
+                diffs = get_git_diffs()
                 heavy_data["diffs_summary"] = diffs
                 heavy_data["git_branch"] = diffs.get("branch", "unknown")
                 
-                # Include latest brain plan info
-                brain_plan = await asyncio.to_thread(get_latest_brain_plan)
+                brain_plan = get_latest_brain_plan()
                 if brain_plan:
                     heavy_data["brain_plan"] = {
                         "session_id": brain_plan.get("session_id"),
@@ -2137,8 +2249,7 @@ async def ws_status(websocket: WebSocket, token: str = Query(...)):
                 else:
                     heavy_data["brain_plan"] = None
 
-                # Include latest brain walkthrough info
-                brain_walkthrough = await asyncio.to_thread(get_latest_brain_walkthrough)
+                brain_walkthrough = get_latest_brain_walkthrough()
                 if brain_walkthrough:
                     heavy_data["brain_walkthrough"] = {
                         "session_id": brain_walkthrough.get("session_id"),
@@ -2149,19 +2260,37 @@ async def ws_status(websocket: WebSocket, token: str = Query(...)):
                 else:
                     heavy_data["brain_walkthrough"] = None
                     
-                last_heavy_data = heavy_data
+                GLOBAL_HEAVY_DATA = heavy_data
                 last_processed_change = LAST_STATE_CHANGE
                 
-            status_data.update(last_heavy_data)
-            
-            # We send data if:
-            # 1. State changed recently (needs_heavy_update)
-            # 2. Every 2 seconds (loop_count % 4 == 0) to keep CPU metrics live
-            if needs_heavy_update or (loop_count % 4 == 0):
-                await websocket.send_json(status_data)
-            
             loop_count += 1
-            await asyncio.sleep(0.5)
+        except Exception as e:
+            pass
+            
+        time.sleep(0.5)
+
+# Start global state updater loop in a background daemon thread
+threading.Thread(target=global_state_updater_loop, daemon=True).start()
+
+@app.websocket("/ws/status")
+async def ws_status(websocket: WebSocket, token: str = Query(...)):
+    if not verify_ws_token(token):
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+        
+    await websocket.accept()
+    try:
+        while True:
+            if not GLOBAL_STATUS_DATA:
+                await asyncio.sleep(0.5)
+                continue
+                
+            send_data = dict(GLOBAL_STATUS_DATA)
+            if GLOBAL_HEAVY_DATA:
+                send_data.update(GLOBAL_HEAVY_DATA)
+                
+            await websocket.send_json(send_data)
+            await asyncio.sleep(1.0)
     except WebSocketDisconnect:
         pass
     except Exception as e:
@@ -2375,7 +2504,8 @@ def get_history_transcript_endpoint(session_id: str, token: str = Depends(verify
 @app.post("/api/history/session/{session_id}/continue")
 def continue_history_session(session_id: str, token: str = Depends(verify_token)):
     """Restore the project workspace of a past conversation session to continue it.
-    Auto-detects which directory the conversation belongs to and switches both IDE and mobile."""
+    Auto-detects which directory the conversation belongs to and switches both IDE and mobile.
+    Skips workspace switching if already in the correct project."""
     workspace_path = find_session_workspace(session_id)
     
     if not workspace_path:
@@ -2384,13 +2514,19 @@ def continue_history_session(session_id: str, token: str = Depends(verify_token)
     
     # Normalize the path
     workspace_path = workspace_path.replace("\\", "/")
+    current_ws = get_workspace_root().replace("\\", "/").rstrip("/")
+    target_ws = workspace_path.rstrip("/")
     
-    success = do_switch_workspace(workspace_path)
-    if not success:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to switch to the session's workspace path: {workspace_path}"
-        )
+    switched = False
+    if current_ws.lower() != target_ws.lower():
+        # Only switch if we're actually in a different project
+        success = do_switch_workspace(workspace_path)
+        if not success:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to switch to the session's workspace path: {workspace_path}"
+            )
+        switched = True
     
     # Load the conversation history from the brain transcript into the mobile chat
     turns = get_session_transcript(session_id)
@@ -2402,11 +2538,14 @@ def continue_history_session(session_id: str, token: str = Depends(verify_token)
             "text": turn["text"]
         })
     
+    notify_state_change()
+    
     return {
         "status": "success",
         "workspace_path": workspace_path,
         "session_id": session_id,
-        "turns_loaded": len(turns)
+        "turns_loaded": len(turns),
+        "workspace_switched": switched
     }
 
 # UI static file routes

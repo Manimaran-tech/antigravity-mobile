@@ -2109,8 +2109,8 @@
 
                     <!-- Prompt Input -->
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                        <div id="daemon-ready-indicator" style="font-size: 0.75rem; color: var(--accent-emerald); display: none; align-items: center; gap: 4px;">
-                            <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> Daemon Ready
+                        <div id="daemon-ready-indicator" style="font-size: 0.75rem; color: #888; display: flex; align-items: center; gap: 6px;">
+                            Daemon <span id="daemon-led" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #10b981;"></span>
                         </div>
                         <button id="stop-execution-btn" class="btn-action" style="font-size: 0.75rem; padding: 4px 8px; color: #ef4444; border: 1px solid #ef4444; background: transparent; display: none;">
                             <i data-lucide="stop-circle" style="width: 14px; height: 14px;"></i> Stop Execution
@@ -2362,18 +2362,59 @@
         let ws = null;
         let activeFileContent = '';
 
-        // Helper API Fetch with Authorization
+        // Helper API Fetch with Authorization + Auto-Retry
+        let _connectionHealthy = true;
+        let _fetchRetryCount = 0;
+        const _MAX_FETCH_RETRIES = 3;
+
         async function fetchWithAuth(url, options = {}) {
             options.headers = options.headers || {};
             if (token) {
                 options.headers['Authorization'] = `Bearer ${token}`;
             }
-            const res = await fetch(url, options);
-            if (res.status === 401 && url !== '/api/login') {
-                localStorage.removeItem('remote_auth_token');
-                window.location.reload();
+            // Add a timeout to prevent hanging requests (tunnel can stall)
+            const controller = new AbortController();
+            const timeoutMs = options._timeout || 30000;
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+            if (!options.signal) options.signal = controller.signal;
+
+            let lastError;
+            const maxRetries = options._noRetry ? 0 : _MAX_FETCH_RETRIES;
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                try {
+                    const res = await fetch(url, options);
+                    clearTimeout(timeoutId);
+                    if (res.status === 401 && url !== '/api/login') {
+                        localStorage.removeItem('remote_auth_token');
+                        window.location.reload();
+                    }
+                    // Connection recovered
+                    if (!_connectionHealthy) {
+                        _connectionHealthy = true;
+                        _fetchRetryCount = 0;
+                        showToastBanner('Reconnected', 'Connection restored', 'success');
+                    }
+                    return res;
+                } catch (e) {
+                    lastError = e;
+                    if (e.name === 'AbortError') {
+                        // Timeout — don't retry immediately
+                        break;
+                    }
+                    if (attempt < maxRetries) {
+                        // Exponential backoff: 500ms, 1s, 2s
+                        const delay = Math.min(500 * Math.pow(2, attempt), 4000);
+                        await new Promise(r => setTimeout(r, delay));
+                    }
+                }
             }
-            return res;
+            clearTimeout(timeoutId);
+            // All retries failed — mark connection unhealthy
+            if (_connectionHealthy) {
+                _connectionHealthy = false;
+                showToastBanner('Connection Lost', 'Retrying automatically...', 'warning');
+            }
+            throw lastError;
         }
 
         // Tab Navigation with Anime.js Spring Animations
@@ -3776,6 +3817,9 @@
             }
         }
 
+        let _wsReconnectDelay = 1000;
+        const _WS_MAX_RECONNECT_DELAY = 30000;
+
         function initWS() {
             const loc = window.location;
             const wsProtocol = loc.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -3786,17 +3830,35 @@
             ws.onopen = () => {
                 document.getElementById('ws-dot').classList.add('active');
                 document.getElementById('ws-text').textContent = 'Connected';
+                _wsReconnectDelay = 1000; // Reset backoff on successful connection
+                if (!_connectionHealthy) {
+                    _connectionHealthy = true;
+                    showToastBanner('Reconnected', 'Live connection restored', 'success');
+                }
+                loadWorkspaceTree();
             };
 
             ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                updateUI(data);
+                try {
+                    const data = JSON.parse(event.data);
+                    updateUI(data);
+                } catch (e) {
+                    // Ignore malformed messages (can happen during tunnel hiccups)
+                }
             };
 
-            ws.onclose = () => {
+            ws.onclose = (event) => {
                 document.getElementById('ws-dot').classList.remove('active');
-                document.getElementById('ws-text').textContent = 'Disconnected';
-                setTimeout(validateToken, 3000);
+                document.getElementById('ws-text').textContent = 'Reconnecting...';
+                // Exponential backoff: 1s → 2s → 4s → ... → 30s max
+                const delay = _wsReconnectDelay;
+                _wsReconnectDelay = Math.min(_wsReconnectDelay * 2, _WS_MAX_RECONNECT_DELAY);
+                setTimeout(validateToken, delay);
+            };
+
+            ws.onerror = () => {
+                // onerror is always followed by onclose, so just update status text
+                document.getElementById('ws-text').textContent = 'Connection error';
             };
         }
 
@@ -3868,12 +3930,16 @@
             }
 
             // Daemon Ready Indicator
-            const daemonReady = document.getElementById('daemon-ready-indicator');
-            if (daemonReady) {
-                if (data.agent_info && data.agent_info.remote_prompt && data.agent_info.remote_prompt.status === 'idle') {
-                    daemonReady.style.display = 'flex';
+            const daemonLed = document.getElementById('daemon-led');
+            if (daemonLed) {
+                if (!data.daemon_online) {
+                    daemonLed.style.backgroundColor = '#4b5563'; // Gray (offline)
+                } else if (isWorking) {
+                    daemonLed.style.backgroundColor = '#ef4444'; // Red (working on something)
+                } else if ((data.agent_info && data.agent_info.remote_prompt && data.agent_info.remote_prompt.status !== 'idle') || (pendingApproval && pendingApproval.status === 'pending')) {
+                    daemonLed.style.backgroundColor = '#eab308'; // Yellow (adjusting json/prompts)
                 } else {
-                    daemonReady.style.display = 'none';
+                    daemonLed.style.backgroundColor = '#10b981'; // Green (free/ready)
                 }
             }
 
@@ -4045,15 +4111,7 @@
 
             let newHtml = '';
             if (filtered.length === 0) {
-                newHtml = renderRecommendationCard('welcome', 'Antigravity AI', 'Ready to assist. What would you like to build today?', {
-                    label: 'Initialize New Project',
-                    cta: 'Start',
-                    signal: 0.95,
-                    tone: '#38bdf8'
-                }, [
-                    { label: 'Refactor Codebase', cta: 'Run', signal: 0.7, tone: '#facc15' },
-                    { label: 'Run Tests', cta: 'Test', signal: 0.6, tone: '#a78bfa' }
-                ], false, false);
+                newHtml = '';
             } else {
                 newHtml = filtered.map((t, i) => {
                     const isUser = t.sender === 'user';
@@ -4551,7 +4609,7 @@
         
         function filterHistory() {
             const query = document.getElementById('history-search-input').value.toLowerCase();
-            const items = document.querySelectorAll('#history-sessions-list > div.glass-card');
+            const items = document.querySelectorAll('#history-sessions-list .ag-context-card');
             items.forEach(item => {
                 const text = item.innerText.toLowerCase();
                 if (text.includes(query)) {
@@ -4600,10 +4658,17 @@
             try {
                 const res = await fetchWithAuth(`/api/history/session/${sessionId}/continue`, { method: 'POST' });
                 if (res.ok) {
-                    alert('Session loaded!');
-                    document.querySelector('[data-tab="tab-chat"]').click();
+                    const data = await res.json();
+                    if (data.workspace_switched) {
+                        showToastBanner('Workspace Switched', `Switched to ${data.workspace_path.split('/').pop()}`, 'success');
+                    } else {
+                        showToastBanner('Session Loaded', `${data.turns_loaded} messages restored`, 'success');
+                    }
+                    if (window.switchTab) window.switchTab('tab-chat');
+                } else {
+                    showToastBanner('Error', 'Failed to continue session', 'warning');
                 }
-            } catch (e) { alert('Failed to continue session'); }
+            } catch (e) { showToastBanner('Error', 'Failed to continue session', 'warning'); }
         }
 
         // Control / Settings & Interactive Workspace Switcher
@@ -4714,7 +4779,7 @@
                     document.getElementById('current-ws-label').textContent = path;
                     loadWorkspaceTree();
                     browseDirectory(path);
-                    document.querySelector('[data-tab="tab-explorer"]').click();
+                    if (window.switchTab) window.switchTab('tab-explorer');
                 }
             } catch (e) { alert('Failed to switch workspace.'); }
         }

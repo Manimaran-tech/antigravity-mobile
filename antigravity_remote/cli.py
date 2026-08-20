@@ -8,6 +8,10 @@ import sysconfig
 import uvicorn
 import psutil
 import ctypes
+import subprocess
+import shutil
+import signal
+import threading
 
 def get_workspace_root() -> str:
     cwd = os.path.abspath(os.getcwd())
@@ -158,15 +162,155 @@ def cmd_start(args):
         except Exception as e:
             print(f"Warning: Could not set sleep prevention: {e}")
 
-    # Run uvicorn server
-    # We pass the module path as a string to support reloading
-    uvicorn.run(
-        "antigravity_remote.server:app",
-        host=args.host,
-        port=args.port,
-        reload=args.reload,
-        log_level="info"
-    )
+    # Start Cloudflare tunnel if --tunnel flag is set
+    tunnel_proc = None
+    if getattr(args, 'tunnel', False):
+        tunnel_proc = start_cloudflare_tunnel(args.port)
+
+    # Run uvicorn server with proper timeouts for tunnel stability
+    try:
+        uvicorn.run(
+            "antigravity_remote.server:app",
+            host=args.host,
+            port=args.port,
+            reload=args.reload,
+            log_level="info",
+            timeout_keep_alive=120,
+            ws_ping_interval=20,
+            ws_ping_timeout=30,
+        )
+    finally:
+        # Clean up tunnel process when server stops
+        if tunnel_proc:
+            stop_cloudflare_tunnel(tunnel_proc)
+
+
+def find_cloudflared() -> str:
+    """Find cloudflared binary. Returns path or None."""
+    # Check PATH first
+    cf = shutil.which("cloudflared")
+    if cf:
+        return cf
+    # Check common install locations on Windows
+    if os.name == 'nt':
+        for candidate in [
+            os.path.expandvars(r"%USERPROFILE%\cloudflared\cloudflared.exe"),
+            os.path.expandvars(r"%LOCALAPPDATA%\cloudflared\cloudflared.exe"),
+            os.path.expandvars(r"%ProgramFiles%\cloudflared\cloudflared.exe"),
+        ]:
+            if os.path.exists(candidate):
+                return candidate
+    return None
+
+
+def install_cloudflared() -> str:
+    """Download and install cloudflared. Returns path to binary."""
+    print(f"    {YELLOW}cloudflared not found. Installing...{RESET}")
+    
+    if os.name == 'nt':
+        install_dir = os.path.expandvars(r"%USERPROFILE%\cloudflared")
+        os.makedirs(install_dir, exist_ok=True)
+        exe_path = os.path.join(install_dir, "cloudflared.exe")
+        
+        # Download latest cloudflared for Windows
+        download_url = "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe"
+        print(f"    Downloading from {download_url}...")
+        
+        try:
+            import urllib.request
+            urllib.request.urlretrieve(download_url, exe_path)
+            print(f"    {GREEN}✓{RESET} cloudflared installed to {exe_path}")
+            return exe_path
+        except Exception as e:
+            print(f"    {RED}✗{RESET} Failed to download cloudflared: {e}")
+            print(f"    {DIM}Please install manually: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/{RESET}")
+            return None
+    else:
+        print(f"    {DIM}Please install cloudflared manually: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/{RESET}")
+        return None
+
+
+def start_cloudflare_tunnel(port: int):
+    """Start a Cloudflare Quick Tunnel (TryCloudflare) pointing at the local server.
+    
+    Quick Tunnels are 100% free, no account needed, and generate a random
+    *.trycloudflare.com URL. Much more stable than localtunnel.
+    """
+    cf_path = find_cloudflared()
+    if not cf_path:
+        cf_path = install_cloudflared()
+        if not cf_path:
+            print(f"    {RED}✗{RESET} Cannot start tunnel without cloudflared. Server will run locally only.")
+            return None
+    
+    print(f"\n    {YELLOW}━━━ Starting Cloudflare Tunnel ━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}")
+    print(f"    {DIM}Using cloudflared Quick Tunnel (free, no account needed){RESET}")
+    print(f"    {DIM}Connecting to localhost:{port}...{RESET}")
+    
+    try:
+        # Start cloudflared as a subprocess
+        proc = subprocess.Popen(
+            [cf_path, "tunnel", "--url", f"http://localhost:{port}"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding="utf-8",
+            errors="replace"
+        )
+        
+        # Monitor output in a thread to capture the tunnel URL
+        def _monitor_tunnel(proc):
+            tunnel_url = None
+            try:
+                for line in proc.stdout:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    # Look for the tunnel URL in the output
+                    if "trycloudflare.com" in line or ".cloudflare" in line:
+                        import re
+                        urls = re.findall(r'https?://[a-zA-Z0-9\-]+\.trycloudflare\.com', line)
+                        if urls and not tunnel_url:
+                            tunnel_url = urls[0]
+                            print(f"\n    {GREEN}━━━ Cloudflare Tunnel Active ━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}")
+                            print(f"    {WHITE}{BOLD}Public URL: {CYAN}{tunnel_url}{RESET}")
+                            print(f"    {DIM}Open this URL on your phone to access the dashboard{RESET}")
+                            print(f"    {GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}")
+                            print()
+            except Exception:
+                pass
+        
+        monitor_thread = threading.Thread(target=_monitor_tunnel, args=(proc,), daemon=True)
+        monitor_thread.start()
+        
+        # Give cloudflared a moment to start
+        time.sleep(2)
+        
+        if proc.poll() is not None:
+            print(f"    {RED}✗{RESET} cloudflared exited immediately (code {proc.returncode})")
+            return None
+        
+        return proc
+    except FileNotFoundError:
+        print(f"    {RED}✗{RESET} cloudflared binary not found at {cf_path}")
+        return None
+    except Exception as e:
+        print(f"    {RED}✗{RESET} Failed to start tunnel: {e}")
+        return None
+
+
+def stop_cloudflare_tunnel(proc):
+    """Gracefully stop the cloudflared tunnel process."""
+    if proc and proc.poll() is None:
+        print(f"\n    {DIM}Stopping Cloudflare tunnel...{RESET}")
+        try:
+            proc.terminate()
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        except Exception:
+            pass
+        print(f"    {GREEN}✓{RESET} Tunnel stopped.")
 
 def cmd_run(args):
     # Get config PIN
@@ -334,8 +478,9 @@ def print_quickstart():
        {CYAN}$ antigravity-mobile start --host 0.0.0.0 --port 8000{RESET}
 
     {GREEN}3.{RESET} {WHITE}Get Public URL{RESET}  {DIM}Expose your server so your phone can reach it{RESET}
-       {CYAN}$ npx localtunnel --port 8000{RESET}
-       {DIM}Copy the URL it gives you (e.g. https://xyz.loca.lt){RESET}
+       {CYAN}$ antigravity-mobile start --host 0.0.0.0 --port 8000 --tunnel{RESET}
+       {DIM}Cloudflare Quick Tunnel (free, auto-installs cloudflared){RESET}
+       {DIM}Or manually: npx localtunnel --port 8000{RESET}
 
     {GREEN}4.{RESET} {WHITE}Open on Phone{RESET}  {DIM}Visit the URL on your mobile browser & enter your PIN{RESET}
 
@@ -625,15 +770,13 @@ def cmd_setup(args):
     print()
     print(f"       {DIM}(This is needed once per terminal session. Future terminals will have it automatically.){RESET}")
     print()
-    print(f"    {GREEN}2.{RESET} Start the server in the same terminal:")
-    print(f"       {CYAN}$ antigravity-mobile start --host 0.0.0.0 --port 8000{RESET}")
+    print(f"    {GREEN}2.{RESET} Start the server with tunnel (so your phone can reach it):")
+    print(f"       {CYAN}$ antigravity-mobile start --host 0.0.0.0 --port 8000 --tunnel{RESET}")
+    print(f"       {DIM}(Uses Cloudflare Quick Tunnel — free, auto-installs cloudflared){RESET}")
     print()
-    print(f"    {GREEN}3.{RESET} Expose to internet (so your phone can reach it):")
-    print(f"       {CYAN}$ npx localtunnel --port 8000{RESET}")
+    print(f"    {GREEN}3.{RESET} Open the URL on your phone & enter PIN: {YELLOW}{BOLD}{pin}{RESET}")
     print()
-    print(f"    {GREEN}4.{RESET} Open the URL on your phone & enter PIN: {YELLOW}{BOLD}{pin}{RESET}")
-    print()
-    print(f"    {GREEN}5.{RESET} {WHITE}Start the listener in your IDE Chat window:{RESET}")
+    print(f"    {GREEN}4.{RESET} {WHITE}Start the listener in your IDE Chat window:{RESET}")
     print(f"       {DIM}Open the Antigravity IDE Chat panel and type:{RESET}")
     print(f"       {CYAN}start remote control{RESET}")
     print()
@@ -857,6 +1000,7 @@ def main():
     start_parser.add_argument("--host", default="127.0.0.1", help="Host interface to bind (e.g., 0.0.0.0 for local network access)")
     start_parser.add_argument("--port", type=int, default=8000, help="Port to run the web server on")
     start_parser.add_argument("--reload", action="store_true", help="Enable hot reloading for development")
+    start_parser.add_argument("--tunnel", action="store_true", help="Start a Cloudflare Quick Tunnel for public access (free, no account needed)")
 
     # run command
     run_parser = subparsers.add_parser("run", help="Run a command locally via the background runner and log it to the server")
