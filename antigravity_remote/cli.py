@@ -408,11 +408,13 @@ def cmd_remote(args):
             
     if args.on:
         enabled = True
+        os.makedirs(os.path.dirname(mode_file), exist_ok=True)
         with open(mode_file, "w") as f:
             json.dump({"enabled": True}, f)
         print("Remote monitoring and control mode: ENABLED")
     elif args.off:
         enabled = False
+        os.makedirs(os.path.dirname(mode_file), exist_ok=True)
         with open(mode_file, "w") as f:
             json.dump({"enabled": False}, f)
         # Clear files so they are not left behind
