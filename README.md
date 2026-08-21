@@ -68,35 +68,30 @@ pip uninstall antigravity-mobile -y
 
 ## Quick Start
 
-### Step 1: Setup
-Run the interactive setup wizard to generate your secure access PIN and configure agent rules:
+### Step 1: Install the Package
+First, install the package using pip:
 ```bash
-antigravity-mobile setup
+pip install antigravity-mobile
 ```
 
 ### Step 2: Start the Server
-Launch the FastAPI dashboard server on all interfaces:
-```bash
-antigravity-mobile start --host 0.0.0.0 --port 8000
-```
-
-### Step 3: Get a Public URL
-Expose your local server to the internet using the built-in Cloudflare Quick Tunnel integration (no account required):
+Open a **separate CMD terminal** and run the server with a public Cloudflare tunnel:
 ```bash
 antigravity-mobile start --host 0.0.0.0 --port 8000 --tunnel
 ```
-This will automatically launch the server and give you a public URL like `https://xyz.trycloudflare.com`.
+*(This will give you a public `trycloudflare.com` URL to open on your phone, along with a secure PIN to log in).*
 
-### Step 4: Open on Your Phone
-1. Open the trycloudflare.com URL on your mobile browser
-2. Enter your access PIN (shown during setup)
-3. You're in! Start monitoring and controlling your IDE agent remotely 🎉
+### Step 3: Enable "Always Proceed" Mode
+Go to your Antigravity IDE and make sure it is set to **"Always Proceed" mode** (Full Autonomy) so it can automatically route commands to your phone without pausing for desktop approvals.
 
-### Step 5: Instruct the AI Agent
-To tell your Antigravity IDE agent to start outputting logs and routing command confirmations to your phone, copy and paste this prompt into your **Antigravity IDE Chat Panel**:
+### Step 4: Connect the Agent
+In your Antigravity IDE chat, simply type:
 ```text
-Please read the remote monitoring rules in .agents/AGENTS.md and follow them. I have started the server and want to monitor your steps remotely. Also, check if my Python scripts directory is in my system/user PATH, and if not, add it automatically. Finally, read config.json to print my access PIN and let me know.
+start the daemon server
 ```
+
+### Step 5: Start Working!
+That's it! Once it connects, open the tunnel URL on your mobile browser, enter your PIN, and you can start working in remote mode and monitoring your agent directly from your phone.
 
 ---
 
