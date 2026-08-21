@@ -26,6 +26,8 @@ Monitor agent tasks, approve commands, and switch active models — remotely.
 [![Total Downloads](https://static.pepy.tech/badge/antigravity-mobile)](https://pepy.tech/project/antigravity-mobile)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+**Current Version: 0.4.0**
+
 ---
 
 ## ✨ Features
