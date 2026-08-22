@@ -47,6 +47,7 @@ def generate_config(force=False) -> dict:
         "secret_key": secret_key
     }
     
+    os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
     with open(CONFIG_FILE, "w") as f:
         json.dump(config, f, indent=2)
         
