@@ -6,6 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Backend: FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Tunnel: Cloudflare](https://img.shields.io/badge/Gateway-Cloudflare%20Tunnels-F38020.svg?logo=cloudflare&logoColor=white)](https://www.cloudflare.com/)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/antigravity-mobile?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/antigravity-mobile)
 
 > **Control your Google Antigravity IDE coding assistant from mobile devices. Stream step-by-step agent thinking, approve or reject sensitive terminal commands, switch foundation models, and monitor hardware telemetry remotely.**
 
