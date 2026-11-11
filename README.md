@@ -1,4 +1,4 @@
-# Antigravity Mobile: Remote Control & Telemetry Dashboard for Google Antigravity IDE
+# Antigravity Mobile: Remote Control & Telemetry Dashboard for Google Antigravity IDE and CLI
 
 [![PyPI Version](https://img.shields.io/pypi/v/antigravity-mobile.svg)](https://pypi.org/project/antigravity-mobile/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/antigravity-mobile.svg)](https://pypi.org/project/antigravity-mobile/)
